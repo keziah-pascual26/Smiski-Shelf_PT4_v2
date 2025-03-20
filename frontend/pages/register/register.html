@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="/pages/register/register.css">
+</head>
+<body>
+
+    <h1>User Registration</h1>
+    <form id="register-form">
+        <input type="text" id="username" placeholder="Username" required> <!-- ✅ Username field -->
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <input type="password" id="confirm-password" placeholder="Confirm Password" required> <!-- ✅ Confirm Password field -->
+        <button type="submit">Register</button>
+    </form>
+
+    <p id="message"></p>
+
+    <!-- ✅ Always Visible Login Button -->
+    <button id="go-to-login">Go to Login</button>
+
+    <script src="/pages/register/register.js"></script>
+</body>
+</html>

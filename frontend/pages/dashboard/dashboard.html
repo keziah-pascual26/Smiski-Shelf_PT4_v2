@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="smiskilogo.png"> <!-- For PNG -->
+    <title>The Smiski Shelf</title>
+    <link rel="stylesheet" href="/pages/dashboard/dashboard.css">
+    <link rel="stylesheet" href="/pages/dashboard/components/styles/post-feed.css">
+    <script type="module" src="/pages/dashboard/dashboard.js" defer></script>
+    <script src="/pages/dashboard/functions/dashboard-db-retrieval.js" defer></script>
+    <script type="module" src="/pages/dashboard/functions/create-stories/story-modal.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.9.8/dist/ffmpeg.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+</head>
+<body>
+
+    <script src="./components/navbar.js" defer></script>
+    
+    <div  id="postContainer">
+        <script src="./components/post-create.js" defer></script>
+    </div>
+
+    <script src="./components/post-feed.js" defer></script> 
+
+    <!-- Smiski Stories Section -->
+    <div class="smiskistories-section">
+        <div class="stories-container" id="storiesContainer">
+            <div class="story add-story" id="createStoryButton">
+                +
+            </div>
+        </div>
+    </div>
+
+    <div id="postFeed"></div> <!-- This is where posts will be displayed -->
+
+    <div class="user-posts-wrapper">
+        <!-- User Posts Container -->
+        <div class="user-posts-container">
+            <h2 id="smiskimoments">Share Your Smiski Moments</h2>
+            
+            <div class="post-form">
+                <textarea id="postCaption" placeholder="Write a caption..."></textarea>
+                <input type="file" id="postImage" accept="image/*,video/*">
+                <button onclick="submitPost()">Post</button>
+            </div>
+            
+            <div id="userPosts"></div>
+        </div>
+    
+
+    
+            <!-- Chat Panel (Initially Hidden) -->
+            <div id="chatPanel" class="chat-panel" style="display: none;">
+                <div class="chat-header">
+                    <span id="chatUserName">Chat</span>
+                    <button onclick="closeChat()">X</button>
+                </div>
+                <div class="chat-messages" id="chatMessages"></div>
+                <input type="text" id="chatInput" placeholder="Type a message...">
+                <button class="send-button" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Story Viewer -->
+    <div class="story-viewer" id="storyViewer">
+        <div class="story-viewer-title" id="storyViewerTitle"></div>
+        <button id="previousButton" class="navigation-button">
+            <img src="left-arrow.png" alt="Previous">
+        </button>
+        <div class="story-viewer-content" id="storyViewerContent"></div>
+        <button id="nextButton" class="navigation-button">
+            <img src="right-arrow.png" alt="Next">
+        </button>
+        <div id="story-indicators"></div>
+        <div class="progress-bar">
+            <div class="progress" id="progressBar"></div>
+        </div>
+
+        <!-- Story Reactions Panel (Initially Hidden) -->
+        <div class="reaction-panel" id="reactionPanel">
+            <!-- Story Description Display -->
+            <div id="storyDescriptionDisplay" class="story-description-container"></div>
+
+            <div id="reactionCounts" style="display: none;">
+                <span>👍 <span id="likeCount">0</span></span>
+                <span>❤️ <span id="loveCount">0</span></span>
+                <span>😂 <span id="hahaCount">0</span></span>
+                <span>😢 <span id="sadCount">0</span></span>
+                <span>😡 <span id="angryCount">0</span></span>
+            </div>          
+
+            <div class="reactions">
+                <button class="reaction" data-reaction="like">
+                    <img src="reactionIcons/like.png" alt="Like" /> <!-- Like Image -->
+                </button>
+                <button class="reaction" data-reaction="love">
+                     <img src="reactionIcons/love.png" alt="Love" /> <!-- Love Image -->
+                </button>
+                <button class="reaction" data-reaction="haha">
+                    <img src="reactionIcons/haha.png" alt="Haha" /> <!-- Haha Image -->
+                </button>
+                <button class="reaction" data-reaction="sad">
+                    <img src="reactionIcons/sad.png" alt="Sad" /> <!-- Sad Image -->
+                </button>
+                <button class="reaction" data-reaction="angry">
+                    <img src="reactionIcons/angry.png" alt="Angry" /> <!-- Angry Image -->
+                </button>
+                <button id="moreReactionsButton">More</button>
+            </div>           
+        </div>
+    </div>
+
+     <!-- Story Confirmation Modal -->
+        <div id="confirmationModal" class="modal">
+            <div class="modal-content">
+                <h2>Confirm Your Story</h2>
+                <div id="storyPreviewContainer">
+                    <!-- Preview will be inserted here -->
+                </div>
+                <p><strong>Title:</strong> <span id="previewStoryTitle"></span></p>
+                <p><strong>Description:</strong> <span id="previewStoryDescription"></span></p>
+                <button id="confirmBtn">Confirm</button>
+                <button id="cancelBtn">Cancel</button>
+            </div>
+        </div>
+
+
+    <!-- Overlay for dimming the background when Create Story Modal is opened -->
+    <div id="overlay" class="overlay"></div>
+
+    <!-- Footer -->
+    <footer class="footer" id="footersection">
+        <div class="footer-column">
+            <h3>Smiski Series</h3>
+            <ul>
+                <li><a href="https://smiski.com/e/products/hippers-series/">Hippers</a></li>
+                <li><a href="https://smiski.com/e/products/moving-series/">Moving Series</a></li>
+                <li><a href="https://smiski.com/e/products/exercising-series/">Exercising Series</a></li>
+                <li><a href="https://smiski.com/e/products/dressing-series/">Dressing Series</a></li>
+                <li><a href="https://smiski.com/e/products/yoga-series/">Yoga Series</a></li>
+            </ul>
+        </div>
+        <div class="footer-column">
+            <h3>Learn</h3>
+            <ul>
+                <li><a href="#">Our Story</a></li>
+                <li><a href="#">Smiski Products</a></li>
+                <li><a href="#">Smiski Content</a></li>
+                <li><a href="#">Where to buy</a></li>
+                <li><a href="#">FAQs</a></li>
+            </ul>
+        </div>
+        <div class="footer-column">
+            <h3>More from Smiski</h3>
+            <ul>
+                <li><a href="#">Sign In</a></li>
+                <li><a href="#">Wholesale Opportunities</a></li>
+                <li><a href="#">Affiliate</a></li>
+                <li><a href="#">Contact Us</a></li>
+            </ul>
+        </div>
+        <div class="footer-column">
+            <h3>Follow us</h3>
+            <div class="social-icons">
+                <a href="https://www.youtube.com/channel/UCkKGZJ-oZ6PhxFVI_Ppm26g">Y</a>
+                <a href="https://www.facebook.com/smiski.japan">F</a>
+                <a href="https://www.instagram.com/smiski_usa/">I</a>
+                <a href="https://x.com/smiski_usa_">X</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 The Smiski Shelf</p>
+        </div>
+    </footer>

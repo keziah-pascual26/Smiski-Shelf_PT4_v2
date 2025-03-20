@@ -1,0 +1,47 @@
+/* Post feed container */
+#postFeed {
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Adds spacing between posts */
+    align-items: center; /* Centers posts horizontally */
+    padding: 20px;
+    width: 100%;
+    max-width: 800px; /* Restricts width for better layout */
+    margin: 0 auto; /* Centers the feed */
+}
+
+/* Individual post styling */
+.post {
+    background-color: #7ac142; /* Green background */
+    border-radius: 12px; /* Rounded corners */
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 600px;
+}
+
+/* Ensures images and text align properly */
+.post-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Profile picture */
+.post-header img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+/* Footer with icons */
+.post-footer {
+    display: flex;
+    justify-content: flex-start;
+    gap: 20px;
+    align-items: center;
+    margin-top: 10px;
+}

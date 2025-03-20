@@ -1,0 +1,195 @@
+/* Fix Post Create Container */
+.post-create-container {
+    width: 100%;
+    max-width: 1000px;
+    background-color: #6dbf49;
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    margin: auto;
+    overflow: visible; /* Prevents unwanted layering */
+}
+
+/* User Profile */
+.user-profile {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding-bottom: 10px;
+    gap: 15px;
+}
+
+/* Profile Image */
+.user-profile img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+/* Username Styling */
+.username {
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+}
+
+/* Fix Input Box */
+.post-input {
+    width: 100%;
+    background: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    outline: none;
+    color: #333;
+    box-shadow: none;
+}
+
+.post-input input{
+    width: 100%;
+    max-width: 975px;
+}
+
+/* Post Options */
+.post-options {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 10px;
+    padding-top: 5px;
+}
+
+/* Post Option Buttons */
+.post-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    color: black;
+    cursor: pointer;
+}
+
+/* Post Option Icons */
+.post-option img {
+    width: 18px;
+    height: 18px;
+}
+
+
+/* Post Modal */
+.post-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
+/* Post Modal Content */
+.post-modal-content {
+    background: #242526;
+    width: 400px;
+    border-radius: 10px;
+    padding: 20px;
+    color: white;
+}
+
+/* Close Post Modal Button */
+.close-post-modal {
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+/* Post Modal Textarea */
+.post-modal-textarea {
+    width: 100%;
+    height: 100px;
+    border: none;
+    resize: none;
+    padding: 10px;
+    border-radius: 8px;
+    max-width: 380px;
+}
+
+/* Post Button */
+.post-modal-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #1877f2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+/* Post Options */
+.post-modal-options {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.post-modal-option {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.post-modal-option img {
+    width: 20px;
+    height: 20px;
+}
+
+.media-preview-container {
+    display: flex;
+    justify-content: center; /* Centers content horizontally */
+    align-items: center; /* Centers content vertically */
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    width: 100%; /* Ensure it spans full width */
+    text-align: center;
+}
+
+
+.media-preview {
+    max-width: 300px;
+    max-height: 300px;
+    border-radius: 5px;
+    object-fit: cover;
+}
+
+.post-media {
+    display: flex;
+    justify-content: center; /* Centers media */
+    align-items: center;
+    margin-top: 10px;
+}
+
+.post-media img,
+.post-media video {
+    width: 100%; /* Makes media responsive */
+    max-width: 300px; /* Limits the size */
+    height: auto; /* Ensures proper aspect ratio */
+    border-radius: 10px; /* Optional: Rounds corners */
+}
+
+.post-media video {
+    max-height: 200px; /* Ensures video is not too large */
+}
+
+

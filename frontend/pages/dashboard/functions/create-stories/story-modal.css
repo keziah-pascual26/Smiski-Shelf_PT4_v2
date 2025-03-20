@@ -1,0 +1,427 @@
+/* Modal Styles */
+#createStoryModal {
+    width: 700px; /* Adjusted for better spacing */
+    height: auto; /* Let content define height */
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 1100;
+    display: none;
+}
+
+/* Modal Content Layout */
+.create-story-modal .modal-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+/* Title */
+.create-story-modal h2 {
+    text-align: center;
+    width: 100%;
+    font-size: 22px;
+    margin-bottom: 20px;
+}
+
+/* Left-side Inputs */
+.create-story-modal .input-section {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Left-side Inputs */
+.create-story-modal .input-section #storyTitle {
+    width: 94%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Input Fields */
+.create-story-modal input {
+    width: 90%;
+    padding: 10px;
+    border: none;
+    background: #ddd; /* Light gray background */
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* File Upload */
+.create-story-modal .file-upload {
+    background: #f6f0f0; /* Light pinkish background */
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* Add Music/Voiceover Button */
+.create-story-modal .audio-upload {
+    background: #f6f0f0;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* Preview Box */
+.create-story-modal .preview-section {
+    width: 45%;
+    min-height: 200px;
+    background: #f6f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 10px;
+}
+
+/* Edit Button */
+.create-story-modal .edit-button {
+    background: #4CAF50;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+    margin-top: 15px;
+}
+
+/* Buttons */
+.create-story-modal .post-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 15px;
+    text-align: center;
+}
+
+/* Buttons */
+.create-story-modal button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.create-story-modal button:hover {
+    background-color: #3d883e;
+}
+
+/* Modal Content Alignment Adjustments */
+.create-story-modal .input-section {
+    flex: 1;
+    margin-right: 20px;
+}
+
+.create-story-modal .preview-section {
+    flex: 1;
+    margin-left: 20px;
+}
+
+.create-story-modal .button-section {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+}
+
+.close-modal-button {
+    position: absolute;
+    top: 10px;
+    right: 50px; /* Adjusted for proper alignment */
+    background: none;
+    border: none;
+    font-size: 24px; /* Increased for better visibility */
+    cursor: pointer;
+    color: #333; /* Adjust color as needed */
+    width: 32px; /* Ensures proper size */
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%; /* Optional: Makes it circular */
+    max-width: 32px; /* Ensures proper size */
+}
+
+.close-modal-button:hover {
+    background: rgba(0, 0, 0, 0.1); /* Optional hover effect */
+    color: red;
+}
+
+.story-input-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Align text to the left */
+    gap: 5px; /* Space between elements */
+    width: 100%;
+    max-width: 290px; /* Adjust as needed */
+    padding: 10px;
+    border: 1px solid #ccc; /* Light border */
+    border-radius: 8px;
+    background-color: #f9f9f9; /* Light background */
+    height: 110px;
+}
+
+textarea#storyDescription {
+    width: 100%;
+    min-height: 70px;
+    max-width: 270px;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: none; /* Prevent resizing */
+}
+
+.char-counter {
+    font-size: 12px;
+    color: #666; /* Subtle text color */
+    align-self: flex-start; /* Align character count to the right */
+}
+
+
+
+
+
+
+
+
+#imageEditor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Header */
+#imageEditor h3 {
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+/* Button Section */
+#imageEditor > div {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Individual Buttons */
+#imageEditor button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s;
+    width: 100%;
+    max-width: 150px;
+    text-align: center;
+}
+
+#imageEditor button:hover {
+    background-color: #0056b3;
+}
+
+/* Image Resize Controls */
+.image-crop-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between text and button */
+    white-space: nowrap; /* Prevents text from wrapping */
+}
+
+.image-crop-controls span {
+    font-size: 14px;
+    color: #444;
+    white-space: nowrap; /* Ensures text stays in one line */
+}
+
+
+
+
+.image-crop-controls button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+.image-crop-controls button:hover {
+    background-color: #0056b3;
+}
+
+
+/* Header */
+#videoEditor h3 {
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: #333;
+}
+
+/* Button Styling */
+#videoEditor button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
+    margin-right: 5px;
+}
+
+#videoEditor button:hover {
+    background: #0056b3;
+}
+
+/* Align buttons horizontally */
+#videoEditor div {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px; /* Space between buttons and elements */
+}
+
+/* Checkbox alignment */
+#trimVideoCheckbox {
+    margin-left: 5px;
+}
+
+/* Input fields styling */
+#videoEditor label {
+    display: block;
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+#videoEditor input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Add spacing for responsiveness */
+@media (max-width: 480px) {
+    #videoEditor {
+        max-width: 100%;
+    }
+
+    #videoEditor div {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #videoEditor button {
+        width: 100%;
+    }
+}
+
+/* Container for Start Time & End Time */
+.video-time-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Adds spacing between the inputs */
+    margin-top: 10px;
+}
+
+/* Style for Labels */
+.video-time-controls label {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Style for Input Fields */
+.video-time-controls input {
+    width: 100px; /* Adjust as needed */
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    max-width: 50px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .video-time-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .video-time-controls input {
+        width: 100%;
+    }
+}
+
+.video-editor-buttons {
+    display: flex;
+    flex-direction: row; /* Align buttons in a row */
+    justify-content: flex-start; /* Align items from the start */
+    align-items: center; /* Align items vertically */
+    gap: 10px; /* Add space between buttons */
+    margin-left: 10px;
+    width: 350px;
+    padding-bottom: 13px;
+}
+
+.video-editor-buttons button {
+    width: 150px;
+}
+
+
+
+.trim-checkbox {
+    display: flex;
+    justify-content: center; /* Center checkbox + label */
+    align-items: center;
+    gap: 5px; /* Space between checkbox and label */
+}
+
+/* Editor Styles */
+#imageEditor,
+#videoEditor {
+    width: 100%; /* Ensures it doesn't exceed modal size */
+    height: 300px; /* Adjust as needed */
+    overflow: hidden;
+    display: none; /* Initially hidden */
+}
+
+/* Video and Image Previews */
+#imagePreview, #videoPreview {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}

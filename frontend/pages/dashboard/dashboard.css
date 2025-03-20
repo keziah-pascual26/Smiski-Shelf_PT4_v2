@@ -1,0 +1,1444 @@
+/* General Styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5efd4;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+.post-create-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centers items horizontally */
+    justify-content: center; /* Centers items vertically (if needed) */
+    gap: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: fit-content; /* Adjusts width to content */
+    margin: 0 auto; /* Centers the whole container */
+    margin-top: 20px;
+}
+
+.smiskistories-section {
+    display: flex;
+    justify-content: center; /* Centers horizontally */
+    align-items: center; /* Centers vertically */
+    margin-top: 20px;
+    width: 100%;
+}
+
+.stories-container {
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    width: 53%;
+}
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background-color: #feeb29; /* Transparent navbar */
+    color: #729c2f;
+    gap: 10px;
+    flex-wrap: wrap;
+    position: absolute;
+    width: 100vw; /* Ensure it spans exactly the screen width */
+    max-width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    box-sizing: border-box;
+}
+
+/* Logo and Text Container */
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.logo-text {
+    font-size: clamp(1rem, 2vw, 1.5rem); /* Adjusts dynamically with screen size */
+    font-weight: bold;
+    color: #729c2f;
+}
+
+/* Search Bar */
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 255, 255, 0.8); /* Slightly transparent background */
+    border-radius: 20px;
+    padding: 3px 8px;
+    width: fit-content;
+}
+
+.search-bar {
+    border: none;
+    outline: none;
+    padding: 5px;
+    border-radius: 15px;
+    font-size: 14px; /* Slightly smaller font */
+    width: 150px; /* Make it smaller */
+    background: transparent;
+}
+
+.search-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px; /* Slightly smaller icon */
+}
+
+/* Navigation and User Info */
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap; /* Allows wrapping on smaller screens */
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.greeting {
+    font-size: clamp(0.9rem, 2vw, 1rem); /* Dynamically scales text */
+}
+
+.user-image {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid white;
+}
+
+.text {
+    flex: 1; /* Ensure it takes up available space on the left */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start; /* Align text to the left */
+    padding: 10px;
+}
+
+.text h1 {
+  margin: 0;
+  font-size: 2.8rem;
+  font-weight: bold;
+  text-align: left; /* Align text to the left */
+}
+
+.text p {
+  margin: 5px 0;
+  font-size: 1.2rem;
+}
+
+.text button {
+  padding: 12px 20px; /* Increase padding for bigger button */
+  background: #f5efd4;
+  color: #729c2f;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1.2rem; /* Increase font size */
+}
+
+.text button:hover {
+  background: #feeb29;
+}
+
+button img {
+    pointer-events: none; /* Ensure the image doesn't block clicks */
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .text h1 {
+        font-size: 2rem; /* Reduce heading size for smaller screens */
+    }
+
+    .text p {
+        font-size: 1rem; /* Adjust paragraph size */
+    }
+
+    .text button {
+        padding: 10px 15px; /* Adjust button padding */
+        font-size: 1rem; /* Adjust button font size */
+    }
+
+    .nav-links a {
+    font-size: 1rem; /* Adjust link size on smaller screens */
+    margin: 0 10px; /* Adjust spacing between links */
+  }
+}
+
+/* Divider below the banner */
+.nav-divider {
+  background-color: #333; /* Dark background for the divider */
+  padding: 20px 0; /* Add padding for spacing */
+  text-align: center; /* Center the links */
+}
+
+/* Navigation links inside the divider */
+.nav-links a {
+  color: #fff; /* White text color */
+  text-decoration: none; /* Remove underline */
+  font-size: 1.1rem;
+  margin: 0 20px; /* Space between the links */
+  font-weight: bold;
+}
+
+.nav-links a:hover {
+  color: #feeb29; /* Highlight color on hover */
+  text-decoration: underline; /* Underline on hover */
+}
+
+
+
+
+/* Smiski Stories heading container */
+.stories-header {
+    width: 100%;
+    text-align: center; /* Center align the text */
+    margin-bottom: 20px; /* Add some space below the header */
+}
+
+/* Updated .story */
+.story {
+    width: 120px; /* Adjust width as needed */
+    height: 213px; /* Adjusted for 9:16 aspect ratio */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #ddd; /* Optional border for better visuals */
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f9f9f9; /* Optional background color */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional shadow for depth */
+    cursor: pointer;
+}
+
+/* Centering the "+" symbol inside .add-story */
+.story .add-story {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 2rem;
+    font-weight: bold;
+    position: absolute;
+    top: 50%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    transform: translate(-50%, -50%); /* Adjust for exact centering */
+}
+
+/* Style for the image and video */
+.story img, .story video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Optional hover effect */
+.story:hover {
+    opacity: 0.8; /* Slight opacity change on hover */
+}
+
+.overlay {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+    z-index: 1000; /* Keep this lower than the modal */
+}
+
+/* Modal Styles */
+#createStoryModal {
+    width: 700px; /* Adjusted for better spacing */
+    height: auto; /* Let content define height */
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 1100;
+    display: none;
+}
+
+/* Modal Content Layout */
+.create-story-modal .modal-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+/* Title */
+.create-story-modal h2 {
+    text-align: center;
+    width: 100%;
+    font-size: 22px;
+    margin-bottom: 20px;
+}
+
+/* Left-side Inputs */
+.create-story-modal .input-section {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Left-side Inputs */
+.create-story-modal .input-section #storyTitle {
+    width: 94%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Input Fields */
+.create-story-modal input {
+    width: 90%;
+    padding: 10px;
+    border: none;
+    background: #ddd; /* Light gray background */
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* File Upload */
+.create-story-modal .file-upload {
+    background: #f6f0f0; /* Light pinkish background */
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* Add Music/Voiceover Button */
+.create-story-modal .audio-upload {
+    background: #f6f0f0;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+/* Preview Box */
+.create-story-modal .preview-section {
+    width: 45%;
+    min-height: 200px;
+    background: #f6f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 10px;
+}
+
+/* Edit Button */
+.create-story-modal .edit-button {
+    background: #4CAF50;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+    margin-top: 15px;
+}
+
+/* Buttons */
+.create-story-modal .post-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 15px;
+    text-align: center;
+}
+
+/* Buttons */
+.create-story-modal button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.create-story-modal button:hover {
+    background-color: #3d883e;
+}
+
+/* Modal Content Alignment Adjustments */
+.create-story-modal .input-section {
+    flex: 1;
+    margin-right: 20px;
+}
+
+.create-story-modal .preview-section {
+    flex: 1;
+    margin-left: 20px;
+}
+
+.create-story-modal .button-section {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+}
+
+.close-modal-button {
+    position: absolute;
+    top: 10px;
+    right: 50px; /* Adjusted for proper alignment */
+    background: none;
+    border: none;
+    font-size: 24px; /* Increased for better visibility */
+    cursor: pointer;
+    color: #333; /* Adjust color as needed */
+    width: 32px; /* Ensures proper size */
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%; /* Optional: Makes it circular */
+    max-width: 32px; /* Ensures proper size */
+}
+
+.close-modal-button:hover {
+    background: rgba(0, 0, 0, 0.1); /* Optional hover effect */
+    color: red;
+}
+
+.story-input-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Align text to the left */
+    gap: 5px; /* Space between elements */
+    width: 100%;
+    max-width: 290px; /* Adjust as needed */
+    padding: 10px;
+    border: 1px solid #ccc; /* Light border */
+    border-radius: 8px;
+    background-color: #f9f9f9; /* Light background */
+    height: 110px;
+}
+
+textarea#storyDescription {
+    width: 100%;
+    min-height: 70px;
+    max-width: 270px;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: none; /* Prevent resizing */
+}
+
+.char-counter {
+    font-size: 12px;
+    color: #666; /* Subtle text color */
+    align-self: flex-start; /* Align character count to the right */
+}
+
+
+
+
+
+
+
+
+#imageEditor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Header */
+#imageEditor h3 {
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+/* Button Section */
+#imageEditor > div {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+/* Individual Buttons */
+#imageEditor button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s;
+    width: 100%;
+    max-width: 150px;
+    text-align: center;
+}
+
+#imageEditor button:hover {
+    background-color: #0056b3;
+}
+
+/* Image Resize Controls */
+.image-crop-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between text and button */
+    white-space: nowrap; /* Prevents text from wrapping */
+}
+
+.image-crop-controls span {
+    font-size: 14px;
+    color: #444;
+    white-space: nowrap; /* Ensures text stays in one line */
+}
+
+
+
+
+.image-crop-controls button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+.image-crop-controls button:hover {
+    background-color: #0056b3;
+}
+
+
+/* Header */
+#videoEditor h3 {
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: #333;
+}
+
+/* Button Styling */
+#videoEditor button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
+    margin-right: 5px;
+}
+
+#videoEditor button:hover {
+    background: #0056b3;
+}
+
+/* Align buttons horizontally */
+#videoEditor div {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px; /* Space between buttons and elements */
+}
+
+/* Checkbox alignment */
+#trimVideoCheckbox {
+    margin-left: 5px;
+}
+
+/* Input fields styling */
+#videoEditor label {
+    display: block;
+    font-size: 14px;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+#videoEditor input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Add spacing for responsiveness */
+@media (max-width: 480px) {
+    #videoEditor {
+        max-width: 100%;
+    }
+
+    #videoEditor div {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    #videoEditor button {
+        width: 100%;
+    }
+}
+
+/* Container for Start Time & End Time */
+.video-time-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Adds spacing between the inputs */
+    margin-top: 10px;
+}
+
+/* Style for Labels */
+.video-time-controls label {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Style for Input Fields */
+.video-time-controls input {
+    width: 100px; /* Adjust as needed */
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    max-width: 50px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 480px) {
+    .video-time-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .video-time-controls input {
+        width: 100%;
+    }
+}
+
+.video-editor-buttons {
+    display: flex;
+    flex-direction: row; /* Align buttons in a row */
+    justify-content: flex-start; /* Align items from the start */
+    align-items: center; /* Align items vertically */
+    gap: 10px; /* Add space between buttons */
+    margin-left: 10px;
+    width: 350px;
+    padding-bottom: 13px;
+}
+
+.video-editor-buttons button {
+    width: 150px;
+}
+
+
+
+.trim-checkbox {
+    display: flex;
+    justify-content: center; /* Center checkbox + label */
+    align-items: center;
+    gap: 5px; /* Space between checkbox and label */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/* Editor Styles */
+#imageEditor,
+#videoEditor {
+    width: 100%; /* Ensures it doesn't exceed modal size */
+    height: 300px; /* Adjust as needed */
+    overflow: hidden;
+    display: none; /* Initially hidden */
+}
+
+/* Video and Image Previews */
+#imagePreview, #videoPreview {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Story Viewer Styling */
+.story-viewer {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.story-viewer.active {
+    display: flex;
+}
+
+.story-viewer-title {
+    color: #fff;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.story-viewer-content {
+    width: 90%;
+    height: 90%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.story-viewer img, .story-viewer video {
+    width: 56.25%; /* 9:16 ratio */
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Close story display styling */
+.close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.close-button:hover {
+    background-color: darkred;
+}
+
+/* Progress Bar Styling */
+.progress-bar {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 5px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress {
+    height: 100%;
+    background-color: #1877f2;
+    width: 0%;
+    transition: width linear;
+}
+
+/* Footer Styling */
+
+.footer {
+    background: url('smiskifooter.png') no-repeat center/cover;
+    padding: 150px 100px;
+    color: #729c2f;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+.footer-column {
+    flex: 1;
+    min-width: 200px;
+}
+.footer h3 {
+    font-weight: bold;
+}
+.footer ul {
+    list-style: none;
+    padding: 0;
+}
+.footer ul li {
+    margin: 8px 0;
+}
+.footer a {
+    text-decoration: none;
+    color: #729c2f;
+}
+.social-icons {
+    display: flex;
+    gap: 10px;
+}
+.social-icons a {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    background: #729c2f;
+    color: white;
+    text-align: center;
+    line-height: 40px;
+    border-radius: 50%;
+}
+.footer-bottom {
+    text-align: center;
+    padding: 20px;
+    font-size: 14px;
+}
+
+.story-container {
+    position: relative;
+    width: 100vw;  /* Full viewport width */
+    max-width: 360px; /* Limit max width to a typical phone width */
+    aspect-ratio: 9 / 16; /* Maintain 9:16 ratio */
+    overflow: hidden;
+    background-color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.story-container img{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 360px;
+    height: 100%;
+}
+
+#editorSection {
+    padding: 20px;
+    background-color: #f7f7f7;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 900px;
+    margin: 20px auto;
+    display: none;
+    max-height: 270px;
+}
+
+
+#editorSection button {
+    background-color: #e9d824;
+}
+
+#editorSection button:hover {
+    background-color: rgb(196, 167, 5);
+}
+
+#imageEditor, #videoEditor {
+    margin-bottom: 20px;
+}
+
+#imageEditor h3, #videoEditor h3 {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.image-resize-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.image-resize-controls span {
+    align-self: center;
+    font-size: 16px;
+}
+
+button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+#cropper-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+/*story number indicators */
+#story-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    height: 5px;
+}
+
+.story-indicator {
+    width: 60px;  /* You can adjust the width based on how long the progress bar should be */
+    height: 5px;
+    background-color: #ccc;
+    border-radius: 5px;
+}
+
+.story-indicator.active {
+    background-color: #007bff; /* Color for the active bar */
+}
+
+.story-indicator.inactive {
+    background-color: #ccc; /* Color for inactive bars */
+}
+
+
+/* story navigation prev and next */
+
+/* Container for story viewer */
+.story-viewer-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* Style for navigation buttons */
+.navigation-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 2; /* Ensure buttons appear above the story */
+}
+
+/* Position the Previous button on the left */
+#previousButton {
+    left: 10px;
+    width: 70px;
+    height: 70px;
+}
+
+/* Position the Next button on the right */
+#nextButton {
+    right: 10px;
+    width: 70px;
+    height: 70px;
+}
+
+/* Hide the buttons by default */
+#previousButton, #nextButton {
+    display: none;
+    border-radius: 50%;
+}
+
+.reactions {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    display: none; /* Reactions are hidden by default */
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    gap: 10px; /* Space between buttons */
+}
+
+.reaction-btn {
+    margin: 5px;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    cursor: pointer;
+}
+
+.reaction-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    padding: 5px;
+    border-radius: 20px;
+    display: flex;
+    gap: 8px;
+}
+
+.reaction-panel span {
+    font-size: 20px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.reaction-panel span:hover {
+    transform: scale(1.3);
+}
+
+.reactions-section {
+    margin-top: 10px;
+    background-color: #f7f7f7;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.reaction-item {
+    margin: 5px 0;
+}
+
+.reaction-counts {
+    display: none;  /* Hidden by default */
+}
+
+.story-viewer.active .reactions {
+    display: flex; /* Show reactions when story is active */
+}
+
+.more-button {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+
+#previewContainer {
+    position: relative;
+    width: 100%; /* Ensures responsiveness */
+    max-width: 300px; /* Optional: limit the size */
+    aspect-ratio: 9 / 16; /* Maintains 9:16 ratio */
+    background-color: black; /* Optional: adds contrast */
+    overflow: hidden; /* Prevents overflow */
+    display: flex;
+    justify-content: center; /* Horizontally centers the content */
+    align-items: center; /* Vertically centers the content */
+}
+
+#imagePreview,
+#videoPreview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Keeps the aspect ratio intact */
+}
+
+.reaction img {
+    width: 24px; /* Adjust the width of the icons */
+    height: 24px; /* Adjust the height of the icons */
+    vertical-align: middle; /* Align images properly */
+}
+
+.reaction {
+    background: none; /* Remove default background */
+    border: none; /* Remove borders */
+    padding: 5px; /* Adjust padding for spacing */
+}
+
+/* Style for the character counter */
+.char-counter {
+    font-size: 0.8rem; /* Makes text smaller */
+    color: #555; /* Slightly dim color */
+    margin-top: 1px; /* Adds space between textarea and counter */
+    display: block; /* Ensures it appears on a new line */
+}
+
+
+
+/* Ensure reaction counts appear in a single line and add more space */
+#reactionCounts {
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Space between reaction counts */
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 50px; /* Increased space between counts and buttons */
+    flex-wrap: nowrap; /* Prevents wrapping to the next line */
+}
+
+.story-description-container {
+    position: absolute;
+    bottom: 100px; /* Adjust distance from the bottom */
+    left: 10px;   /* Adjust distance from the left */
+    background-color: rgba(0, 0, 0, 0.5); /* Optional: adds a semi-transparent background */
+    color: white; /* Optional: makes the text white for better visibility */
+    padding: 5px;
+    border-radius: 5px;
+    max-width: 90%; /* Optional: prevent the description from overflowing */
+}
+#storyDescriptionDisplay {
+    color: white; /* Set text color to white */
+    position: relative; /* Ensure you can adjust its position */
+    top: -25px; /* Adjust this value to make it go higher or lower */
+}
+
+
+/* Center the user posts section */
+.user-posts-container {
+    width: 60%;
+    margin: 15px;
+    text-align: center;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Style the post form */
+.post-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.post-form textarea {
+    width: 90%;
+    height: 80px;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    resize: none;
+}
+
+.post-form input[type="file"] {
+    border: none;
+}
+
+.post-form button {
+    padding: 10px 20px;
+    background-color: #ffcc00;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.post-form button:hover {
+    background-color: #ffbb00;
+}
+
+/* Style the posts */
+#userPosts {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.user-post {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 15px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+.user-post p {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+/* Ensure uniform media sizes */
+.post-media {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+video.post-media {
+    object-fit: contain; /* Ensures video doesn't crop unexpectedly */
+}
+
+/* Reaction buttons */
+.post-reactions {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 10px;
+}
+
+.post-reactions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+/* Comment section */
+.post-comments {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.comment-input {
+    width: calc(100% - 80px);
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.post-comments button {
+    padding: 5px 10px;
+    margin-left: 5px;
+    background-color: #ffcc00;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.comment-list {
+    margin-top: 10px;
+    text-align: left;
+}
+
+
+
+
+.user-posts-wrapper {
+    display: flex;
+    gap: 20px;
+}
+
+.user-posts-container {
+    flex: 2;
+}
+
+.sidebar-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.suggested-users-section, .chat-panel {
+    background: #f3f3f3;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+    margin-right: 15px;
+    margin-left: 0;
+}
+
+.suggested-users-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.suggested-users-section li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.chat-panel {
+    position: relative;
+    width: 90%;
+    margin-bottom: 15px;
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.chat-messages {
+    height: 150px;
+    overflow-y: auto;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 10px;
+}
+
+#chatInput {
+    width: 80%;
+    padding: 5px;
+}
+
+.chat-button, .send-button {
+    margin-left: 20px;
+    border-radius: 5px;
+}
+
+.send-button, .post-comments button {
+    margin-top: 15px;
+}
+
+/* Basic modal styling */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+#storyPreviewContainer {
+    width: 100%; /* Ensures responsiveness */
+    max-width: 300px; /* Optional: limit the size */
+    aspect-ratio: 9 / 16; /* Maintains 9:16 ratio */
+    background-color: black; /* Optional: adds contrast */
+    overflow: hidden; /* Prevents overflow */
+    justify-content: center; /* Horizontally centers the content */
+    align-items: center; /* Vertically centers the content */
+}
+
+#storyPreviewContainer img,
+#storyPreviewContainer video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Keeps the aspect ratio intact */
+}
+
+#confirmationModal {
+    justify-content: center; /* Centers the modal content horizontally */
+    align-items: center; /* Centers the modal content vertically */
+    position: fixed; /* Keeps the modal fixed in place */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    z-index: 9999; /* Ensures the modal is on top */
+    display: none; /* Start with hidden */
+}
+
+/* Dim the rest of the content when the modal is shown */
+body.modal-open {
+    overflow: hidden; /* Prevent scrolling when modal is open */
+}
+
+.no-scroll .modal-content {
+    overflow: hidden;
+}
+
+.dimming {
+    opacity: 0.5;
+    pointer-events: none; /* Prevent interaction */
+}
+
+
+
+.comment-section {
+    margin-top: 15px;
+    padding: 10px;
+    border-top: 1px solid #ccc;
+}
+
+.comment-list {
+    max-height: 150px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.comment-input {
+    width: calc(100% - 60px);
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-right: 5px;
+}
+
+.comment-button {
+    padding: 8px 12px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.comment-button:hover {
+    background-color: #0056b3;
+}
+
+
