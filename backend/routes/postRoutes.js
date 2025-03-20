@@ -34,22 +34,19 @@ module.exports = (app) => {
     // ✅ Get All Posts
     app.get('/posts', authenticateToken, async (req, res) => {
         try {
-            console.log("📥 GET /posts request received");
-            console.log("🔐 Auth token:", req.headers.authorization);
-            console.log("👤 User:", req.user);
-
-            const posts = await Post.find()
-                .sort({ createdAt: -1 })
-                .lean();
-
-            console.log(`✅ Found ${posts.length} posts`);
-            
-            res.setHeader('Content-Type', 'application/json');
-            return res.status(200).json(posts);
-
+            const { username } = req.query;
+    
+            if (!username) {
+                return res.status(400).json({ error: "Username is required" });
+            }
+    
+            const posts = await Post.find({ username }).sort({ createdAt: -1 }).lean();
+    
+            console.log(`✅ Found ${posts.length} posts for user: ${username}`);
+            res.status(200).json(posts);
         } catch (error) {
             console.error("🚨 Error fetching posts:", error);
-            return res.status(500).json({
+            res.status(500).json({
                 error: "Failed to fetch posts",
                 details: error.message
             });

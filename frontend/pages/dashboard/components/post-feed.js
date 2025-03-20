@@ -12,70 +12,68 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-async function retrievePosts() {
-    const postFeed = document.querySelector("#postFeed");
-    try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            postFeed.innerHTML = '<div class="error-message">Please log in to view posts.</div>';
-            return;
+    async function retrievePosts() {
+        const postFeed = document.querySelector("#postFeed");
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                postFeed.innerHTML = '<div class="error-message">Please log in to view posts.</div>';
+                return;
+            }
+
+            console.log("🔄 Fetching posts with token:", token);
+            const response = await fetch(`http://localhost:3000/posts?username=${encodeURIComponent(loggedInUsername)}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
+            });
+
+            // Log full response for debugging
+            console.log("Response:", {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries())
+            });
+
+            // Check if response is ok
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("Server response:", errorText);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // Check content type
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("Server didn't return JSON");
+            }
+
+            const data = await response.json();
+            console.log("📦 Received posts:", data);
+
+            if (!Array.isArray(data)) {
+                console.error("Invalid data format:", data);
+                throw new Error("Server returned invalid data format");
+            }
+
+            if (data.length === 0) {
+                postFeed.innerHTML = '<div class="no-posts">No posts yet. Be the first to post!</div>';
+                return;
+            }
+
+            renderPosts(data);
+
+        } catch (error) {
+            console.error("🚨 Error fetching posts:", error);
+            postFeed.innerHTML = `
+                <div class="error-message">
+                    Failed to load posts. Please try again later.<br>
+                    <small>${error.message}</small>
+                </div>`;
         }
-
-        console.log("🔄 Fetching posts with token:", token);
-        const response = await fetch("http://localhost:3000/posts", {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
-            },
-            // Remove credentials: 'include' as it's not needed with Bearer token
-        });
-
-        // Log full response for debugging
-        console.log("Response:", {
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries())
-        });
-
-        // Check if response is ok
-        if (!response.ok) {
-            // Try to read error message from response
-            const errorText = await response.text();
-            console.error("Server response:", errorText);
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        // Check content type
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            throw new Error("Server didn't return JSON");
-        }
-
-        const data = await response.json();
-        console.log("📦 Received posts:", data);
-
-        if (!Array.isArray(data)) {
-            console.error("Invalid data format:", data);
-            throw new Error("Server returned invalid data format");
-        }
-
-        if (data.length === 0) {
-            postFeed.innerHTML = '<div class="no-posts">No posts yet. Be the first to post!</div>';
-            return;
-        }
-
-        renderPosts(data);
-
-    } catch (error) {
-        console.error("🚨 Error fetching posts:", error);
-        postFeed.innerHTML = `
-            <div class="error-message">
-                Failed to load posts. Please try again later.<br>
-                <small>${error.message}</small>
-            </div>`;
     }
-}
 
     // Initial load
     await retrievePosts();
@@ -86,16 +84,16 @@ async function retrievePosts() {
     function renderPosts(posts) {
         const postFeed = document.querySelector("#postFeed");
         if (!postFeed) return;
-    
+
         postFeed.innerHTML = ""; // Clear previous posts
-    
+
         posts.forEach(post => {
             const postElement = document.createElement("div");
             postElement.classList.add("post");
-    
+
             // Format timestamp
             const formattedTimestamp = formatTimestamp(post.createdAt);
-    
+
             let mediaContent = "";
             if (post.media && post.media.length > 0) {
                 mediaContent = `
@@ -115,7 +113,7 @@ async function retrievePosts() {
                     </div>
                 `;
             }
-    
+
             postElement.innerHTML = `
                 <div class="post-header">
                     <img src="../../../no-profile.png" alt="User Profile">
@@ -130,28 +128,28 @@ async function retrievePosts() {
                     <span class="retweet"><i class="fa fa-retweet"></i> ${post.retweets || 0}</span>
                 </div>
             `;
-    
+
             postFeed.appendChild(postElement);
         });
     }
-    
+
     /**
      * Formats timestamp to "X minutes ago" or "MM/DD/YYYY"
      */
     function formatTimestamp(createdAt) {
         if (!createdAt) return "Just now"; // Fallback for missing timestamps
-    
+
         const postDate = new Date(createdAt); // Parse timestamp
         const now = new Date();
-    
+
         // Ensure valid date
         if (isNaN(postDate.getTime())) {
             console.error("Invalid timestamp:", createdAt);
             return "Just now";
         }
-    
+
         const timeDiff = Math.floor((now - postDate) / 1000); // Difference in seconds
-    
+
         if (timeDiff < 60) {
             return `${timeDiff} seconds ago`;
         } else if (timeDiff < 3600) {
@@ -167,8 +165,6 @@ async function retrievePosts() {
             });
         }
     }
-    
-    
 
     retrievePosts();
 });
