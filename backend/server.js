@@ -25,6 +25,10 @@ const authenticateToken = require('./middleware/authMiddleware');
 const app = express();
 const port = 3000;
 
+const storyRoutes = require('./routes/storyRoutes');
+// Register routes
+storyRoutes(app);
+
 // Nodemailer transporter setup
 const transporter = nodemailer.createTransport({
     service: "gmail", // Use your email provider (e.g., Outlook, SMTP)

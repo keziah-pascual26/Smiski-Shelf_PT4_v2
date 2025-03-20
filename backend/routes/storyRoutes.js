@@ -2,29 +2,41 @@ const upload = require('../config/multer');
 const Story = require('../models/storyModel');
 
 module.exports = (app) => {
-    // ✅ Handle story upload
     app.post('/upload-story', upload.array('media', 5), async (req, res) => {
         try {
-            console.log("🔄 Received request to upload story");
-            console.log("📦 Request body:", req.body);
-            console.log("📸 Uploaded files:", req.files);
+            const { title, description, username } = req.body;
+            const mediaFiles = req.files;
 
-            if (!req.body.title || !req.body.description || !req.files || req.files.length === 0) {
-                console.error("❌ Missing required fields");
-                return res.status(400).json({ error: "Missing required fields" });
+            if (!title || !description || !username || !mediaFiles || mediaFiles.length === 0) {
+                return res.status(400).json({ error: 'Missing required fields' });
             }
 
-            const { title, description } = req.body;
-            const mediaFilenames = req.files.map(file => file.filename);
+            // Save the story to the database
+            const newStory = new Story({
+                username,
+                title,
+                description,
+                media: mediaFiles.map((file) => file.filename), // Save filenames of uploaded media
+                createdAt: new Date(),
+            });
 
-            const newStory = new Story({ title, description, media: mediaFilenames });
             await newStory.save();
-
-            console.log("✅ Story uploaded successfully:", newStory);
-            res.status(201).json({ message: "Story uploaded successfully", story: newStory });
+            res.status(201).json({ message: 'Story uploaded successfully', story: newStory });
         } catch (error) {
-            console.error("🚨 Server error while uploading story:", error);
-            res.status(500).json({ error: "Failed to upload story", details: error.message });
+            console.error('🚨 Error uploading story:', error);
+            res.status(500).json({ error: 'Failed to upload story' });
+        }
+    });
+
+    // ✅ Fetch all stories
+    app.get('/stories', async (req, res) => {
+        try {
+            const stories = await Story.find().sort({ createdAt: -1 }); // Fetch stories in descending order
+            console.log("✅ Stories fetched successfully:", stories);
+            res.status(200).json(stories);
+        } catch (error) {
+            console.error("🚨 Server error while fetching stories:", error);
+            res.status(500).json({ error: "Failed to fetch stories", details: error.message });
         }
     });
 };

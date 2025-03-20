@@ -1,4 +1,5 @@
 import { initializeMediaPreview } from './media-preview.js';
+import { addStories } from './add-story.js';
 
 // Create a link element for the CSS file
 const storyModalCSS = document.createElement('link');
@@ -21,7 +22,7 @@ const storyModalHTML = `
                 </div>
                 <div class="file-upload">
                     <label for="mediaInput">Choose files</label>
-                    <input type="file" id="mediaInput" accept="image/*, video/*" multiple>
+                    <input type="file" id="mediaUploadInput" accept="image/*, video/*" multiple>
                 </div>
                 <div class="audio-upload">
                     <label for="audioInput">Add background music or voiceover</label>
@@ -46,6 +47,7 @@ const storyModalHTML = `
             <div id="editorSection" style="display: none;">
                 <div id="imageEditor" style="display: none;">
                     <h3>Edit Image</h3>
+                    
                     <div>
                         <button onclick="rotateImage()">Rotate</button>
                         <button id="cropImage">Enable Cropping</button>
@@ -130,6 +132,54 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeMediaPreview('mediaInput', 'previewContainer', 'imagePreview', 'videoPreview', 'videoSource');
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+    const addStoryButton = document.getElementById('addStoryButton'); // Replace with the actual button ID
+    if (addStoryButton) {
+        addStoryButton.addEventListener('click', addStories);
+    }
+});
 
+// Replace the <img> element with a <canvas> for editing
+const imagePreview = document.getElementById('imagePreview');
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d');
+
+// Function to render the image onto the canvas
+function renderImageToCanvas(imageSrc) {
+    const img = new Image();
+    img.src = imageSrc;
+
+    img.onload = () => {
+        // Set canvas dimensions to match the image
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        // Draw the image onto the canvas
+        ctx.drawImage(img, 0, 0, img.width, img.height);
+
+        // Replace the <img> element with the <canvas>
+        if (imagePreview.parentNode) {
+            imagePreview.parentNode.replaceChild(canvas, imagePreview);
+        }
+
+        console.log('✅ Image rendered to canvas.');
+    };
+
+    img.onerror = () => {
+        console.error('🚨 Failed to load image for canvas rendering.');
+    };
+}
+
+// Example usage: Call this function when an image is uploaded or edited
+document.getElementById('mediaUploadInput').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            renderImageToCanvas(reader.result); // Render the uploaded image to the canvas
+        };
+        reader.readAsDataURL(file);
+    }
+});
 
 document.body.insertAdjacentHTML('beforeend', storyModalHTML);
