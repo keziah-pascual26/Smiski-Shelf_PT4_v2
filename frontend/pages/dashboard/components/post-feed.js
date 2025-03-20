@@ -12,20 +12,76 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    async function retrievePosts() {
-        try {
-            const response = await fetch("http://localhost:3000/posts");
-            const postsData = await response.json();
-
-            if (Array.isArray(postsData)) {
-                // ✅ Only show posts belonging to the logged-in user
-                const userPosts = postsData.filter(post => post.username === loggedInUsername);
-                renderPosts(userPosts);
-            }
-        } catch (error) {
-            console.error("🚨 Error fetching posts:", error);
+async function retrievePosts() {
+    const postFeed = document.querySelector("#postFeed");
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            postFeed.innerHTML = '<div class="error-message">Please log in to view posts.</div>';
+            return;
         }
+
+        console.log("🔄 Fetching posts with token:", token);
+        const response = await fetch("http://localhost:3000/posts", {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            },
+            // Remove credentials: 'include' as it's not needed with Bearer token
+        });
+
+        // Log full response for debugging
+        console.log("Response:", {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries())
+        });
+
+        // Check if response is ok
+        if (!response.ok) {
+            // Try to read error message from response
+            const errorText = await response.text();
+            console.error("Server response:", errorText);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Check content type
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new Error("Server didn't return JSON");
+        }
+
+        const data = await response.json();
+        console.log("📦 Received posts:", data);
+
+        if (!Array.isArray(data)) {
+            console.error("Invalid data format:", data);
+            throw new Error("Server returned invalid data format");
+        }
+
+        if (data.length === 0) {
+            postFeed.innerHTML = '<div class="no-posts">No posts yet. Be the first to post!</div>';
+            return;
+        }
+
+        renderPosts(data);
+
+    } catch (error) {
+        console.error("🚨 Error fetching posts:", error);
+        postFeed.innerHTML = `
+            <div class="error-message">
+                Failed to load posts. Please try again later.<br>
+                <small>${error.message}</small>
+            </div>`;
     }
+}
+
+    // Initial load
+    await retrievePosts();
+
+    // Refresh posts every 30 seconds
+    setInterval(retrievePosts, 30000);
 
     function renderPosts(posts) {
         const postFeed = document.querySelector("#postFeed");

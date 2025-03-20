@@ -66,9 +66,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Use routes
 app.use('/', authRoutes);
-app.use('/api', require('./routes/postRoutes'));
 app.use('/api', require('./routes/storyRoutes'));
 app.use('/api', require('./routes/userRoutes'));
+// Import and use routes
+require('./routes/postRoutes')(app);
 
 // Root route handler - serve login page
 app.get('/', (req, res) => {
@@ -79,6 +80,7 @@ app.get('/', (req, res) => {
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/pages/login/login.html'));
 });
+
 
 
 // Connect to MongoDB

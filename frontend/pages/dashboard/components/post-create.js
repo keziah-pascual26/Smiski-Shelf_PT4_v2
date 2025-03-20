@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Create the HTML structure dynamically
     const postInputContainer = document.createElement("div");
     postInputContainer.classList.add("post-input");
+    const API_URL = 'http://localhost:3000'; // Add this at the top
 
     // Add stylesheet dynamically
     const link = document.createElement("link");
@@ -92,56 +93,63 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Handle post submission
-    postButton.addEventListener("click", async function () {
-        const text = document.getElementById("postContent").value.trim();
-        const fileInput = document.getElementById("fileInput");
-        const files = fileInput.files;
-    
-        if (!text && files.length === 0) {
-            alert("Post content or a file is required.");
-            return;
-        }
-    
-        const formData = new FormData();
-        formData.append("text", text);
-        for (let i = 0; i < files.length; i++) {
-            formData.append("media", files[i]);
-        }
-    
-        const token = localStorage.getItem("token");
-        if (!token) {
-            alert("You must be logged in to post.");
-            return;
-        }
-    
-        try {
-            const response = await fetch("/create-post", {
-                method: "POST",
-                body: formData,
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
-    
-            const data = await response.json();
-    
-            if (response.ok) {
-                alert("✅ Post created successfully!");
-                displayPost(data.post);
-                
-                // Clear input fields and close modal
-                document.getElementById("postContent").value = ""; // Clear text input
-                fileInput.value = ""; // Clear file input
-                document.getElementById("mediaPreviewContainer").innerHTML = ""; // Clear media preview
-                postModal.style.display = "none"; // Hide modal
-            } else {
-                alert("❌ Failed to create post: " + data.error);
+
+postButton.addEventListener("click", async function () {
+    const text = document.getElementById("postContent").value.trim();
+    const fileInput = document.getElementById("fileInput");
+    const files = fileInput.files;
+
+    if (!text && files.length === 0) {
+        alert("Post content or a file is required.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("text", text);
+    for (let i = 0; i < files.length; i++) {
+        formData.append("media", files[i]);
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+        alert("You must be logged in to post.");
+        return;
+    }
+
+    try {
+        const response = await fetch("http://localhost:3000/create-post", {  // Make sure this URL matches your backend
+            method: "POST",
+            body: formData,
+            headers: {
+                "Authorization": `Bearer ${token}`
             }
-        } catch (error) {
-            console.error("🚨 Error creating post:", error);
-            alert("Something went wrong. Please try again.");
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-    });
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new Error("Server didn't return JSON");
+        }
+
+        const data = await response.json();
+        alert("✅ Post created successfully!");
+        displayPost(data.post);
+        
+        // Clear input fields and close modal
+        document.getElementById("postContent").value = "";
+        fileInput.value = "";
+        document.getElementById("mediaPreviewContainer").innerHTML = "";
+        postModal.style.display = "none";
+
+    } catch (error) {
+        console.error("🚨 Error creating post:", error);
+        alert("Something went wrong. Please try again.");
+    }
+});
+
     
     
     
@@ -149,9 +157,12 @@ document.addEventListener("DOMContentLoaded", function () {
         event.preventDefault();
     
         const formData = new FormData(event.target);
-        const response = await fetch("http://localhost:3000/create-post", {
+        const response = await fetch(`${API_URL}/create-post`, {
             method: "POST",
-            body: formData
+            body: formData,
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
         });
     
         if (response.ok) {

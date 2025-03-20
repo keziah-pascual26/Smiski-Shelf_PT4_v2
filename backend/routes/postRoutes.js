@@ -32,13 +32,27 @@ module.exports = (app) => {
     });
 
     // ✅ Get All Posts
-    app.get('/posts', async (req, res) => {
+    app.get('/posts', authenticateToken, async (req, res) => {
         try {
-            const posts = await Post.find().sort({ createdAt: -1 }); // Fetch posts sorted by latest
-            res.json(posts);
+            console.log("📥 GET /posts request received");
+            console.log("🔐 Auth token:", req.headers.authorization);
+            console.log("👤 User:", req.user);
+
+            const posts = await Post.find()
+                .sort({ createdAt: -1 })
+                .lean();
+
+            console.log(`✅ Found ${posts.length} posts`);
+            
+            res.setHeader('Content-Type', 'application/json');
+            return res.status(200).json(posts);
+
         } catch (error) {
             console.error("🚨 Error fetching posts:", error);
-            res.status(500).json({ error: "Failed to fetch posts" });
+            return res.status(500).json({
+                error: "Failed to fetch posts",
+                details: error.message
+            });
         }
     });
 };
