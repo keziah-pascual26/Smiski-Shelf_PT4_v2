@@ -1,6 +1,7 @@
 const upload = require('../config/multer');
 const Post = require('../models/postModel');
 const authenticateToken = require('../middleware/authMiddleware');
+const mongoose = require('mongoose');
 
 module.exports = (app) => {
     // ✅ Create a Post
@@ -102,6 +103,81 @@ module.exports = (app) => {
         } catch (error) {
             console.error("🚨 Error commenting on post:", error);
             res.status(500).json({ error: "Failed to add comment" });
+        }
+    });
+
+    app.put('/posts/:postId/comment/:commentId', authenticateToken, async (req, res) => {
+        try {
+            const { text } = req.body;
+            if (!text) {
+                return res.status(400).json({ error: "Comment text is required" });
+            }
+    
+            const post = await Post.findById(req.params.postId);
+            if (!post) return res.status(404).json({ error: "Post not found" });
+    
+            const comment = post.comments.id(req.params.commentId);
+            if (!comment) return res.status(404).json({ error: "Comment not found" });
+    
+            // Ensure the logged-in user is the owner of the comment
+            if (comment.username !== req.user.username) {
+                return res.status(403).json({ error: "You are not authorized to edit this comment" });
+            }
+    
+            comment.text = text; // Update the comment text
+            await post.save();
+    
+            res.status(200).json({ message: "Comment updated successfully", comments: post.comments });
+        } catch (error) {
+            console.error("🚨 Error editing comment:", error);
+            res.status(500).json({ error: "Failed to edit comment" });
+        }
+    });
+
+    app.delete('/posts/:postId/comment/:commentId', authenticateToken, async (req, res) => {
+        try {
+            console.log("🔍 Deleting comment...");
+            console.log("Post ID:", req.params.postId);
+            console.log("Comment ID:", req.params.commentId);
+            console.log("Authenticated user:", req.user.username);
+    
+            if (!mongoose.Types.ObjectId.isValid(req.params.postId)) {
+                console.log("❌ Invalid Post ID");
+                return res.status(400).json({ error: "Invalid Post ID" });
+            }
+    
+            if (!mongoose.Types.ObjectId.isValid(req.params.commentId)) {
+                console.log("❌ Invalid Comment ID");
+                return res.status(400).json({ error: "Invalid Comment ID" });
+            }
+    
+            const post = await Post.findById(req.params.postId);
+            if (!post) {
+                console.log("❌ Post not found");
+                return res.status(404).json({ error: "Post not found" });
+            }
+    
+            const comment = post.comments.id(req.params.commentId);
+            if (!comment) {
+                console.log("❌ Comment not found");
+                return res.status(404).json({ error: "Comment not found" });
+            }
+    
+            // Ensure the logged-in user is the owner of the comment
+            if (comment.username !== req.user.username) {
+                console.log("❌ Unauthorized user");
+                return res.status(403).json({ error: "You are not authorized to delete this comment" });
+            }
+    
+            // Remove the comment using pull
+            post.comments.pull({ _id: req.params.commentId });
+            await post.save();
+    
+            console.log("✅ Comment deleted successfully");
+            res.status(200).json({ message: "Comment deleted successfully", comments: post.comments });
+        } catch (error) {
+            console.error("🚨 Error deleting comment:", error.message, error.stack);
+            res.status(500).json({ error: "Failed to delete comment" });
         }
     });
 };

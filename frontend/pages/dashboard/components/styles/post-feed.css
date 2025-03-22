@@ -45,3 +45,7 @@
     align-items: center;
     margin-top: 10px;
 }
+
+.like-button.liked {
+    color: red; /* Change the color of the button when liked */
+}

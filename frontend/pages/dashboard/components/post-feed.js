@@ -22,11 +22,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     'Content-Type': 'application/json'
                 }
             });
-    
+
             if (!response.ok) {
                 throw new Error(`Failed to toggle like on post: ${response.status}`);
             }
-    
+
             const data = await response.json();
             console.log(`✅ Like toggled on post ${postId}:`, data.message);
             await retrievePosts(); // Refresh posts
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.error("🚨 Error toggling like on post:", error);
         }
     }
-    
+
     async function commentOnPost(postId, commentText) {
         try {
             const token = localStorage.getItem('token');
@@ -46,15 +46,62 @@ document.addEventListener("DOMContentLoaded", async () => {
                 },
                 body: JSON.stringify({ text: commentText })
             });
-    
+
             if (!response.ok) {
                 throw new Error(`Failed to comment on post: ${response.status}`);
             }
-    
+
             console.log(`✅ Comment added to post ${postId}`);
             await retrievePosts(); // Refresh posts
         } catch (error) {
             console.error("🚨 Error commenting on post:", error);
+        }
+    }
+
+    async function editComment(postId, commentId, newText) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:3000/posts/${postId}/comment/${commentId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: newText })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to edit comment: ${response.status}`);
+            }
+
+            console.log(`✅ Comment ${commentId} edited successfully`);
+            await retrievePosts(); // Refresh posts
+        } catch (error) {
+            console.error("🚨 Error editing comment:", error);
+        }
+    }
+
+    async function deleteComment(postId, commentId) {
+        try {
+            console.log("Deleting comment:", { postId, commentId }); // Debugging
+    
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:3000/posts/${postId}/comment/${commentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Failed to delete comment: ${response.status}`);
+            }
+    
+            console.log(`✅ Comment ${commentId} deleted successfully`);
+            await retrievePosts(); // Refresh posts
+        } catch (error) {
+            console.error("🚨 Error deleting comment:", error);
         }
     }
 
@@ -76,31 +123,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                 },
             });
 
-            // Log full response for debugging
-            console.log("Response:", {
-                status: response.status,
-                statusText: response.statusText,
-                headers: Object.fromEntries(response.headers.entries())
-            });
-
-            // Check if response is ok
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error("Server response:", errorText);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            // Check content type
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                throw new Error("Server didn't return JSON");
-            }
-
             const data = await response.json();
             console.log("📦 Received posts:", data);
 
             if (!Array.isArray(data)) {
-                console.error("Invalid data format:", data);
                 throw new Error("Server returned invalid data format");
             }
 
@@ -130,15 +162,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     function renderPosts(posts) {
         const postFeed = document.querySelector("#postFeed");
         if (!postFeed) return;
-    
+
         postFeed.innerHTML = ""; // Clear previous posts
-    
+
         posts.forEach(post => {
             const postElement = document.createElement("div");
             postElement.classList.add("post");
-    
+
             const formattedTimestamp = formatTimestamp(post.createdAt);
-    
+
             let mediaContent = "";
             if (post.media && post.media.length > 0) {
                 mediaContent = `
@@ -158,17 +190,21 @@ document.addEventListener("DOMContentLoaded", async () => {
                     </div>
                 `;
             }
-    
-            // Check if the logged-in user has liked the post
+
             const userLiked = (post.likes || []).some(like => like.username === loggedInUsername);
-    
+
             const likesList = (post.likes || []).map(like => `<span>${like.username}</span>`).join(", ");
             const commentsList = (post.comments || []).map(comment => `
-                <div class="comment">
-                    <span class="comment-username">${comment.username}</span>: ${comment.text}
+                <div class="comment" data-comment-id="${comment._id}">
+                    <span class="comment-username">${comment.username}</span>: 
+                    <span class="comment-text">${comment.text}</span>
+                    ${comment.username === loggedInUsername ? `
+                        <button class="edit-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">Edit</button>
+                        <button class="delete-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">Delete</button>
+                    ` : ""}
                 </div>
             `).join("");
-    
+
             postElement.innerHTML = `
                 <div class="post-header">
                     <img src="../../../no-profile.png" alt="User Profile">
@@ -191,18 +227,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <input type="text" class="comment-input" placeholder="Add a comment..." data-id="${post._id}">
                 </div>
             `;
-    
+
             postFeed.appendChild(postElement);
         });
-    
-        // Add event listeners for like and comment buttons
+
         document.querySelectorAll(".like-button").forEach(button => {
             button.addEventListener("click", () => {
                 const postId = button.getAttribute("data-id");
                 likePost(postId);
             });
         });
-    
+
         document.querySelectorAll(".comment-input").forEach(input => {
             input.addEventListener("keypress", (e) => {
                 if (e.key === "Enter") {
@@ -215,24 +250,45 @@ document.addEventListener("DOMContentLoaded", async () => {
                 }
             });
         });
+
+        document.querySelectorAll(".edit-comment-button").forEach(button => {
+            button.addEventListener("click", () => {
+                const postId = button.getAttribute("data-id");
+                const commentId = button.getAttribute("data-comment-id");
+                const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"] .comment-text`);
+                const currentText = commentElement.textContent;
+
+                const newText = prompt("Edit your comment:", currentText);
+                if (newText && newText.trim() !== "") {
+                    editComment(postId, commentId, newText.trim());
+                }
+            });
+        });
+
+        document.querySelectorAll(".delete-comment-button").forEach(button => {
+            button.addEventListener("click", () => {
+                const postId = button.getAttribute("data-id");
+                const commentId = button.getAttribute("data-comment-id");
+
+                if (confirm("Are you sure you want to delete this comment?")) {
+                    deleteComment(postId, commentId);
+                }
+            });
+        });
     }
 
-    /**
-     * Formats timestamp to "X minutes ago" or "MM/DD/YYYY"
-     */
     function formatTimestamp(createdAt) {
-        if (!createdAt) return "Just now"; // Fallback for missing timestamps
+        if (!createdAt) return "Just now";
 
-        const postDate = new Date(createdAt); // Parse timestamp
+        const postDate = new Date(createdAt);
         const now = new Date();
 
-        // Ensure valid date
         if (isNaN(postDate.getTime())) {
             console.error("Invalid timestamp:", createdAt);
             return "Just now";
         }
 
-        const timeDiff = Math.floor((now - postDate) / 1000); // Difference in seconds
+        const timeDiff = Math.floor((now - postDate) / 1000);
 
         if (timeDiff < 60) {
             return `${timeDiff} seconds ago`;
@@ -241,7 +297,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else if (timeDiff < 86400) {
             return `${Math.floor(timeDiff / 3600)} hours ago`;
         } else {
-            // Convert UTC timestamp to local time for better readability
             return postDate.toLocaleDateString("en-US", { 
                 year: "numeric", 
                 month: "short", 
