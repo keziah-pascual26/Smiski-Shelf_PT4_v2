@@ -1,3 +1,5 @@
+let rotationAngle = 0;
+
 export function initializeImagePreview(mediaInputId, previewContainerId, imagePreviewId, editButtonId) {
     const mediaInput = document.getElementById(mediaInputId);
     const previewContainer = document.getElementById(previewContainerId);
@@ -29,3 +31,14 @@ export function initializeImagePreview(mediaInputId, previewContainerId, imagePr
         });
     }
 }
+
+export function rotateImage() {
+    const image = document.getElementById('imagePreview'); // Ensure this matches your image element's ID
+    if (image && image.style.display !== 'none') {
+        rotationAngle = (rotationAngle + 90) % 360; // Increment rotation by 90 degrees
+        image.style.transform = `rotate(${rotationAngle}deg)`; // Apply rotation
+    } else {
+        console.error('Image element not found or not visible');
+    }
+}
+

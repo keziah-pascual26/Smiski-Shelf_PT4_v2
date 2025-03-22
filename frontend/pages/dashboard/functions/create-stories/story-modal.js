@@ -1,5 +1,9 @@
 import { initializeImagePreview } from './image-preview.js';
+import { rotateImage } from './image-preview.js';
+
 import { initializeVideoPreview } from './video-preview.js';
+
+window.rotateImage = rotateImage;
 
 // Create a link element for the CSS file
 const storyModalCSS = document.createElement('link');
