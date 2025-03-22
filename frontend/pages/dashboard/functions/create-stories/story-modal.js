@@ -1,4 +1,5 @@
-import { initializeMediaPreview } from './media-preview.js';
+import { initializeImagePreview } from './image-preview.js';
+import { initializeVideoPreview } from './video-preview.js';
 
 // Create a link element for the CSS file
 const storyModalCSS = document.createElement('link');
@@ -40,7 +41,7 @@ const storyModalHTML = `
                 </div>
             </div>
             <div class="button-section">
-                <button class="edit-button" onclick="editStory()">Edit</button>
+                <button class="edit-button" id="editButton">Edit</button>
                 <button class="post-button" onclick="addStories();">Post Story</button>
             </div>
             <div id="editorSection" style="display: none;">
@@ -127,9 +128,47 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    initializeMediaPreview('mediaInput', 'previewContainer', 'imagePreview', 'videoPreview', 'videoSource');
+    initializeImagePreview('mediaInput', 'previewContainer', 'imagePreview', 'editButton');
+    initializeVideoPreview('mediaInput', 'previewContainer', 'videoPreview', 'videoSource', 'editButton');
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+    const editButton = document.getElementById('editButton');
+    if (editButton) {
+        editButton.addEventListener('click', () => {
+            const editorSection = document.getElementById('editorSection');
+            const imageEditor = document.getElementById('imageEditor');
+            const videoEditor = document.getElementById('videoEditor');
+            const imagePreview = document.getElementById('imagePreview');
+            const videoPreview = document.getElementById('videoPreview');
 
+            if (editorSection) {
+                if (editorSection.style.display === 'block') {
+                    // Hide the editor section and both editors
+                    editorSection.style.display = 'none';
+                    if (imageEditor) imageEditor.style.display = 'none';
+                    if (videoEditor) videoEditor.style.display = 'none';
+                } else {
+                    // Show the editor section and the appropriate editor
+                    editorSection.style.display = 'block';
+
+                    if (imagePreview && imagePreview.style.display === 'block') {
+                        // Show the image editor if an image is being previewed
+                        if (imageEditor) imageEditor.style.display = 'block';
+                        if (videoEditor) videoEditor.style.display = 'none';
+                    } else if (videoPreview && videoPreview.style.display === 'block') {
+                        // Show the video editor if a video is being previewed
+                        if (videoEditor) videoEditor.style.display = 'block';
+                        if (imageEditor) imageEditor.style.display = 'none';
+                    }
+                }
+            } else {
+                console.error('Editor section not found.');
+            }
+        });
+    } else {
+        console.error('Edit button not found.');
+    }
+});
 
 document.body.insertAdjacentHTML('beforeend', storyModalHTML);

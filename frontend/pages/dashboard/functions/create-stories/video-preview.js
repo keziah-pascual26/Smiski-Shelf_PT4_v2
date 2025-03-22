@@ -1,9 +1,9 @@
-export function initializeMediaPreview(mediaInputId, previewContainerId, imagePreviewId, videoPreviewId, videoSourceId) {
+export function initializeVideoPreview(mediaInputId, previewContainerId, videoPreviewId, videoSourceId, editButtonId) {
     const mediaInput = document.getElementById(mediaInputId);
     const previewContainer = document.getElementById(previewContainerId);
-    const imagePreview = document.getElementById(imagePreviewId);
     const videoPreview = document.getElementById(videoPreviewId);
     const videoSource = document.getElementById(videoSourceId);
+    const editButton = document.getElementById(editButtonId);
 
     if (mediaInput) {
         mediaInput.addEventListener('change', (event) => {
@@ -12,21 +12,21 @@ export function initializeMediaPreview(mediaInputId, previewContainerId, imagePr
 
             const fileType = file.type;
 
-            // Reset previews
-            imagePreview.style.display = 'none';
+            // Reset video preview and hide the edit button
             videoPreview.style.display = 'none';
+            if (editButton) {
+                editButton.style.display = 'none';
+            }
 
-            if (fileType.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    imagePreview.src = reader.result;
-                    imagePreview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            } else if (fileType.startsWith('video/')) {
+            if (fileType.startsWith('video/')) {
                 videoSource.src = URL.createObjectURL(file);
                 videoPreview.load();
                 videoPreview.style.display = 'block';
+
+                // Show the edit button for video
+                if (editButton) {
+                    editButton.style.display = 'block';
+                }
             }
 
             previewContainer.style.display = 'block';
