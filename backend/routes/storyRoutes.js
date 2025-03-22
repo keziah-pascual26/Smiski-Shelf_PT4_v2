@@ -1,30 +1,35 @@
-const upload = require('../config/multer');
+const express = require('express');
+const router = express.Router();
 const Story = require('../models/storyModel');
+const upload = require('../config/multer');
+const authenticateToken = require('../middleware/authMiddleware');
 
-module.exports = (app) => {
-    // ✅ Handle story upload
-    app.post('/upload-story', upload.array('media', 5), async (req, res) => {
-        try {
-            console.log("🔄 Received request to upload story");
-            console.log("📦 Request body:", req.body);
-            console.log("📸 Uploaded files:", req.files);
+// Create a new story with image upload
+router.post('/stories', authenticateToken, upload.single('image'), async (req, res) => {
+    try {
+        const { title, description } = req.body;
+        const story = new Story({
+            userId: req.user._id,
+            title,
+            description,
+            media: req.file ? [req.file.filename] : []
+        });
+        await story.save();
+        res.status(201).json(story);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
 
-            if (!req.body.title || !req.body.description || !req.files || req.files.length === 0) {
-                console.error("❌ Missing required fields");
-                return res.status(400).json({ error: "Missing required fields" });
-            }
+// Get all stories for the logged-in user
+router.get('/stories/mystories', authenticateToken, async (req, res) => {
+    try {
+        const stories = await Story.find({ userId: req.user._id })
+            .sort({ createdAt: -1 });
+        res.json(stories);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-            const { title, description } = req.body;
-            const mediaFilenames = req.files.map(file => file.filename);
-
-            const newStory = new Story({ title, description, media: mediaFilenames });
-            await newStory.save();
-
-            console.log("✅ Story uploaded successfully:", newStory);
-            res.status(201).json({ message: "Story uploaded successfully", story: newStory });
-        } catch (error) {
-            console.error("🚨 Server error while uploading story:", error);
-            res.status(500).json({ error: "Failed to upload story", details: error.message });
-        }
-    });
-};
+module.exports = router;

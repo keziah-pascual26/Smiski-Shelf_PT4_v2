@@ -22,6 +22,8 @@ const Post = require('./models/postModel'); // ✅ Import Post Model
 const { registerUser, loginUser } = require('./auth/auth');
 const authenticateToken = require('./middleware/authMiddleware');
 
+const postRoutes = require('./routes/postRoutes');
+
 const app = express();
 const port = 3000;
 
@@ -70,6 +72,8 @@ app.use('/api', require('./routes/storyRoutes'));
 app.use('/api', require('./routes/userRoutes'));
 // Import and use routes
 require('./routes/postRoutes')(app);
+
+app.use('/api', postRoutes);
 
 // Root route handler - serve login page
 app.get('/', (req, res) => {

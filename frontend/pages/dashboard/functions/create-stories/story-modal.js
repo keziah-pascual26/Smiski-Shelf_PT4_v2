@@ -1,10 +1,15 @@
 import { initializeMediaPreview } from './media-preview.js';
 
-// Create a link element for the CSS file
+// Add overlay HTML and CSS setup
+const overlayHTML = `<div id="overlay" class="overlay"></div>`;
+document.body.insertAdjacentHTML('beforeend', overlayHTML);
+
 const storyModalCSS = document.createElement('link');
 storyModalCSS.rel = 'stylesheet';
-storyModalCSS.href = '/pages/dashboard/functions/create-stories/story-modal.css'; // Ensure the correct path to your CSS file
+storyModalCSS.href = '/pages/dashboard/functions/create-stories/story-modal.css';
 document.head.appendChild(storyModalCSS);
+
+
 
 const storyModalHTML = `
     <!-- Create Story Modal -->
@@ -40,8 +45,8 @@ const storyModalHTML = `
                 </div>
             </div>
             <div class="button-section">
-                <button class="edit-button" onclick="editStory()">Edit</button>
-                <button class="post-button" onclick="addStories();">Post Story</button>
+                <button class="edit-button" id="editStoryButton">Edit</button>
+                <button class="post-button" id="postStoryButton">Post Story</button>
             </div>
             <div id="editorSection" style="display: none;">
                 <div id="imageEditor" style="display: none;">
@@ -118,11 +123,39 @@ function updateCharCount() {
     }
 }
 
-// Attach the event listener to the `storyDescription` input field
 document.addEventListener('DOMContentLoaded', () => {
+    // Insert modal and overlay HTML
+    document.body.insertAdjacentHTML('beforeend', storyModalHTML);
+    
+    // Initialize text area listener
     const textArea = document.getElementById("storyDescription");
     if (textArea) {
         textArea.addEventListener('input', updateCharCount);
+    }
+
+    // Initialize media preview
+    initializeMediaPreview('mediaInput', 'previewContainer', 'imagePreview', 'videoPreview', 'videoSource');
+
+    // Initialize modal buttons
+    const postButton = document.getElementById('postStoryButton');
+    const closeButton = document.getElementById('closeModalButton');
+    const createButton = document.getElementById('createStoryButton');
+    const overlay = document.getElementById('overlay');
+
+    if (postButton) {
+        postButton.addEventListener('click', addStories);
+    }
+
+    if (closeButton) {
+        closeButton.addEventListener('click', closeModalButton);
+    }
+
+    if (createButton) {
+        createButton.addEventListener('click', openStoryModal);
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', closeModalButton);
     }
 });
 
@@ -130,6 +163,105 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeMediaPreview('mediaInput', 'previewContainer', 'imagePreview', 'videoPreview', 'videoSource');
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+    // Existing listeners
+    const textArea = document.getElementById("storyDescription");
+    if (textArea) {
+        textArea.addEventListener('input', updateCharCount);
+    }
+
+    // Initialize media preview
+    initializeMediaPreview('mediaInput', 'previewContainer', 'imagePreview', 'videoPreview', 'videoSource');
+
+    // Add story post button listener
+    const postButton = document.getElementById('postStoryButton');
+    if (postButton) {
+        postButton.addEventListener('click', addStories);
+    }
+});
+
+async function addStories() {
+    const mediaInput = document.getElementById('mediaInput');
+    const storyTitleInput = document.getElementById('storyTitle');
+    const storyDescriptionInput = document.getElementById('storyDescription');
+    
+    const files = mediaInput.files;
+    const storyTitle = storyTitleInput.value.trim();
+    const storyDescription = storyDescriptionInput.value.trim();
+
+    if (!storyTitle || !storyDescription) {
+        alert('Please enter both a title and description for your story.');
+        return;
+    }
+
+    if (files.length === 0) {
+        alert('Please select an image for your story.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', storyTitle);
+    formData.append('description', storyDescription);
+    formData.append('image', files[0]);
+
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Please log in to post a story.');
+            return;
+        }
+
+        const response = await fetch('http://localhost:3000/api/stories', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to post story');
+        }
+
+        const result = await response.json();
+        console.log('✅ Story posted successfully:', result);
+        
+        // Clear form and close modal
+        storyTitleInput.value = '';
+        storyDescriptionInput.value = '';
+        mediaInput.value = '';
+        closeModalButton();
+
+    } catch (error) {
+        console.error('🚨 Error posting story:', error);
+        alert('Failed to post story. Please try again.');
+    }
+}
+
+// Add this after your existing imports
+async function fetchStories() {
+    try {
+        const response = await fetch('http://localhost:3000/api/stories/mystories', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch stories');
+        }
+
+        const stories = await response.json();
+        return stories;
+    } catch (error) {
+        console.error('Error fetching stories:', error);
+        return [];
+    }
+}
+
+
 
 
 document.body.insertAdjacentHTML('beforeend', storyModalHTML);
+
+export { addStories };

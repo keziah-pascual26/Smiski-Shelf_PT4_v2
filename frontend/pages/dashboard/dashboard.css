@@ -34,13 +34,15 @@ html {
 }
 
 .stories-container {
-    padding: 20px;
-    text-align: center;
     display: flex;
-    flex-wrap: wrap;
     gap: 15px;
-    width: 53%;
+    padding: 20px;
+    overflow-x: auto;
+    background: white;
+    border-radius: 10px;
+    margin: 20px 0;
 }
+
 
 /* Header */
 .header {
