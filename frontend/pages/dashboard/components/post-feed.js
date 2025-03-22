@@ -105,6 +105,29 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
+    async function repostPost(postId) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:3000/posts/${postId}/repost`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Failed to repost post: ${response.status}`);
+            }
+    
+            const data = await response.json();
+            console.log(`✅ Post ${postId} reposted successfully:`, data.message);
+            await retrievePosts(); // Refresh posts
+        } catch (error) {
+            console.error("🚨 Error reposting post:", error);
+        }
+    }
+
     async function retrievePosts() {
         const postFeed = document.querySelector("#postFeed");
         try {
@@ -205,28 +228,35 @@ document.addEventListener("DOMContentLoaded", async () => {
                 </div>
             `).join("");
 
-            postElement.innerHTML = `
-                <div class="post-header">
-                    <img src="/public/no-profile.png" alt="User Profile">
-                    <span class="username">${post.username}</span>
-                    <span class="timestamp">• ${formattedTimestamp}</span>
-                </div>
-                <p>${post.text}</p>
-                ${mediaContent}
-                <div class="post-footer">
-                    <button class="like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
-                        <i class="fa fa-heart"></i> ${post.likes?.length || 0}
-                    </button>
-                    <button class="comment-button" data-id="${post._id}">
-                        <i class="fa fa-comment"></i> ${post.comments?.length || 0}
-                    </button>
-                    <div class="likes-list">Liked by: ${likesList || "No likes yet"}</div>
-                </div>
-                <div class="comment-section" id="comment-section-${post._id}">
-                    ${commentsList || "<div>No comments yet</div>"}
-                    <input type="text" class="comment-input" placeholder="Add a comment..." data-id="${post._id}">
-                </div>
+            const repostButton = `
+                <button class="repost-button" data-id="${post._id}">
+                    <i class="fa fa-retweet"></i> Repost
+                </button>
             `;
+
+            postElement.innerHTML = `
+            <div class="post-header">
+                <img src="/public/no-profile.png" alt="User Profile">
+                <span class="username">${post.username}</span>
+                <span class="timestamp">• ${formattedTimestamp}</span>
+            </div>
+            <p>${post.text}</p>
+            ${mediaContent}
+            <div class="post-footer">
+                <button class="like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
+                    <i class="fa fa-heart"></i> ${post.likes?.length || 0}
+                </button>
+                <button class="comment-button" data-id="${post._id}">
+                    <i class="fa fa-comment"></i> ${post.comments?.length || 0}
+                </button>
+                ${repostButton}
+                <div class="likes-list">Liked by: ${likesList || "No likes yet"}</div>
+            </div>
+            <div class="comment-section" id="comment-section-${post._id}">
+                ${commentsList || "<div>No comments yet</div>"}
+                <input type="text" class="comment-input" placeholder="Add a comment..." data-id="${post._id}">
+            </div>
+        `;
 
             postFeed.appendChild(postElement);
         });
@@ -272,6 +302,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 if (confirm("Are you sure you want to delete this comment?")) {
                     deleteComment(postId, commentId);
+                }
+            });
+        });
+
+        document.querySelectorAll(".repost-button").forEach(button => {
+            button.addEventListener("click", () => {
+                const postId = button.getAttribute("data-id");
+        
+                if (confirm("Are you sure you want to repost this?")) {
+                    repostPost(postId);
                 }
             });
         });

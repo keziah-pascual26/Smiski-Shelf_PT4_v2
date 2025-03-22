@@ -6,6 +6,7 @@ const postSchema = new mongoose.Schema({
     media: { type: [String], default: [] },
     likes: [{ username: String }], // Array of users who liked the post
     comments: [{ username: String, text: String }], // Array of comments with username and text
+    originalPostId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', default: null }, // Reference to the original post
     createdAt: { type: Date, default: Date.now }
 });
 

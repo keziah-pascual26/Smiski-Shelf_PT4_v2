@@ -180,4 +180,28 @@ module.exports = (app) => {
             res.status(500).json({ error: "Failed to delete comment" });
         }
     });
+
+    app.post('/posts/:id/repost', authenticateToken, async (req, res) => {
+        try {
+            const originalPost = await Post.findById(req.params.id);
+            if (!originalPost) {
+                return res.status(404).json({ error: "Original post not found" });
+            }
+    
+            const repost = new Post({
+                username: req.user.username,
+                text: `Reposted: ${originalPost.text}`,
+                media: originalPost.media,
+                originalPostId: originalPost._id, // Reference to the original post
+            });
+    
+            await repost.save();
+    
+            console.log(`✅ Post ${req.params.id} reposted by ${req.user.username}`);
+            res.status(201).json({ message: "Post reposted successfully", repost });
+        } catch (error) {
+            console.error("🚨 Error reposting post:", error);
+            res.status(500).json({ error: "Failed to repost post" });
+        }
+    });
 };
