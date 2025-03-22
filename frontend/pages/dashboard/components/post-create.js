@@ -18,16 +18,16 @@ document.addEventListener("DOMContentLoaded", function () {
         <!-- Small Post Input Box -->
         <div id="smallPostInput" class="post-create-container">
             <div class="user-profile">
-                <img src="../../../no-profile.png" alt="User Profile">
+                <img src="/public/no-profile.png" alt="User Profile">
                 <span class="username">${storedUsername}</span>
             </div>
             <input type="text" class="post-input" placeholder="What's on your mind?">
 
             <!-- Post Options -->
             <div class="post-options">
-                <div class="post-option"><img src="../../../live.png" alt="Live video"> Live video</div>
-                <div class="post-option"><img src="../../../photos.png" alt="Photo/video"> Photo/video</div>
-                <div class="post-option"><img src="../../../feeling.png" alt="Feeling/activity"> Feeling/activity</div>
+                <div class="post-option"><img src="/public/live.png" alt="Live video"> Live video</div>
+                <div class="post-option"><img src="/public/photos.png" alt="Photo/video"> Photo/video</div>
+                <div class="post-option"><img src="/public/feeling.png" alt="Feeling/activity"> Feeling/activity</div>
             </div>
         </div>
 
@@ -37,19 +37,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 <span class="close-post-modal">&times;</span>
                 <h2>Create post</h2>
                 <div class="user-profile">
-                    <img src="../../../no-profile.png" alt="User Profile">
+                    <img src="/public/no-profile.png" alt="User Profile">
                     <span class="username">${storedUsername}</span>
                 </div>
                 <textarea id="postContent" placeholder="What's on your mind, ${storedUsername}?" class="post-modal-textarea"></textarea>
 
                 <!-- Post Options -->
                 <div class="post-modal-options">
-                    <div class="post-modal-option"><img src="../../../live.png" alt="Live video"> Live video</div>
+                    <div class="post-modal-option"><img src="/public/live.png" alt="Live video"> Live video</div>
                     <div class="post-modal-option" id="photoVideoOption">
-                        <img src="../../../photos.png" alt="Photo/video"> Photo/video
+                        <img src="/public/photos.png" alt="Photo/video"> Photo/video
                     </div>
                     <input type="file" id="fileInput" multiple style="display: none;">
-                    <div class="post-modal-option"><img src="../../../feeling.png" alt="Feeling/activity"> Feeling/activity</div>
+                    <div class="post-modal-option"><img src="/public/feeling.png" alt="Feeling/activity"> Feeling/activity</div>
                 </div>
                 
                 <!-- Media Preview Box -->

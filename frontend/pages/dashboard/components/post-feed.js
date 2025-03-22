@@ -207,7 +207,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             postElement.innerHTML = `
                 <div class="post-header">
-                    <img src="../../../no-profile.png" alt="User Profile">
+                    <img src="/public/no-profile.png" alt="User Profile">
                     <span class="username">${post.username}</span>
                     <span class="timestamp">• ${formattedTimestamp}</span>
                 </div>
