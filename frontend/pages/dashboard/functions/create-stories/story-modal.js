@@ -1,9 +1,11 @@
 import { initializeImagePreview } from './image-preview.js';
 import { rotateImage } from './image-preview.js';
+import { saveEditedImage } from './image-preview.js';
 
 import { initializeVideoPreview } from './video-preview.js';
 
 window.rotateImage = rotateImage;
+window.saveEditedImage = saveEditedImage;
 
 // Create a link element for the CSS file
 const storyModalCSS = document.createElement('link');
@@ -46,7 +48,7 @@ const storyModalHTML = `
             </div>
             <div class="button-section">
                 <button class="edit-button" id="editButton">Edit</button>
-                <button class="post-button" onclick="addStories();">Post Story</button>
+                <button class="post-button" onclick="saveEditedImage();">Post Story</button>
             </div>
             <div id="editorSection" style="display: none;">
                 <div id="imageEditor" style="display: none;">

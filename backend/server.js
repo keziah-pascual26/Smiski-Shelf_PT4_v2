@@ -13,6 +13,7 @@ const session = require('express-session');
 const authRoutes = require('./routes/authRoutes');
 require('./config/passportSetup');
 require('dotenv').config();
+const uploadRoutes = require('./routes/uploadRoutes');
 
 
 // Import Models & Auth
@@ -33,6 +34,13 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASS
     }
 });
+
+// Middleware to serve static files (e.g., uploaded images)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Use the upload routes
+app.use('/api', uploadRoutes);
+
 
 // Middleware
 app.use(cors({

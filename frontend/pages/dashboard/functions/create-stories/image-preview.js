@@ -32,6 +32,49 @@ export function initializeImagePreview(mediaInputId, previewContainerId, imagePr
     }
 }
 
+export function saveEditedImage() {
+    const image = document.getElementById('imagePreview');
+    if (image && image.style.display !== 'none') {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        // Set canvas dimensions to match the image
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+
+        // Apply the rotation
+        context.translate(canvas.width / 2, canvas.height / 2);
+        context.rotate((rotationAngle * Math.PI) / 180);
+        context.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
+
+        // Convert the canvas to a Blob
+        canvas.toBlob((blob) => {
+            if (blob) {
+                const formData = new FormData();
+                formData.append('editedImage', blob, 'edited-image.png');
+
+                fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.filePath) {
+                            console.log('Image saved successfully at:', data.filePath);
+                        } else {
+                            console.error('Failed to save the image.');
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error uploading the image:', error);
+                    });
+            }
+        }, 'image/png');
+    } else {
+        console.error('Image element not found or not visible');
+    }
+}
+
 export function rotateImage() {
     const image = document.getElementById('imagePreview'); // Ensure this matches your image element's ID
     if (image && image.style.display !== 'none') {
