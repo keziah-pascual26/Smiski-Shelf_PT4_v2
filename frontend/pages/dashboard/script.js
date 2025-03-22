@@ -15,19 +15,18 @@ let uploadedFileType = null; // Variable to store the file type
 let rotationAngle = 0;
 let currentStoryData = null;
 let resizeFactor = 1;  // A factor to control resizing
-let croppedImageData = null;
 let audioUrl = null;
+
+let croppedImageData = null;  // Global variable to hold the cropped image data
+// Global variable to track mute state
 let isMuted = false;
-let isStoryViewed = false; // Flag to check if a story is being viewed
-
-// Initialize reaction counts
 let reactionCounts = {}; // Global object to store reaction counts for each story
-
 let currentAudio = null;  // Global variable to track the currently playing audio
 let currentVideo = null;  // Global variable to track the currently playing video
+let progressStartTime = 0;
 let progressPaused = false;
 let remainingTime = 0;
-let progressStartTime = 0;
+let isStoryViewed = false; // Flag to check if a story is being viewed
 
 // Function to handle media upload
 function handleMediaUpload(event) {
@@ -846,6 +845,11 @@ function updateReactionCounts(storyIndex) {
 
 
 
+// Initialize reaction counts
+
+
+
+
 function showStory(index) {
     if (index < 0 || index >= storyQueue.length) {
         closeStoryViewer();
@@ -1122,6 +1126,7 @@ function closeStoryViewer() {
 
 
 
+
 function updateProgressBar(duration, callback) {
     if (!progressBar) return;
 
@@ -1295,8 +1300,6 @@ function handleAudioUpload(event) {
 
 document.getElementById('audioInput').addEventListener('change', handleAudioUpload);
 
-
-
 function handleAudioUpload(event) {
     const audioInput = event.target;
     const audioPreview = document.getElementById('audioPreview');
@@ -1324,7 +1327,6 @@ function handleAudioUpload(event) {
     }
 }
 
-// Global variable to track mute state
 
 
 function toggleMute() {
@@ -1521,6 +1523,9 @@ function initializeCropper(imagePreview) {
     // Ensure crop button is visible and not hidden
     document.getElementById('cropImage').style.display = 'inline-block'; // Make sure it's visible
 }
+
+
+
 
 function finalizeCropping() {
     console.log("finalizeCropping()");
