@@ -12,6 +12,52 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
+    async function likePost(postId) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:3000/posts/${postId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Failed to toggle like on post: ${response.status}`);
+            }
+    
+            const data = await response.json();
+            console.log(`✅ Like toggled on post ${postId}:`, data.message);
+            await retrievePosts(); // Refresh posts
+        } catch (error) {
+            console.error("🚨 Error toggling like on post:", error);
+        }
+    }
+    
+    async function commentOnPost(postId, commentText) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:3000/posts/${postId}/comment`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: commentText })
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Failed to comment on post: ${response.status}`);
+            }
+    
+            console.log(`✅ Comment added to post ${postId}`);
+            await retrievePosts(); // Refresh posts
+        } catch (error) {
+            console.error("🚨 Error commenting on post:", error);
+        }
+    }
+
     async function retrievePosts() {
         const postFeed = document.querySelector("#postFeed");
         try {
@@ -84,16 +130,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     function renderPosts(posts) {
         const postFeed = document.querySelector("#postFeed");
         if (!postFeed) return;
-
+    
         postFeed.innerHTML = ""; // Clear previous posts
-
+    
         posts.forEach(post => {
             const postElement = document.createElement("div");
             postElement.classList.add("post");
-
-            // Format timestamp
+    
             const formattedTimestamp = formatTimestamp(post.createdAt);
-
+    
             let mediaContent = "";
             if (post.media && post.media.length > 0) {
                 mediaContent = `
@@ -113,23 +158,62 @@ document.addEventListener("DOMContentLoaded", async () => {
                     </div>
                 `;
             }
-
+    
+            // Check if the logged-in user has liked the post
+            const userLiked = (post.likes || []).some(like => like.username === loggedInUsername);
+    
+            const likesList = (post.likes || []).map(like => `<span>${like.username}</span>`).join(", ");
+            const commentsList = (post.comments || []).map(comment => `
+                <div class="comment">
+                    <span class="comment-username">${comment.username}</span>: ${comment.text}
+                </div>
+            `).join("");
+    
             postElement.innerHTML = `
                 <div class="post-header">
                     <img src="../../../no-profile.png" alt="User Profile">
                     <span class="username">${post.username}</span>
-                    <span class="timestamp">• ${formatTimestamp(post.createdAt)}</span>
+                    <span class="timestamp">• ${formattedTimestamp}</span>
                 </div>
                 <p>${post.text}</p>
                 ${mediaContent}
                 <div class="post-footer">
-                    <span class="like"><i class="fa fa-heart"></i> ${post.likes || 0}</span>
-                    <span class="comment"><i class="fa fa-comment"></i> ${post.comments || 0}</span>
-                    <span class="retweet"><i class="fa fa-retweet"></i> ${post.retweets || 0}</span>
+                    <button class="like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
+                        <i class="fa fa-heart"></i> ${post.likes?.length || 0}
+                    </button>
+                    <button class="comment-button" data-id="${post._id}">
+                        <i class="fa fa-comment"></i> ${post.comments?.length || 0}
+                    </button>
+                    <div class="likes-list">Liked by: ${likesList || "No likes yet"}</div>
+                </div>
+                <div class="comment-section" id="comment-section-${post._id}">
+                    ${commentsList || "<div>No comments yet</div>"}
+                    <input type="text" class="comment-input" placeholder="Add a comment..." data-id="${post._id}">
                 </div>
             `;
-
+    
             postFeed.appendChild(postElement);
+        });
+    
+        // Add event listeners for like and comment buttons
+        document.querySelectorAll(".like-button").forEach(button => {
+            button.addEventListener("click", () => {
+                const postId = button.getAttribute("data-id");
+                likePost(postId);
+            });
+        });
+    
+        document.querySelectorAll(".comment-input").forEach(input => {
+            input.addEventListener("keypress", (e) => {
+                if (e.key === "Enter") {
+                    const postId = input.getAttribute("data-id");
+                    const commentText = input.value.trim();
+                    if (commentText) {
+                        commentOnPost(postId, commentText);
+                        input.value = ""; // Clear input field
+                    }
+                }
+            });
         });
     }
 

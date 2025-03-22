@@ -1,14 +1,13 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-// Define Post Schema
 const postSchema = new mongoose.Schema({
-    username: String,
-    text: String,
-    media: [String], // Array to store filenames of uploaded media (photos/videos)
+    username: { type: String, required: true },
+    text: { type: String, required: true },
+    media: { type: [String], default: [] },
+    likes: [{ username: String }], // Array of users who liked the post
+    comments: [{ username: String, text: String }], // Array of comments with username and text
     createdAt: { type: Date, default: Date.now }
 });
 
-// Create Post Model
-const Post = mongoose.model("Post", postSchema);
-
+const Post = mongoose.model('Post', postSchema);
 module.exports = Post;
