@@ -1,4 +1,3 @@
-/*
 // Get the button, modal, and overlay elements
 const createStoryButton = document.getElementById('createStoryButton');
 const createStoryModal = document.getElementById('createStoryModal');
@@ -16,7 +15,19 @@ let uploadedFileType = null; // Variable to store the file type
 let rotationAngle = 0;
 let currentStoryData = null;
 let resizeFactor = 1;  // A factor to control resizing
+let croppedImageData = null;
+let audioUrl = null;
+let isMuted = false;
+let isStoryViewed = false; // Flag to check if a story is being viewed
 
+// Initialize reaction counts
+let reactionCounts = {}; // Global object to store reaction counts for each story
+
+let currentAudio = null;  // Global variable to track the currently playing audio
+let currentVideo = null;  // Global variable to track the currently playing video
+let progressPaused = false;
+let remainingTime = 0;
+let progressStartTime = 0;
 
 // Function to handle media upload
 function handleMediaUpload(event) {
@@ -438,6 +449,7 @@ document.querySelectorAll('.reaction').forEach(button => {
 
 // Function to handle the image preview
 
+let isCroppingEnabled = false;  // ✅ Declare before use
 
 async function addStories() {
     console.log('Post story');
@@ -464,30 +476,7 @@ async function addStories() {
         return;
     }
 
-    const formData = new FormData();
-    formData.append("title", storyTitle);
-    formData.append("description", storyDescription);
-    files.forEach(file => formData.append("media", file));
-
-    try {
-        const response = await fetch('http://localhost:3000/upload-story', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) {
-            throw new Error("Failed to upload story");
-        }
-
-        const result = await response.json();
-        console.log("Story uploaded successfully:", result);
-        alert("Story uploaded successfully!");
-
-        // Optionally refresh the page or update the UI
-    } catch (error) {
-        console.error("Error uploading story:", error);
-        alert("Error uploading story. Please try again.");
-    }
+    let isCroppingEnabled = false;  // ✅ Declare before using it
 
     // Ensure cropper is initialized before use
     if (isCroppingEnabled && !cropper) {
@@ -855,13 +844,7 @@ function updateReactionCounts(storyIndex) {
     document.getElementById('angryCount').textContent = counts.angry;
 }
 
-let isStoryViewed = false; // Flag to check if a story is being viewed
 
-// Initialize reaction counts
-let reactionCounts = {}; // Global object to store reaction counts for each story
-
-let currentAudio = null;  // Global variable to track the currently playing audio
-let currentVideo = null;  // Global variable to track the currently playing video
 
 function showStory(index) {
     if (index < 0 || index >= storyQueue.length) {
@@ -1136,9 +1119,7 @@ function closeStoryViewer() {
     isStoryViewed = false;
 }
 
-let progressPaused = false;
-let remainingTime = 0;
-let progressStartTime = 0;
+
 
 
 function updateProgressBar(duration, callback) {
@@ -1314,7 +1295,7 @@ function handleAudioUpload(event) {
 
 document.getElementById('audioInput').addEventListener('change', handleAudioUpload);
 
-let audioUrl = null;
+
 
 function handleAudioUpload(event) {
     const audioInput = event.target;
@@ -1344,7 +1325,7 @@ function handleAudioUpload(event) {
 }
 
 // Global variable to track mute state
-let isMuted = false;
+
 
 function toggleMute() {
     const muteButton = document.getElementById('muteButton');
@@ -1483,13 +1464,12 @@ function saveStory() {
 */
 
 
-/*
+
 document.addEventListener('DOMContentLoaded', function() {
     const title = document.getElementById('storyTitle').value.trim();
     console.log('Title:', title);  // Check the value when the DOM is ready
 });
 
-let isCroppingEnabled = false;  // Tracks whether cropping is enabled or not
 let cropper = null; // Declare the cropper variable globally
 
 // Function to enable cropping and initialize the Cropper.js instance
@@ -1541,9 +1521,6 @@ function initializeCropper(imagePreview) {
     // Ensure crop button is visible and not hidden
     document.getElementById('cropImage').style.display = 'inline-block'; // Make sure it's visible
 }
-
-
-let croppedImageData = null;  // Global variable to hold the cropped image data
 
 function finalizeCropping() {
     console.log("finalizeCropping()");
@@ -1709,4 +1686,3 @@ function sendMessage() {
         document.getElementById('chatInput').value = '';
     }
 }
-    */

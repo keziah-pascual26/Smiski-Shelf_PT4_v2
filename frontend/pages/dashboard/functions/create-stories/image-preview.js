@@ -1,3 +1,5 @@
+/*
+
 let rotationAngle = 0;
 
 export function initializeImagePreview(mediaInputId, previewContainerId, imagePreviewId, editButtonId) {
@@ -111,3 +113,4 @@ export function rotateImage() {
     }
 }
 
+*/
