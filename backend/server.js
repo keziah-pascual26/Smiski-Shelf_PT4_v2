@@ -36,6 +36,9 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+const userRoutes = require('./routes/userRoutes');
+app.use('/api/user', userRoutes);
+
 // Middleware
 app.use(cors({
     origin: true, // Allow all origins for now

@@ -61,6 +61,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    // Redirect to user profile when clicking the username
+    userName.addEventListener("click", () => {
+        window.location.href = "/pages/userprofile/userprofile.html"; // Redirect to user profile page
+    });
+
     // Handle Logout
     logoutBtn.addEventListener("click", () => {
         alert("Logging out...");
@@ -85,9 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error("Logout Error:", err);
         });
         
-    
         // Redirect to the login page
         window.location.href = "/login"; // Correct the URL to match the backend route
     });
-    
 });
