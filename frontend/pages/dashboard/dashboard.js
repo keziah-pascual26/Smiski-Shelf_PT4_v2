@@ -1,7 +1,8 @@
 import { openStoryModal, closeModalButton } from '/pages/dashboard/functions/create-stories/story-modal.js';
 
 let currentStoryIndex = 0;
-
+let progressTimeout;
+let currentVideo = null;
 
 
 // Single DOMContentLoaded event listener to handle both normal and OAuth login
@@ -176,14 +177,15 @@ export async function loadStories() {
     }
 }
 
-// Add the viewStory function
-// Update the viewStory function
 function viewStory(story, storyArray) {
     const viewer = document.querySelector('.story-viewer');
     const container = viewer.querySelector('.story-container');
+    const progressBar = viewer.querySelector('.progress');
     
-    // Clear previous content
+    // Clear previous content and reset progress
     container.innerHTML = '';
+    if (progressBar) progressBar.style.width = '0%';
+    clearTimeout(progressTimeout);
     
     // Find current story index
     currentStoryIndex = storyArray.findIndex(s => s._id === story._id);
@@ -196,46 +198,75 @@ function viewStory(story, storyArray) {
             const img = document.createElement('img');
             img.src = `http://localhost:3000/uploads/${story.media[0]}`;
             container.appendChild(img);
+            
+            // Start 5-second timer for images
+            startProgress(5000, () => {
+                if (currentStoryIndex < storyArray.length - 1) {
+                    viewStory(storyArray[currentStoryIndex + 1], storyArray);
+                } else {
+                    viewer.classList.remove('active');
+                }
+            });
+            
         } else if (['mp4', 'webm'].includes(fileExtension)) {
             const video = document.createElement('video');
             video.src = `http://localhost:3000/uploads/${story.media[0]}`;
             video.controls = true;
             video.autoplay = true;
-         
+            
+            // Limit video duration to 15 seconds
+            video.onloadedmetadata = () => {
+                const duration = Math.min(video.duration * 1000, 15000);
+                startProgress(duration, () => {
+                    if (currentStoryIndex < storyArray.length - 1) {
+                        viewStory(storyArray[currentStoryIndex + 1], storyArray);
+                    } else {
+                        viewer.classList.remove('active');
+                    }
+                });
+            };
+            
+            currentVideo = video;
             container.appendChild(video);
         }
     }
 
-   // Add navigation buttons
-        const previousButton = viewer.querySelector('#previousButton');
-        const nextButton = viewer.querySelector('#nextButton');
+    // Add navigation buttons
+    const previousButton = viewer.querySelector('#previousButton');
+    const nextButton = viewer.querySelector('#nextButton');
 
-        // Show/hide next button
-        if (nextButton) {
-            nextButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
-            nextButton.onclick = () => {
-                if (currentStoryIndex > 0) {
-                    viewStory(storyArray[currentStoryIndex - 1], storyArray);
-                }
-            };
-        }
+    // Show/hide next button
+    if (nextButton) {
+        nextButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
+        nextButton.onclick = () => {
+            clearTimeout(progressTimeout);
+            if (currentVideo) currentVideo.pause();
+            if (currentStoryIndex > 0) {
+                viewStory(storyArray[currentStoryIndex - 1], storyArray);
+            }
+        };
+    }
 
-        // Show/hide previous button
-        if (previousButton) {
-            previousButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
-            previousButton.onclick = () => {
-                if (currentStoryIndex < storyArray.length - 1) {
-                    viewStory(storyArray[currentStoryIndex + 1], storyArray);
-                }
-            };
-        }
+    // Show/hide previous button
+    if (previousButton) {
+        previousButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
+        previousButton.onclick = () => {
+            clearTimeout(progressTimeout);
+            if (currentVideo) currentVideo.pause();
+            if (currentStoryIndex < storyArray.length - 1) {
+                viewStory(storyArray[currentStoryIndex + 1], storyArray);
+            }
+        };
+    }
 
-    // Add close button if not already present
+    // Add close button
     if (!viewer.querySelector('.close-button')) {
         const closeButton = document.createElement('button');
         closeButton.classList.add('close-button');
         closeButton.innerHTML = '×';
         closeButton.onclick = () => {
+            clearTimeout(progressTimeout);
+            if (currentVideo) currentVideo.pause();
             viewer.classList.remove('active');
         };
         viewer.appendChild(closeButton);
@@ -244,3 +275,22 @@ function viewStory(story, storyArray) {
     // Show the viewer
     viewer.classList.add('active');
 }
+
+function startProgress(duration, callback) {
+    const progressBar = document.querySelector('.progress');
+    if (!progressBar) return;
+
+    clearTimeout(progressTimeout);
+    progressBar.style.width = '0%';
+    progressBar.style.transition = 'none';
+
+    // Force a reflow
+    progressBar.offsetHeight;
+
+    progressBar.style.transition = `width ${duration}ms linear`;
+    progressBar.style.width = '100%';
+
+    progressTimeout = setTimeout(callback, duration);  
+}
+
+    
