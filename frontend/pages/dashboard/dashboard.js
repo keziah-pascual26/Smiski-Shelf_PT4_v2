@@ -1,48 +1,53 @@
 import { openStoryModal, closeModalButton } from '/pages/dashboard/functions/create-stories/story-modal.js';
 
-// Attach event listeners and load stories when page loads
+// Single DOMContentLoaded event listener to handle both normal and OAuth login
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('token');
-    if (!token) {
-        window.location.href = '/login.html';
-        return;
-    }
+    try {
+        // First handle OAuth callback if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenFromURL = urlParams.get('token');
+        const usernameFromURL = urlParams.get('username');
 
-    const createStoryButton = document.getElementById('createStoryButton');
-    const closeModalButtonElement = document.getElementById('closeModalButton');
-    const overlay = document.getElementById('overlay');
+        if (tokenFromURL && usernameFromURL) {
+            console.log('Processing OAuth callback...');
+            localStorage.setItem('token', tokenFromURL);
+            localStorage.setItem('username', usernameFromURL);
+            // Clean URL
+            window.history.replaceState({}, document.title, "/pages/dashboard/dashboard.html");
+        }
 
-    if (createStoryButton) {
-        createStoryButton.addEventListener('click', openStoryModal);
-    }
+        // Check authentication
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.log('No authentication token found, redirecting to login...');
+            window.location.replace('/pages/login/login.html');
+            return;
+        }
 
-    if (closeModalButtonElement) {
-        closeModalButtonElement.addEventListener('click', closeModalButton);
-    }
+        // Initialize UI elements
+        const createStoryButton = document.getElementById('createStoryButton');
+        const closeModalButtonElement = document.getElementById('closeModalButton');
+        const overlay = document.getElementById('overlay');
 
-    if (overlay) {
-        overlay.addEventListener('click', closeModalButton);
-    }
+        if (createStoryButton) {
+            createStoryButton.addEventListener('click', openStoryModal);
+        }
 
-    // Load stories when page loads
-    await loadStories();
-});
+        if (closeModalButtonElement) {
+            closeModalButtonElement.addEventListener('click', closeModalButton);
+        }
 
-// Handle OAuth callback
-document.addEventListener('DOMContentLoaded', async () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    const username = urlParams.get('username');
+        if (overlay) {
+            overlay.addEventListener('click', closeModalButton);
+        }
 
-    if (token && username) {
-        // Store token and username from Google OAuth
-        localStorage.setItem('token', token);
-        localStorage.setItem('username', username);
-        
-        // Clean URL and reload stories
-        window.history.replaceState({}, document.title, "/pages/dashboard/dashboard.html");
+        // Load stories
         await loadStories();
+
+    } catch (error) {
+        console.error('Dashboard initialization error:', error);
+        localStorage.clear(); // Clear any invalid tokens
+        window.location.replace('/pages/login/login.html');
     }
 });
 
