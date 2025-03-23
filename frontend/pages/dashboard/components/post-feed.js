@@ -108,6 +108,49 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function repostPost(postId) {
         try {
             const token = localStorage.getItem('token');
+            
+            // Get all posts to check if user already reposted this post
+            const checkResponse = await fetch(`http://localhost:3000/posts?username=${encodeURIComponent(loggedInUsername)}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!checkResponse.ok) {
+                throw new Error(`Failed to check posts: ${checkResponse.status}`);
+            }
+            
+            const posts = await checkResponse.json();
+            
+            // Check if user already reposted this post OR any post that has this post as its original
+            const alreadyReposted = posts.some(post => {
+                // Only check posts by the current user
+                if (post.username !== loggedInUsername) {
+                    return false;
+                }
+                
+                // Check if this is a repost of the target post
+                if (post.originalPostId && post.originalPostId.toString() === postId) {
+                    return true;
+                }
+                
+                // Also check if the target post is a repost and the current user has already reposted its original
+                const targetPost = posts.find(p => p._id.toString() === postId);
+                if (targetPost && targetPost.originalPostId) {
+                    return post.originalPostId && post.originalPostId.toString() === targetPost.originalPostId.toString();
+                }
+                
+                return false;
+            });
+            
+            if (alreadyReposted) {
+                alert("You have already reposted this content!");
+                return;
+            }
+            
+            // If not already reposted, proceed with repost
             const response = await fetch(`http://localhost:3000/posts/${postId}/repost`, {
                 method: 'POST',
                 headers: {
@@ -115,16 +158,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                     'Content-Type': 'application/json'
                 }
             });
-    
+        
             if (!response.ok) {
                 throw new Error(`Failed to repost post: ${response.status}`);
             }
-    
+        
             const data = await response.json();
             console.log(`✅ Post ${postId} reposted successfully:`, data.message);
             await retrievePosts(); // Refresh posts
         } catch (error) {
             console.error("🚨 Error reposting post:", error);
+            alert("Error reposting post: " + error.message);
         }
     }
 
@@ -239,6 +283,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <img src="/public/no-profile.png" alt="User Profile">
                 <span class="username">${post.username}</span>
                 <span class="timestamp">• ${formattedTimestamp}</span>
+                <span class="repost-info">${post.originalPostId ? `• Reposted from original post` : ""}</span>
             </div>
             <p>${post.text}</p>
             ${mediaContent}

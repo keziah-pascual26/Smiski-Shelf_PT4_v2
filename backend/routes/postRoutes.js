@@ -190,7 +190,7 @@ module.exports = (app) => {
     
             const repost = new Post({
                 username: req.user.username,
-                text: `Reposted: ${originalPost.text}`,
+                text: `${originalPost.text}`,
                 media: originalPost.media,
                 originalPostId: originalPost._id, // Reference to the original post
             });
