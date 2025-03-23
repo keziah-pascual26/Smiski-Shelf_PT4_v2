@@ -294,76 +294,203 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
     
-    // Helper function to create a post element
-    function createPostElement(post) {
-        const postElement = document.createElement('div');
-        postElement.className = 'post';
-        
-        // Format timestamp
-        const timestamp = formatTimestamp(post.createdAt);
-        
-        // Create media HTML if post has media
-        let mediaContent = '';
-        if (post.media && post.media.length > 0) {
-            mediaContent = `
-                <div class="post-media">
-                    ${post.media.map(file => {
-                        const fileExtension = file.split('.').pop().toLowerCase();
-                        if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
-                            return `
-                                <video controls>
-                                    <source src="/uploads/${file}" type="video/${fileExtension}">
-                                    Your browser does not support the video tag.
-                                </video>`;
-                        } else {
-                            return `<img src="/uploads/${file}" alt="Post Image">`;
-                        }
-                    }).join('')}
-                </div>
-            `;
-        }
-        
-        // Get current username from localStorage
-        const currentUsername = localStorage.getItem('username');
-        
-        // Check if current user has liked the post
-        const userLiked = (post.likes || []).some(like => like.username === currentUsername);
-        
-        postElement.innerHTML = `
-            <div class="post-header">
-                <img src="/public/no-profile.png" alt="User Profile">
-                <span class="username">${post.username}</span>
-                <span class="timestamp">• ${timestamp}</span>
-                ${post.originalPostId ? `• Reposted from original post` : ''}
-            </div>
-            <p>${post.text}</p>
-            ${mediaContent}
-            <div class="post-footer">
-                <button class="like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
-                    <i class="fa fa-heart"></i> ${post.likes?.length || 0}
-                </button>
-                <button class="comment-button" data-id="${post._id}">
-                    <i class="fa fa-comment"></i> ${post.comments?.length || 0}
-                </button>
-                <button class="delete-button" data-id="${post._id}">
-                    <i class="fa fa-trash"></i> Delete
-                </button>
-            </div>
-            <div class="comment-section" id="comment-section-${post._id}">
-                ${(post.comments || []).map(comment => `
-                    <div class="comment" data-comment-id="${comment._id}">
-                        <span class="comment-username">${comment.username}</span>: 
-                        <span class="comment-text">${comment.text}</span>
-                        ${comment.username === currentUsername ? `
-                            <button class="delete-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">
-                                <i class="fa fa-times"></i>
-                            </button>
-                        ` : ''}
-                    </div>
-                `).join('') || '<div>No comments yet</div>'}
-                <input type="text" class="comment-input" placeholder="Add a comment..." data-id="${post._id}">
+// Helper function to create a post element
+function createPostElement(post) {
+    const postElement = document.createElement('div');
+    postElement.className = 'post';
+    
+    // Format timestamp
+    const timestamp = formatTimestamp(post.createdAt);
+    
+    // Create media HTML if post has media
+    let mediaContent = '';
+    if (post.media && post.media.length > 0) {
+        mediaContent = `
+            <div class="post-media">
+                ${post.media.map(file => {
+                    const fileExtension = file.split('.').pop().toLowerCase();
+                    if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                        return `
+                            <video controls>
+                                <source src="/uploads/${file}" type="video/${fileExtension}">
+                                Your browser does not support the video tag.
+                            </video>`;
+                    } else {
+                        return `<img src="/uploads/${file}" alt="Post Image">`;
+                    }
+                }).join('')}
             </div>
         `;
+    }
+    
+    // Get current username from localStorage
+    const currentUsername = localStorage.getItem('username');
+    
+    // Check if current user has liked the post
+    const userLiked = (post.likes || []).some(like => like.username === currentUsername);
+    
+    postElement.innerHTML = `
+        <div class="post-header">
+            <img src="/public/no-profile.png" alt="User Profile">
+            <span class="username">${post.username}</span>
+            <span class="timestamp">• ${timestamp}</span>
+            ${post.originalPostId ? `• Reposted from original post` : ''}
+        </div>
+        <div class="post-content" id="post-content-${post._id}">
+            <p>${post.text}</p>
+            ${mediaContent}
+        </div>
+        <div class="post-edit-form" id="post-edit-form-${post._id}" style="display: none;">
+            <textarea id="edit-text-${post._id}" class="edit-post-textarea">${post.text}</textarea>
+            
+            ${post.media && post.media.length > 0 ? `
+                <div class="current-media-preview">
+                    <p>Current media:</p>
+                    <div class="media-preview-container">
+                        ${post.media.map(file => {
+                            const fileExtension = file.split('.').pop().toLowerCase();
+                            if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                                return `<div class="media-preview-item">
+                                    <video controls>
+                                        <source src="/uploads/${file}" type="video/${fileExtension}">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>`;
+                            } else {
+                                return `<div class="media-preview-item">
+                                    <img src="/uploads/${file}" alt="Post Image">
+                                </div>`;
+                            }
+                        }).join('')}
+                    </div>
+                    <p class="media-note">Uploading new media will replace the current media</p>
+                </div>
+            ` : ''}
+            
+            <div class="media-upload-container">
+                <label for="edit-media-${post._id}">Upload new media (optional):</label>
+                <input type="file" id="edit-media-${post._id}" class="edit-media-input" multiple accept="image/*,video/*">
+            </div>
+            
+            <div class="edit-actions">
+                <button class="save-edit-button" data-id="${post._id}">Save</button>
+                <button class="cancel-edit-button" data-id="${post._id}">Cancel</button>
+            </div>
+        </div>
+        <div class="post-footer">
+            <button class="like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
+                <i class="fa fa-heart"></i> ${post.likes?.length || 0}
+            </button>
+            <button class="comment-button" data-id="${post._id}">
+                <i class="fa fa-comment"></i> ${post.comments?.length || 0}
+            </button>
+            <button class="edit-button" data-id="${post._id}">
+                <i class="fa fa-edit"></i> Edit
+            </button>
+            <button class="delete-button" data-id="${post._id}">
+                <i class="fa fa-trash"></i> Delete
+            </button>
+        </div>
+        <div class="comment-section" id="comment-section-${post._id}">
+            ${(post.comments || []).map(comment => `
+                <div class="comment" data-comment-id="${comment._id}">
+                    <span class="comment-username">${comment.username}</span>: 
+                    <span class="comment-text">${comment.text}</span>
+                    ${comment.username === currentUsername ? `
+                        <button class="delete-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('') || '<div>No comments yet</div>'}
+            <input type="text" class="comment-input" placeholder="Add a comment..." data-id="${post._id}">
+        </div>
+    `;
+    
+    // Add some CSS for the edit form
+    const style = document.createElement('style');
+    style.textContent = `
+        .post-edit-form {
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .edit-post-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        
+        .media-upload-container {
+            margin: 10px 0;
+        }
+        
+        .edit-media-input {
+            margin-top: 5px;
+        }
+        
+        .edit-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .save-edit-button, .cancel-edit-button {
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .save-edit-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        
+        .cancel-edit-button {
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+        }
+        
+        .current-media-preview {
+            margin: 10px 0;
+        }
+        
+        .media-preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .media-preview-item {
+            width: 100px;
+            height: 100px;
+            overflow: hidden;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .media-preview-item img, .media-preview-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .media-note {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    `;
+    document.head.appendChild(style);
         
         // Add event listeners
         const likeButton = postElement.querySelector('.like-button');
@@ -379,6 +506,30 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (e.key === 'Enter') {
                     addComment(post._id, commentInput);
                 }
+            });
+        }
+        
+        // Edit button functionality
+        const editButton = postElement.querySelector('.edit-button');
+        if (editButton) {
+            editButton.addEventListener('click', () => {
+                toggleEditMode(post._id);
+            });
+        }
+        
+        // Save edit button functionality
+        const saveEditButton = postElement.querySelector('.save-edit-button');
+        if (saveEditButton) {
+            saveEditButton.addEventListener('click', () => {
+                savePostEdit(post._id);
+            });
+        }
+        
+        // Cancel edit button functionality
+        const cancelEditButton = postElement.querySelector('.cancel-edit-button');
+        if (cancelEditButton) {
+            cancelEditButton.addEventListener('click', () => {
+                toggleEditMode(post._id, false);
             });
         }
         
@@ -583,6 +734,90 @@ document.addEventListener('DOMContentLoaded', async function() {
             alert(`Failed to delete post: ${error.message}`);
         }
     }
+
+// Function to toggle edit mode for a post
+function toggleEditMode(postId, showEditForm = true) {
+    const contentElement = document.getElementById(`post-content-${postId}`);
+    const editFormElement = document.getElementById(`post-edit-form-${postId}`);
+    
+    // Check if elements exist before trying to modify them
+    if (!contentElement || !editFormElement) {
+        console.error(`Could not find post elements for post ID: ${postId}`);
+        return;
+    }
+    
+    if (showEditForm) {
+        contentElement.style.display = 'none';
+        editFormElement.style.display = 'block';
+    } else {
+        contentElement.style.display = 'block';
+        editFormElement.style.display = 'none';
+    }
+}
+
+// Function to save post edits
+async function savePostEdit(postId) {
+    const editTextarea = document.getElementById(`edit-text-${postId}`);
+    const mediaInput = document.getElementById(`edit-media-${postId}`);
+    const newText = editTextarea.value.trim();
+    
+    // Check if we have either text or media files
+    if (!newText && (!mediaInput.files || mediaInput.files.length === 0)) {
+        alert('Post content cannot be empty. Please add text or media.');
+        return;
+    }
+    
+    // Confirmation dialog
+    if (!confirm('Are you sure you want to save these changes?')) {
+        return;
+    }
+    
+    console.log('Saving post edit:', { postId, text: newText, mediaFiles: mediaInput.files });
+    
+    try {
+        const token = localStorage.getItem('token');
+        
+        // Use FormData to handle both text and files
+        const formData = new FormData();
+        formData.append('text', newText);
+        
+        // Add media files if selected
+        if (mediaInput.files && mediaInput.files.length > 0) {
+            for (let i = 0; i < mediaInput.files.length; i++) {
+                formData.append('media', mediaInput.files[i]);
+            }
+        }
+        
+        const response = await fetch(`http://localhost:3000/posts/${postId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`
+                // Don't set Content-Type when using FormData
+            },
+            body: formData
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to update post');
+        }
+        
+        console.log('Post updated successfully');
+        
+        // Reload posts to reflect changes
+        loadUserPosts();
+        
+        // Hide edit form
+        toggleEditMode(postId, false);
+        
+        // Show success message
+        alert('Post updated successfully');
+        
+    } catch (error) {
+        console.error('Error updating post:', error);
+        alert(`Failed to update post: ${error.message}`);
+    }
+}
     
     // Function to delete a comment
     async function deleteComment(postId, commentId) {

@@ -282,12 +282,13 @@ module.exports = (app) => {
     });
 
     // ✅ Update a Post
-    app.put('/posts/:id', authenticateToken, async (req, res) => {
+    app.put('/posts/:id', authenticateToken, upload.array('media', 5), async (req, res) => {
         try {
             console.log("🔍 Updating post...");
             console.log("Post ID:", req.params.id);
             console.log("Authenticated user:", req.user.username);
             console.log("Update data:", req.body);
+            console.log("Files:", req.files);
 
             if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
                 console.log("❌ Invalid Post ID");
@@ -295,10 +296,12 @@ module.exports = (app) => {
             }
 
             const { text } = req.body;
+            const mediaFilenames = req.files ? req.files.map(file => file.filename) : [];
             
-            if (!text) {
-                console.log("❌ Missing text field");
-                return res.status(400).json({ error: "Post text is required" });
+            // Allow updating either text or media or both
+            if (!text && mediaFilenames.length === 0) {
+                console.log("❌ Missing update data");
+                return res.status(400).json({ error: "Post must contain text or media to update" });
             }
 
             const post = await Post.findById(req.params.id);
@@ -314,11 +317,23 @@ module.exports = (app) => {
                 return res.status(403).json({ error: "You are not authorized to edit this post" });
             }
 
-            post.text = text;
+            // Update text if provided
+            if (text) {
+                post.text = text;
+            }
+            
+            // Update media if provided
+            if (mediaFilenames.length > 0) {
+                post.media = mediaFilenames;
+            }
+            
             await post.save();
             
             console.log("✅ Post updated successfully");
-            res.status(200).json({ message: "Post updated successfully", post });
+            res.status(200).json({ 
+                message: "Post updated successfully", 
+                post 
+            });
         } catch (error) {
             console.error("🚨 Error updating post:", error.message, error.stack);
             res.status(500).json({ error: "Failed to update post" });
