@@ -115,8 +115,8 @@ export async function loadStories() {
             return `${hours}h ${minutes}m remaining`;
         };
 
-        // Display stories with user's stories first
-        [...otherStories, ...userStories].forEach(story => {
+        // Display stories with user's stories last
+        [...otherStories,...userStories].forEach(story => {  // Changed order here
             const storyElement = document.createElement('div');
             storyElement.classList.add('story');
 
@@ -160,7 +160,7 @@ export async function loadStories() {
 
             // Add click event to view story
             storyElement.addEventListener('click', () => {
-                viewStory(story, [...userStories, ...otherStories]); // Pass the full array of stories
+                viewStory(story, [...otherStories,...userStories]); // Pass the full array of stories
             });
 
 
@@ -201,33 +201,34 @@ function viewStory(story, storyArray) {
             video.src = `http://localhost:3000/uploads/${story.media[0]}`;
             video.controls = true;
             video.autoplay = true;
+         
             container.appendChild(video);
         }
     }
 
-    // Add navigation buttons
-    const previousButton = viewer.querySelector('#previousButton');
-    const nextButton = viewer.querySelector('#nextButton');
+   // Add navigation buttons
+        const previousButton = viewer.querySelector('#previousButton');
+        const nextButton = viewer.querySelector('#nextButton');
 
-    // Show/hide previous button
-    if (previousButton) {
-        previousButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
-        previousButton.onclick = () => {
-            if (currentStoryIndex > 0) {
-                viewStory(storyArray[currentStoryIndex - 1], storyArray);
-            }
-        };
-    }
+        // Show/hide next button
+        if (nextButton) {
+            nextButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
+            nextButton.onclick = () => {
+                if (currentStoryIndex > 0) {
+                    viewStory(storyArray[currentStoryIndex - 1], storyArray);
+                }
+            };
+        }
 
-    // Show/hide next button
-    if (nextButton) {
-        nextButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
-        nextButton.onclick = () => {
-            if (currentStoryIndex < storyArray.length - 1) {
-                viewStory(storyArray[currentStoryIndex + 1], storyArray);
-            }
-        };
-    }
+        // Show/hide previous button
+        if (previousButton) {
+            previousButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
+            previousButton.onclick = () => {
+                if (currentStoryIndex < storyArray.length - 1) {
+                    viewStory(storyArray[currentStoryIndex + 1], storyArray);
+                }
+            };
+        }
 
     // Add close button if not already present
     if (!viewer.querySelector('.close-button')) {
