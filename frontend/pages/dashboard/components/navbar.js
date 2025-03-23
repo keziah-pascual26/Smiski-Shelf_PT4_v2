@@ -67,10 +67,16 @@ document.addEventListener("DOMContentLoaded", function () {
         window.location.href = "/pages/dashboard/dashboard.html";
     });
 
+
     // Add Settings navigation
     settingsBtn.addEventListener("click", () => {
         window.location.href = "/pages/settings/settings.html";
     });
+
+    userName.addEventListener("click", () => {
+        window.location.href = "/pages/profile/profile.html";
+    });
+
 
     // Handle Logout
     logoutBtn.addEventListener("click", () => {

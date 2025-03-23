@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/public/smiskilogo.png">
+    <title>My Profile - Smiski Shelf</title>
+    <link rel="stylesheet" href="/pages/dashboard/dashboard.css">
+    <link rel="stylesheet" href="/pages/dashboard/components/styles/post-feed.css">
+    <link rel="stylesheet" href="/pages/profile/profile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+    <!-- The navbar component will be added here dynamically -->
+    <script src="/pages/dashboard/components/navbar.js" defer></script>
+
+    <div class="profile-page-container">
+        <!-- User Profile Header -->
+        <div class="profile-header">
+            <div class="profile-header-content">
+                <div class="profile-picture-container">
+                    <img src="/public/no-profile.png" alt="Profile Picture" id="profilePicture" class="profile-picture">
+                    <button class="edit-profile-picture-btn" id="editProfilePictureBtn">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                </div>
+                <div class="profile-info">
+                    <h1 id="profileUsername">Username</h1>
+                    <p id="profileBio">Bio will appear here...</p>
+                    <div class="profile-stats">
+                        <div class="stat">
+                            <span id="postsCount">0</span> Posts
+                        </div>
+                        <div class="stat">
+                            <span id="friendsCount">0</span> Friends
+                        </div>
+                        <div class="stat">
+                            <span id="storiesCount">0</span> Stories
+                        </div>
+                    </div>
+                    <button class="edit-profile-btn" id="editProfileBtn">Edit Profile</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Tabs -->
+        <div class="profile-tabs">
+            <button class="tab-btn active" data-tab="posts">Posts</button>
+            <button class="tab-btn" data-tab="stories">Stories</button>
+            <button class="tab-btn" data-tab="liked">Liked</button>
+        </div>
+
+        <!-- Profile Content -->
+        <div class="profile-content">
+            <!-- Posts Tab Content (active by default) -->
+            <div class="tab-content active" id="posts-content">
+                <h2>My Posts</h2>
+                <div id="userPostsFeed" class="user-posts-feed">
+                    <div class="loading">Loading your posts...</div>
+                </div>
+            </div>
+
+            <!-- Stories Tab Content -->
+            <div class="tab-content" id="stories-content">
+                <h2>My Stories</h2>
+                <div id="userStoriesFeed" class="user-stories-feed">
+                    <div class="loading">Loading your stories...</div>
+                </div>
+            </div>
+
+            <!-- Liked Tab Content -->
+            <div class="tab-content" id="liked-content">
+                <h2>Posts You've Liked</h2>
+                <div id="userLikedFeed" class="user-liked-feed">
+                    <div class="loading">Loading liked posts...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer" id="footersection">
+        <div class="footer-column">
+            <h3>Smiski Series</h3>
+            <ul>
+                <li><a href="https://smiski.com/e/products/hippers-series/">Hippers</a></li>
+                <li><a href="https://smiski.com/e/products/moving-series/">Moving Series</a></li>
+                <li><a href="https://smiski.com/e/products/exercising-series/">Exercising Series</a></li>
+                <li><a href="https://smiski.com/e/products/dressing-series/">Dressing Series</a></li>
+                <li><a href="https://smiski.com/e/products/yoga-series/">Yoga Series</a></li>
+            </ul>
+        </div>
+        <div class="footer-column">
+            <h3>Learn</h3>
+            <ul>
+                <li><a href="#">Our Story</a></li>
+                <li><a href="#">Smiski Products</a></li>
+                <li><a href="#">Smiski Content</a></li>
+                <li><a href="#">Where to buy</a></li>
+                <li><a href="#">FAQs</a></li>
+            </ul>
+        </div>
+        <div class="footer-column">
+            <h3>More from Smiski</h3>
+            <ul>
+                <li><a href="#">Sign In</a></li>
+                <li><a href="#">Wholesale Opportunities</a></li>
+                <li><a href="#">Affiliate</a></li>
+                <li><a href="#">Contact Us</a></li>
+            </ul>
+        </div>
+        <div class="footer-column">
+            <h3>Follow us</h3>
+            <div class="social-icons">
+                <a href="https://www.youtube.com/channel/UCkKGZJ-oZ6PhxFVI_Ppm26g">Y</a>
+                <a href="https://www.facebook.com/smiski.japan">F</a>
+                <a href="https://www.instagram.com/smiski_usa/">I</a>
+                <a href="https://x.com/smiski_usa_">X</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 The Smiski Shelf</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/pages/profile/profile.js" defer></script>
+</body>
+</html>

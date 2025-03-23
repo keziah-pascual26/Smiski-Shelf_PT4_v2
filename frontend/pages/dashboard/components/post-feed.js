@@ -180,9 +180,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 postFeed.innerHTML = '<div class="error-message">Please log in to view posts.</div>';
                 return;
             }
-
-            console.log("🔄 Fetching posts with token:", token);
-            const response = await fetch(`http://localhost:3000/posts?username=${encodeURIComponent(loggedInUsername)}`, {
+    
+            console.log("🔄 Fetching posts for feed...");
+            const response = await fetch(`http://localhost:3000/feed`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -238,6 +238,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             const formattedTimestamp = formatTimestamp(post.createdAt);
 
+            // Use the post's username directly from the post object
+            const postUsername = post.username; // This is the username of the post creator
+
             let mediaContent = "";
             if (post.media && post.media.length > 0) {
                 mediaContent = `
@@ -281,7 +284,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             postElement.innerHTML = `
             <div class="post-header">
                 <img src="/public/no-profile.png" alt="User Profile">
-                <span class="username">${post.username}</span>
+                <span class="username">${postUsername}</span>
                 <span class="timestamp">• ${formattedTimestamp}</span>
                 <span class="repost-info">${post.originalPostId ? `• Reposted from original post` : ""}</span>
             </div>

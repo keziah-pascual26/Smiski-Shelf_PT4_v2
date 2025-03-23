@@ -17,41 +17,53 @@
 
 </head>
 <body>
-
+    
     <script src="./components/navbar.js" defer></script>
     
-    <div  id="postContainer">
-        <script src="./components/post-create.js" defer></script>
-    </div>
-
-    <script src="./components/post-feed.js" defer></script> 
-
-    <!-- Smiski Stories Section -->
-    <div class="smiskistories-section">
-        <div class="stories-container" id="storiesContainer">
-            <div class="story add-story" id="createStoryButton">
-                +
+    <!-- Dashboard Layout - 3 Column Structure -->
+    <div class="dashboard-layout">
+        <!-- Left Column: Profile Section -->
+        <div class="profile-section" id="profileSection">
+            <!-- This will be populated by profileSection.js -->
+        </div>
+        
+        <!-- Center Content Column -->
+        <div class="center-content">
+            <!-- Post Creation Component -->
+            <div id="postContainer">
+                <script src="./components/post-create.js" defer></script>
             </div>
-            <!-- Stories will be dynamically loaded here -->
+
+        <div class="smiskistories-section">
+            <div class="stories-container" id="storiesContainer">
+                <div class="story add-story" id="createStoryButton">
+                    <div class="add-story-icon">+</div>
+                </div>
+                <!-- Other story items will be added here -->
+            </div>
+        </div>
+
+            <!-- Post Feed -->
+            <div id="postFeed"></div>
+            <script src="./components/post-feed.js" defer></script>
+        </div>
+        
+        <!-- Right Column: People You May Know -->
+        <div class="right-sidebar">
+            <!-- Explore Section for Suggested Users -->
+            <div class="explore-section" id="exploreSection">
+                <!-- This will be populated by exploreSection.js -->
+            </div>
+            
+            <!-- Friends & Messages Section -->
+            <div class="friends-section" id="friendsSection">
+                <!-- This will be populated by friendsSection.js -->
+            </div>
         </div>
     </div>
 
-
-
-    <!-- Add this after your stories container -->
-<div class="story-viewer" id="storyViewer">
-    <div class="story-viewer-content">
-        <span class="close-viewer">&times;</span>
-        <div class="story-media"></div>
-        <div class="story-details">
-            <h3 class="story-title"></h3>
-            <p class="story-description"></p>
-        </div>
-    </div>
-</div>
-
+    <!-- User Posts Section - Kept at the bottom -->
     <div class="user-posts-wrapper">
-        <!-- User Posts Container -->
         <div class="user-posts-container">
             <h2 id="smiskimoments">Share Your Smiski Moments</h2>
             
@@ -64,18 +76,15 @@
             <div id="userPosts"></div>
         </div>
     
-
-    
-            <!-- Chat Panel (Initially Hidden) -->
-            <div id="chatPanel" class="chat-panel" style="display: none;">
-                <div class="chat-header">
-                    <span id="chatUserName">Chat</span>
-                    <button onclick="closeChat()">X</button>
-                </div>
-                <div class="chat-messages" id="chatMessages"></div>
-                <input type="text" id="chatInput" placeholder="Type a message...">
-                <button class="send-button" onclick="sendMessage()">Send</button>
+        <!-- Chat Panel (Initially Hidden) -->
+        <div id="chatPanel" class="chat-panel" style="display: none;">
+            <div class="chat-header">
+                <span id="chatUserName">Chat</span>
+                <button onclick="closeChat()">X</button>
             </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <input type="text" id="chatInput" placeholder="Type a message...">
+            <button class="send-button" onclick="sendMessage()">Send</button>
         </div>
     </div>
 
@@ -190,5 +199,11 @@
             <p>&copy; 2025 The Smiski Shelf</p>
         </div>
     </footer>
+
+    <!-- Add new component scripts -->
+    <script src="./components/profileSection.js" defer></script>
+    <script src="./components/exploreSection.js" defer></script>
+    <script src="./components/friendsSection.js" defer></script>
+    <script src="./components/messageService.js" defer></script>
 </body>
 </html>

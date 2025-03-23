@@ -32,6 +32,22 @@ module.exports = (app) => {
         }
     });
 
+    app.get('/feed', authenticateToken, async (req, res) => {
+        try {
+            // Fetch posts from all users, sorted by newest first
+            const posts = await Post.find({}).sort({ createdAt: -1 }).limit(20).lean();
+            
+            console.log(`✅ Found ${posts.length} posts for feed`);
+            res.status(200).json(posts);
+        } catch (error) {
+            console.error("🚨 Error fetching feed:", error);
+            res.status(500).json({
+                error: "Failed to fetch feed",
+                details: error.message
+            });
+        }
+    });
+
     // ✅ Get All Posts
     app.get('/posts', authenticateToken, async (req, res) => {
         try {
@@ -51,6 +67,31 @@ module.exports = (app) => {
                 error: "Failed to fetch posts",
                 details: error.message
             });
+        }
+    });
+
+    // Get current user's posts
+    app.get('/posts/user', authenticateToken, async (req, res) => {
+        try {
+            const posts = await Post.find({ userId: req.user._id })
+                .sort({ createdAt: -1 });
+                
+            res.json(posts);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Get posts liked by current user
+    app.get('/posts/liked', authenticateToken, async (req, res) => {
+        try {
+            const posts = await Post.find({ 
+                'likes.userId': req.user._id 
+            }).sort({ createdAt: -1 });
+                
+            res.json(posts);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
         }
     });
 

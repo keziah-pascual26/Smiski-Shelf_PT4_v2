@@ -22,6 +22,8 @@ require('dotenv').config();
 const User = require('./models/userModel');
 const Story = require('./models/storyModel');
 const Post = require('./models/postModel'); // ✅ Import Post Model
+const Friend = require('./models/friendModel'); // Add Friend model
+const Message = require('./models/messageModel'); // Add Message model
 const { registerUser, loginUser } = require('./auth/auth');
 const authenticateToken = require('./middleware/authMiddleware');
 
@@ -82,6 +84,8 @@ app.get('/api/direct-test', (req, res) => {
 app.use('/', authRoutes);
 app.use('/api', require('./routes/storyRoutes'));
 app.use('/api', require('./routes/userRoutes'));
+app.use('/api', require('./routes/friendRoutes')); // Add friend routes
+app.use('/api', require('./routes/messageRoutes')); // Add message routes
 
 // Import and use routes - IMPORTANT: Only use one method for post routes
 require('./routes/postRoutes')(app);
