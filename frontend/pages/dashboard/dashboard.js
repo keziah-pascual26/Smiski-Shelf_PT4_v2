@@ -1,5 +1,9 @@
 import { openStoryModal, closeModalButton } from '/pages/dashboard/functions/create-stories/story-modal.js';
 
+let currentStoryIndex = 0;
+
+
+
 // Single DOMContentLoaded event listener to handle both normal and OAuth login
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -156,7 +160,7 @@ export async function loadStories() {
 
             // Add click event to view story
             storyElement.addEventListener('click', () => {
-                viewStory(story);
+                viewStory(story, [...userStories, ...otherStories]); // Pass the full array of stories
             });
 
 
@@ -173,42 +177,69 @@ export async function loadStories() {
 }
 
 // Add the viewStory function
-function viewStory(story) {
-    const viewer = document.getElementById('storyViewer');
-    const mediaContainer = viewer.querySelector('.story-media');
-    const titleElement = viewer.querySelector('.story-title');
-    const descriptionElement = viewer.querySelector('.story-description');
-
+// Update the viewStory function
+function viewStory(story, storyArray) {
+    const viewer = document.querySelector('.story-viewer');
+    const container = viewer.querySelector('.story-container');
+    
     // Clear previous content
-    mediaContainer.innerHTML = '';
-
+    container.innerHTML = '';
+    
+    // Find current story index
+    currentStoryIndex = storyArray.findIndex(s => s._id === story._id);
+    
     // Create media element based on file type
     if (story.media && story.media.length > 0) {
-        const mediaUrl = `http://localhost:3000/uploads/${story.media[0]}`;
         const fileExtension = story.media[0].split('.').pop().toLowerCase();
         
         if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
             const img = document.createElement('img');
-            img.src = mediaUrl;
-            mediaContainer.appendChild(img);
+            img.src = `http://localhost:3000/uploads/${story.media[0]}`;
+            container.appendChild(img);
         } else if (['mp4', 'webm'].includes(fileExtension)) {
             const video = document.createElement('video');
-            video.src = mediaUrl;
+            video.src = `http://localhost:3000/uploads/${story.media[0]}`;
             video.controls = true;
-            mediaContainer.appendChild(video);
+            video.autoplay = true;
+            container.appendChild(video);
         }
     }
 
-    // Set story details
-    titleElement.textContent = story.title;
-    descriptionElement.textContent = story.description;
+    // Add navigation buttons
+    const previousButton = viewer.querySelector('#previousButton');
+    const nextButton = viewer.querySelector('#nextButton');
+
+    // Show/hide previous button
+    if (previousButton) {
+        previousButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
+        previousButton.onclick = () => {
+            if (currentStoryIndex > 0) {
+                viewStory(storyArray[currentStoryIndex - 1], storyArray);
+            }
+        };
+    }
+
+    // Show/hide next button
+    if (nextButton) {
+        nextButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
+        nextButton.onclick = () => {
+            if (currentStoryIndex < storyArray.length - 1) {
+                viewStory(storyArray[currentStoryIndex + 1], storyArray);
+            }
+        };
+    }
+
+    // Add close button if not already present
+    if (!viewer.querySelector('.close-button')) {
+        const closeButton = document.createElement('button');
+        closeButton.classList.add('close-button');
+        closeButton.innerHTML = '×';
+        closeButton.onclick = () => {
+            viewer.classList.remove('active');
+        };
+        viewer.appendChild(closeButton);
+    }
 
     // Show the viewer
-    viewer.style.display = 'flex';
-
-    // Add close functionality
-    const closeBtn = viewer.querySelector('.close-viewer');
-    closeBtn.onclick = () => {
-        viewer.style.display = 'none';
-    };
+    viewer.classList.add('active');
 }
