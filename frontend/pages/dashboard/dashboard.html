@@ -32,10 +32,23 @@
             <div class="story add-story" id="createStoryButton">
                 +
             </div>
+            <!-- Stories will be dynamically loaded here -->
         </div>
     </div>
 
-    <div id="postFeed"></div> <!-- This is where posts will be displayed -->
+
+
+    <!-- Add this after your stories container -->
+<div class="story-viewer" id="storyViewer">
+    <div class="story-viewer-content">
+        <span class="close-viewer">&times;</span>
+        <div class="story-media"></div>
+        <div class="story-details">
+            <h3 class="story-title"></h3>
+            <p class="story-description"></p>
+        </div>
+    </div>
+</div>
 
     <div class="user-posts-wrapper">
         <!-- User Posts Container -->
@@ -177,3 +190,5 @@
             <p>&copy; 2025 The Smiski Shelf</p>
         </div>
     </footer>
+</body>
+</html>

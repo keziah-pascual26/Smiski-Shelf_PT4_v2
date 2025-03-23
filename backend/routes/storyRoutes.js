@@ -7,16 +7,29 @@ const authenticateToken = require('../middleware/authMiddleware');
 // Create a new story with image upload
 router.post('/stories', authenticateToken, upload.single('image'), async (req, res) => {
     try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'Image file is required' });
+        }
+
         const { title, description } = req.body;
+        
+        if (!title || !description) {
+            return res.status(400).json({ error: 'Title and description are required' });
+        }
+
+        // Create new story with user information from auth token
         const story = new Story({
-            userId: req.user._id,
+            userId: req.user.id, // Changed from _id to id to match the token payload
+            username: req.user.username,
             title,
             description,
-            media: req.file ? [req.file.filename] : []
+            media: [req.file.filename]
         });
+
         await story.save();
         res.status(201).json(story);
     } catch (error) {
+        console.error('Error creating story:', error);
         res.status(400).json({ error: error.message });
     }
 });

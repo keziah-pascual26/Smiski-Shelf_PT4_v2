@@ -1,4 +1,5 @@
 import { initializeMediaPreview } from './media-preview.js';
+import { loadStories } from '../../dashboard.js';
 
 // Add overlay HTML and CSS setup
 const overlayHTML = `<div id="overlay" class="overlay"></div>`;
@@ -199,17 +200,17 @@ async function addStories() {
         return;
     }
 
-    const formData = new FormData();
-    formData.append('title', storyTitle);
-    formData.append('description', storyDescription);
-    formData.append('image', files[0]);
-
     try {
         const token = localStorage.getItem('token');
         if (!token) {
             alert('Please log in to post a story.');
             return;
         }
+
+        const formData = new FormData();
+        formData.append('title', storyTitle);
+        formData.append('description', storyDescription);
+        formData.append('image', files[0]);
 
         const response = await fetch('http://localhost:3000/api/stories', {
             method: 'POST',
@@ -220,7 +221,8 @@ async function addStories() {
         });
 
         if (!response.ok) {
-            throw new Error('Failed to post story');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to post story');
         }
 
         const result = await response.json();
@@ -231,6 +233,9 @@ async function addStories() {
         storyDescriptionInput.value = '';
         mediaInput.value = '';
         closeModalButton();
+
+        // Refresh stories list
+        await loadStories();
 
     } catch (error) {
         console.error('🚨 Error posting story:', error);
