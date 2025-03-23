@@ -1,16 +1,96 @@
 body {
     font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(to bottom right, #f5efd4, #d4e157);
+    position: relative;
+    overflow: hidden;
+}
+
+.reset-container {
     text-align: center;
-    margin: 50px;
+    background-color: transparent;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 350px;
+    border: 7px solid #6dbf49; /* Green border */
 }
 
-form {
-    display: inline-block;
-    text-align: left;
+.reset-image {
+    width: 100px;
+    height: auto;
+    margin-bottom: 1rem;
 }
 
-input, button {
-    display: block;
-    margin: 10px 0;
-    padding: 10px;
+.reset-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    color: #333333;
+}
+
+.reset-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid #666666;
+    padding: 0.5rem 0;
+}
+
+.input-group .icon {
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+    color: #333333;
+}
+
+.input-group input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 1rem;
+    background: none;
+}
+
+.reset-btn {
+    background-color: #ffc107;
+    color: #ffffff;
+    border: none;
+    padding: 0.8rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.reset-btn:hover {
+    background-color: #e0a800;
+}
+
+.back-btn {
+    background-color: #6dbf49; /* Green background */
+    color: #ffffff; /* White text */
+    border: none;
+    padding: 0.8rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 1rem; /* Add spacing above */
+    width: 100%; /* Full width button */
+    transition: background-color 0.3s;
+}
+
+.back-btn:hover {
+    background-color: #5aa43d; /* Darker green on hover */
 }
