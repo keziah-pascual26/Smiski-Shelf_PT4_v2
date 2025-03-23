@@ -9,20 +9,14 @@ storyModalCSS.rel = 'stylesheet';
 storyModalCSS.href = '/pages/dashboard/functions/create-stories/story-modal.css';
 document.head.appendChild(storyModalCSS);
 
-// Add a small security settings button to the modal header
+
+
 const storyModalHTML = `
     <!-- Create Story Modal -->
     <div id="createStoryModal" class="create-story-modal">
         <div id="modal-content" class="modal-content">
-            <div class="modal-header">
-                <h2>Create Your Smiski Story</h2>
-                <div class="modal-actions">
-                    <a href="/pages/settings/settings.html" class="security-link" title="Security Settings">
-                        <span class="security-icon">🔒</span>
-                    </a>
-                    <button class="close-modal-button" id="closeModalButton">✖</button>
-                </div>
-            </div>
+            <button class="close-modal-button" id="closeModalButton">✖</button>
+            <h2>Create Your Smiski Story</h2>
             <div class="input-section">
                 <input type="text" id="storyTitle" placeholder="Enter story title">
                 <div class="story-input-container">
@@ -264,6 +258,9 @@ async function fetchStories() {
         return [];
     }
 }
+
+
+
 
 document.body.insertAdjacentHTML('beforeend', storyModalHTML);
 
