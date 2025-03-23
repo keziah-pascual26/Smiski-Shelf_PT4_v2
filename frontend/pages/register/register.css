@@ -1,29 +1,108 @@
 body {
     font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(to bottom right, #f5efd4, #d4e157);
+    position: relative;
+    overflow: hidden;
+}
+
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('img/smiski-register.png') no-repeat center center;
+    background-size: cover;
+    z-index: 0;
+}
+
+.register-container {
+    position: relative;
+    z-index: 1;
     text-align: center;
-    margin-top: 50px;
+    background-color: transparent;
+    padding: 2rem;
+    border-radius: 10px;
+    width: 350px;
 }
 
-input {
-    display: block;
-    margin: 10px auto;
-    padding: 10px;
-    width: 200px;
+.register-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
+    color: #333333;
 }
 
-button {
-    padding: 10px 20px;
-    background-color: blue;
-    color: white;
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid #666666;
+    padding: 0.5rem 0;
+}
+
+.input-group .icon {
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+    color: #333333;
+}
+
+.input-group input {
     border: none;
+    outline: none;
+    flex: 1;
+    font-size: 1rem;
+    background: none;
+}
+
+.form-links {
+    font-size: 0.9rem;
+    color: #007bff;
+    margin-bottom: 1rem;
+}
+
+.register-btn {
+    background-color: #ffc107;
+    color: #ffffff;
+    border: none;
+    padding: 0.8rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: bold;
     cursor: pointer;
-    margin-top: 10px;
+    transition: background-color 0.3s;
 }
 
-button:hover {
-    background-color: darkblue;
+.register-btn:hover {
+    background-color: #e0a800;
 }
 
-p {
-    color: red;
+.login-btn {
+    background-color: #007bff; /* Blue background */
+    color: #ffffff; /* White text */
+    border: none;
+    padding: 0.8rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 1rem; /* Add spacing above */
+    width: 100%; /* Full width button */
+    transition: background-color 0.3s;
+}
+
+.login-btn:hover {
+    background-color: #0056b3; /* Darker blue on hover */
 }
