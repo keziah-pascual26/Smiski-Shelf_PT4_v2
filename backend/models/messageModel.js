@@ -29,4 +29,5 @@ const messageSchema = new mongoose.Schema({
 messageSchema.index({ senderId: 1, recipientId: 1, createdAt: -1 });
 messageSchema.index({ recipientId: 1, read: 1 });
 
-module.exports = mongoose.model('Message', messageSchema);
+// Use this pattern to prevent duplicate model compilation:
+module.exports = mongoose.models.Message || mongoose.model('Message', messageSchema)
