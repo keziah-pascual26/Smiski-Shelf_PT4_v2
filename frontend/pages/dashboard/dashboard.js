@@ -61,7 +61,7 @@ export async function loadStories() {
             return;
         }
 
-        const response = await fetch('http://localhost:3000/api/stories/mystories', {
+        const response = await fetch('http://localhost:3000/api/stories/all', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -90,7 +90,6 @@ export async function loadStories() {
         storiesContainer.appendChild(createStoryButton);
 
         if (stories.length === 0) {
-            // Show message when user has no stories
             const noStoriesMsg = document.createElement('div');
             noStoriesMsg.classList.add('no-stories-message');
             noStoriesMsg.textContent = 'No stories yet. Create your first story!';
@@ -98,8 +97,22 @@ export async function loadStories() {
             return;
         }
 
-        // Display user's stories
-        stories.forEach(story => {
+        // Separate user's stories and other stories
+        const userStories = stories.filter(story => story.username === currentUsername);
+        const otherStories = stories.filter(story => story.username !== currentUsername);
+
+        // Function to calculate time remaining
+        const getTimeRemaining = (expiresAt) => {
+            const now = new Date();
+            const expiry = new Date(expiresAt);
+            const diff = expiry - now;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            return `${hours}h ${minutes}m remaining`;
+        };
+
+        // Display stories with user's stories first
+        [...otherStories, ...userStories].forEach(story => {
             const storyElement = document.createElement('div');
             storyElement.classList.add('story');
             
@@ -112,9 +125,11 @@ export async function loadStories() {
 
             const storyInfo = document.createElement('div');
             storyInfo.classList.add('story-info');
+            const isCurrentUser = story.username === currentUsername;
             storyInfo.innerHTML = `
-                <span class="story-title">${story.title}</span>
-                <span class="story-description">${story.description}</span>
+                <span class="story-title">${isCurrentUser ? 'Your Story' : story.title}</span>
+                <span class="story-username">${isCurrentUser ? '' : `by ${story.username}`}</span>
+                <span class="story-time">${getTimeRemaining(story.expiresAt)}</span>
             `;
             storyElement.appendChild(storyInfo);
 

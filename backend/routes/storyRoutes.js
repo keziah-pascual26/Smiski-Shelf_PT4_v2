@@ -4,15 +4,14 @@ const Story = require('../models/storyModel');
 const upload = require('../config/multer');
 const authenticateToken = require('../middleware/authMiddleware');
 
-// Get stories for logged in user only
-router.get('/stories/mystories', authenticateToken, async (req, res) => {
+// Get all active stories
+router.get('/stories/all', authenticateToken, async (req, res) => {
     try {
-        // Find stories only for the logged-in user using userId
-        const stories = await Story.find({ 
-            userId: req.user.id  // Filter by current user's ID
+        // Find all non-expired stories
+        const stories = await Story.find({
+            expiresAt: { $gt: new Date() } // Only get stories that haven't expired
         }).sort({ createdAt: -1 });
         
-        console.log(`Found ${stories.length} stories for user ${req.user.username}`);
         res.json(stories);
     } catch (error) {
         console.error('Error fetching stories:', error);
