@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 </div>
             </div>
             <div class="main-nav">
-                <i class="fas fa-home icon"></i>
+                <i class="fas fa-home icon" id="dashboard"></i>
                 <i class="fas fa-video icon"></i>
                 <i class="fas fa-smile icon"></i>
             </div>
@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div class="profile-pic" id="profile-pic"></div>
                 <div class="dropdown-menu" id="dropdown-menu">
                     <div class="dropdown-item" id="user-name">👤 Username</div>
+                    <div class="dropdown-item" id="settings-btn">⚙️ Settings</div>
                     <div class="dropdown-item logout" id="logout-btn">🚪 Logout</div>
                 </div>
             </div>
@@ -40,6 +41,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const dropdownMenu = document.getElementById("dropdown-menu");
     const logoutBtn = document.getElementById("logout-btn");
     const userName = document.getElementById("user-name");
+    const settingsBtn = document.getElementById("settings-btn"); 
 
     // 🔹 Get username from localStorage (set during login)
     const username = localStorage.getItem("username");
@@ -59,6 +61,15 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!profilePic.contains(event.target) && !dropdownMenu.contains(event.target)) {
             dropdownMenu.classList.remove("open");
         }
+    });
+
+    dashboard.addEventListener("click", () => {
+        window.location.href = "/pages/dashboard/dashboard.html";
+    });
+
+    // Add Settings navigation
+    settingsBtn.addEventListener("click", () => {
+        window.location.href = "/pages/settings/settings.html";
     });
 
     // Handle Logout

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings - Smiski Shelf</title>
+    <link rel="stylesheet" href="settings.css">
+    <link rel="stylesheet" href="/pages/dashboard/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+    <!-- The navbar component will be added here dynamically -->
+    <script src="/pages/dashboard/components/navbar.js" defer></script>
+
+    <main class="container" style="margin-top: 70px;">
+        <h1>Account Settings</h1>
+        
+        <div class="settings-section">
+            <h2>Security</h2>
+            
+            <div class="card">
+                <h3>Two-Factor Authentication</h3>
+                <p>Add an extra layer of security to your account by enabling two-factor authentication.</p>
+                
+                <div id="twoFactorStatus">
+                    <div class="loading">Loading status...</div>
+                </div>
+                
+                <div id="twoFactorSetup" style="display: none;">
+                    <p>Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):</p>
+                    <div id="qrCodeContainer"></div>
+                    
+                    <div class="form-group">
+                        <label for="verificationCode">Enter the verification code from your app:</label>
+                        <input type="text" id="verificationCode" placeholder="6-digit code">
+                        <button id="verifyBtn" class="btn-primary">Verify and Enable</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="settings.js"></script>
+</body>
+</html>

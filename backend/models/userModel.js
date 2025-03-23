@@ -8,7 +8,10 @@ const userSchema = new mongoose.Schema({
     }},
     googleId: { type: String },
     resetToken: { type: String, default: null },
-    resetTokenExpiry: { type: Date, default: null }
+    resetTokenExpiry: { type: Date, default: null },
+    // Add 2FA fields
+    twoFactorSecret: { type: String, default: null },
+    twoFactorEnabled: { type: Boolean, default: false }
 });
 
 module.exports = mongoose.model("User", userSchema);

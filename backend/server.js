@@ -11,6 +11,9 @@ const nodemailer = require("nodemailer");
 const passport = require('passport');
 const session = require('express-session');
 const authRoutes = require('./routes/authRoutes');
+// Add speakeasy and qrcode
+const speakeasy = require('speakeasy');
+const qrcode = require('qrcode');
 require('./config/passportSetup');
 require('dotenv').config();
 
@@ -46,13 +49,13 @@ app.use(cors({
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Session setup
+// Session setup - make sure to have this before routes
 app.use(session({
     secret: process.env.SESSION_SECRET || 'your_session_secret',
     resave: false,
     saveUninitialized: true,
     cookie: {
-        secure: false,
+        secure: false, // Set to true in production with HTTPS
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
