@@ -66,32 +66,52 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/pages', express.static(path.join(__dirname, '../frontend/pages')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Add test routes for debugging
+app.get('/test', (req, res) => {
+  res.json({ message: 'Server is working' });
+});
+
+app.get('/api/direct-test', (req, res) => {
+  res.json({ message: 'Direct API test is working' });
+});
+
 // Use routes
 app.use('/', authRoutes);
 app.use('/api', require('./routes/storyRoutes'));
 app.use('/api', require('./routes/userRoutes'));
-// Import and use routes
-require('./routes/postRoutes')(app);
 
-app.use('/api', postRoutes);
+// Import and use routes - IMPORTANT: Only use one method for post routes
+require('./routes/postRoutes')(app);
+// Remove this duplicate route registration
+// app.use('/api', postRoutes);
 
 // Root route handler - serve login page
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/pages/login/login.html'));
 });
 
-// Catch-all route for SPA navigation
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/pages/login/login.html'));
+// Specific route for the new password page - ADD THIS BEFORE THE CATCH-ALL
+app.get('/new-password/new-pass.html', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/new-password/new-pass.html'));
 });
 
+// Add this route to serve the new-pass.js file
+app.get('/new-password/new-pass.js', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/new-password/new-pass.js'));
+});
 
+// Add this route to serve the CSS file if needed
+app.get('/new-password/new-pass.css', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/new-password/new-pass.css'));
+});
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/smiskiDB')
     .then(() => console.log("✅ Connected to MongoDB"))
     .catch(err => console.error("🚨 MongoDB Connection Error:", err));
 
+
+    
 // Reset Password Route
 app.post("/reset-password", async (req, res) => {
     try {
@@ -142,20 +162,39 @@ app.post("/reset-password", async (req, res) => {
 
 
 // Handle password update
+// Handle password update
 app.post("/reset-password/new", async (req, res) => {
-    const { token, newPassword } = req.body;
-    const user = await User.findOne({ resetToken: token, resetTokenExpiry: { $gt: Date.now() } });
+    try {
+        const { token, newPassword } = req.body;
+        
+        if (!token || !newPassword) {
+            return res.status(400).json({ message: "Token and new password are required" });
+        }
+        
+        console.log("Received token:", token);
+        
+        const user = await User.findOne({ 
+            resetToken: token, 
+            resetTokenExpiry: { $gt: Date.now() } 
+        });
 
-    if (!user) return res.status(400).json({ message: "Invalid or expired token." });
+        if (!user) {
+            console.log("Invalid token or token expired");
+            return res.status(400).json({ message: "Invalid or expired token." });
+        }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = await bcrypt.hash(newPassword, 10); // ✅ Hash the new password
-    user.resetToken = undefined; // Remove the reset token
-    user.resetTokenExpiry = undefined; // Remove expiry
-    await user.save();
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        user.resetToken = undefined;
+        user.resetTokenExpiry = undefined;
+        await user.save();
 
-
-    res.json({ message: "Password updated successfully." });
+        console.log("Password updated successfully for user:", user.email);
+        res.json({ message: "Password updated successfully." });
+    } catch (error) {
+        console.error("Error in reset-password/new:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
 });
 
 app.post("/api/reset-password", async (req, res) => {
@@ -182,9 +221,12 @@ app.post("/api/reset-password", async (req, res) => {
     }
 });
 
+// Catch-all route for SPA navigation - MOVED TO THE END so it doesn't intercept API routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/pages/login/login.html'));
+});
+
 // Start Server
 app.listen(port, () => {
     console.log(`🚀 Server running at http://localhost:${port}`);
 });
-
-
