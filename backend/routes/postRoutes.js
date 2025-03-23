@@ -245,4 +245,83 @@ module.exports = (app) => {
             res.status(500).json({ error: "Failed to repost post" });
         }
     });
+
+    // ✅ Delete a Post
+    app.delete('/posts/:id', authenticateToken, async (req, res) => {
+        try {
+            console.log("🔍 Deleting post...");
+            console.log("Post ID:", req.params.id);
+            console.log("Authenticated user:", req.user.username);
+
+            if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+                console.log("❌ Invalid Post ID");
+                return res.status(400).json({ error: "Invalid Post ID" });
+            }
+
+            const post = await Post.findById(req.params.id);
+            
+            if (!post) {
+                console.log("❌ Post not found");
+                return res.status(404).json({ error: "Post not found" });
+            }
+
+            // Ensure the logged-in user is the owner of the post
+            if (post.username !== req.user.username) {
+                console.log("❌ Unauthorized user");
+                return res.status(403).json({ error: "You are not authorized to delete this post" });
+            }
+
+            await Post.findByIdAndDelete(req.params.id);
+            
+            console.log("✅ Post deleted successfully");
+            res.status(200).json({ message: "Post deleted successfully" });
+        } catch (error) {
+            console.error("🚨 Error deleting post:", error.message, error.stack);
+            res.status(500).json({ error: "Failed to delete post" });
+        }
+    });
+
+    // ✅ Update a Post
+    app.put('/posts/:id', authenticateToken, async (req, res) => {
+        try {
+            console.log("🔍 Updating post...");
+            console.log("Post ID:", req.params.id);
+            console.log("Authenticated user:", req.user.username);
+            console.log("Update data:", req.body);
+
+            if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+                console.log("❌ Invalid Post ID");
+                return res.status(400).json({ error: "Invalid Post ID" });
+            }
+
+            const { text } = req.body;
+            
+            if (!text) {
+                console.log("❌ Missing text field");
+                return res.status(400).json({ error: "Post text is required" });
+            }
+
+            const post = await Post.findById(req.params.id);
+            
+            if (!post) {
+                console.log("❌ Post not found");
+                return res.status(404).json({ error: "Post not found" });
+            }
+
+            // Ensure the logged-in user is the owner of the post
+            if (post.username !== req.user.username) {
+                console.log("❌ Unauthorized user");
+                return res.status(403).json({ error: "You are not authorized to edit this post" });
+            }
+
+            post.text = text;
+            await post.save();
+            
+            console.log("✅ Post updated successfully");
+            res.status(200).json({ message: "Post updated successfully", post });
+        } catch (error) {
+            console.error("🚨 Error updating post:", error.message, error.stack);
+            res.status(500).json({ error: "Failed to update post" });
+        }
+    });
 };

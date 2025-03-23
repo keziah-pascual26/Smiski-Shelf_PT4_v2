@@ -542,6 +542,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Function to delete a post
     async function deletePost(postId) {
         try {
+            // Get token inside the function to ensure it's available
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                alert('You need to be logged in to delete posts');
+                return;
+            }
+            
+            console.log('Attempting to delete post:', postId); // Debug log
+            
+            // Changed endpoint to match the backend route structure
             const response = await fetch(`http://localhost:3000/posts/${postId}`, {
                 method: 'DELETE',
                 headers: {
@@ -550,8 +561,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
             
+            console.log('Delete response status:', response.status); // Debug log
+            
             if (!response.ok) {
-                throw new Error('Failed to delete post');
+                const errorText = await response.text();
+                console.error('Server response:', errorText);
+                throw new Error(`Failed to delete post: ${response.status} ${response.statusText}`);
             }
             
             // Reload posts to reflect changes
@@ -560,9 +575,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Also update user stats
             loadUserStats();
             
+            // Show success message
+            alert('Post deleted successfully');
+            
         } catch (error) {
             console.error('Error deleting post:', error);
-            alert('Failed to delete post. Please try again.');
+            alert(`Failed to delete post: ${error.message}`);
         }
     }
     
