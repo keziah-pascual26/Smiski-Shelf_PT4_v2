@@ -49,6 +49,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 export async function loadStories() {
     try {
         const token = localStorage.getItem('token');
+        const currentUsername = localStorage.getItem('username');
+        
         if (!token) {
             console.error('No authentication token found');
             return;
@@ -82,6 +84,16 @@ export async function loadStories() {
         storiesContainer.innerHTML = '';
         storiesContainer.appendChild(createStoryButton);
 
+        if (stories.length === 0) {
+            // Show message when user has no stories
+            const noStoriesMsg = document.createElement('div');
+            noStoriesMsg.classList.add('no-stories-message');
+            noStoriesMsg.textContent = 'No stories yet. Create your first story!';
+            storiesContainer.appendChild(noStoriesMsg);
+            return;
+        }
+
+        // Display user's stories
         stories.forEach(story => {
             const storyElement = document.createElement('div');
             storyElement.classList.add('story');
@@ -109,13 +121,12 @@ export async function loadStories() {
             createStoryButton.parentNode.insertBefore(storyElement, createStoryButton.nextSibling);
         });
 
-        // Reattach event listener to create button
-        if (createStoryButton) {
-            createStoryButton.addEventListener('click', openStoryModal);
-        }
-
     } catch (error) {
         console.error('Error loading stories:', error);
+        const storiesContainer = document.getElementById('storiesContainer');
+        if (storiesContainer) {
+            storiesContainer.innerHTML = '<p class="error-message">Failed to load stories. Please try again later.</p>';
+        }
     }
 }
 
