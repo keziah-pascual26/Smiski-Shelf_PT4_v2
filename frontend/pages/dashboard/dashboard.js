@@ -115,14 +115,35 @@ export async function loadStories() {
         [...otherStories, ...userStories].forEach(story => {
             const storyElement = document.createElement('div');
             storyElement.classList.add('story');
-            
-            if (story.media && story.media.length > 0) {
-                const mediaPreview = document.createElement('div');
-                mediaPreview.classList.add('story-preview');
-                mediaPreview.style.backgroundImage = `url(http://localhost:3000/uploads/${story.media[0]})`;
-                storyElement.appendChild(mediaPreview);
-            }
 
+                    // Create media preview
+                    if (story.media && story.media.length > 0) {
+                    const mediaPreview = document.createElement('div');
+                    mediaPreview.classList.add('story-preview');
+                    
+                    // Get file extension to determine media type
+                    const fileExtension = story.media[0].split('.').pop().toLowerCase();
+                    
+                    if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+                        // For images, use background image
+                        mediaPreview.style.backgroundImage = `url(http://localhost:3000/uploads/${story.media[0]})`;
+                    } else if (['mp4', 'webm'].includes(fileExtension)) {
+                        // For videos, create a video element
+                        const video = document.createElement('video');
+                        video.src = `http://localhost:3000/uploads/${story.media[0]}`;
+                        video.muted = true;
+                        video.playsInline = true;
+                        video.style.width = '100%';
+                        video.style.height = '100%';
+                        video.style.objectFit = 'cover';
+                        
+                        mediaPreview.appendChild(video);
+                    }
+                    
+                    storyElement.appendChild(mediaPreview);
+                }
+
+            // Add story info
             const storyInfo = document.createElement('div');
             storyInfo.classList.add('story-info');
             const isCurrentUser = story.username === currentUsername;
@@ -137,6 +158,7 @@ export async function loadStories() {
             storyElement.addEventListener('click', () => {
                 viewStory(story);
             });
+
 
             createStoryButton.parentNode.insertBefore(storyElement, createStoryButton.nextSibling);
         });
