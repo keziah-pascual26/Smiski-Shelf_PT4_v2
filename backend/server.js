@@ -11,11 +11,19 @@ const nodemailer = require("nodemailer");
 const passport = require('passport');
 const session = require('express-session');
 const authRoutes = require('./routes/authRoutes');
+const reactionRoutes = require('./routes/reactionRoutes');
+
 // Add speakeasy and qrcode
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
 require('./config/passportSetup');
 require('dotenv').config();
+
+const router = express.Router();
+
+const { Types: { ObjectId } } = require('mongoose');
+
+
 
 
 // Import Models & Auth
@@ -24,6 +32,7 @@ const Story = require('./models/storyModel');
 const Post = require('./models/postModel'); // ✅ Import Post Model
 const Friend = require('./models/friendModel'); // Add Friend model
 const Message = require('./models/messageModel'); // Add Message model
+const Reaction = require('./models/storyreactModel'); // ✅ Import Reaction Model
 const { registerUser, loginUser } = require('./auth/auth');
 const authenticateToken = require('./middleware/authMiddleware');
 
@@ -86,6 +95,9 @@ app.use('/api', require('./routes/storyRoutes'));
 app.use('/api', require('./routes/userRoutes'));
 app.use('/api', require('./routes/friendRoutes')); // Add friend routes
 app.use('/api', require('./routes/messageRoutes')); // Add message routes
+
+app.use('/', reactionRoutes);
+
 
 // Import and use routes - IMPORTANT: Only use one method for post routes
 require('./routes/postRoutes')(app);
@@ -237,3 +249,4 @@ app.get('*', (req, res) => {
 app.listen(port, () => {
     console.log(`🚀 Server running at http://localhost:${port}`);
 });
+

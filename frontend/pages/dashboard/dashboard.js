@@ -375,7 +375,7 @@ function viewStory(story, storyArray) {
 
     viewer.classList.add('active');
 
-    // Add reaction panel only for other users' stories
+    /// Add reaction panel for all stories
     let reactionPanel = viewer.querySelector('.reaction-panel');
     const currentUsername = localStorage.getItem('username');
     const isOwnStory = story.username === currentUsername;
@@ -385,63 +385,98 @@ function viewStory(story, storyArray) {
         reactionPanel.remove();
     }
 
-    // Only create and add reaction panel for other users' stories
-    if (!isOwnStory) {
-        reactionPanel = document.createElement('div');
-        reactionPanel.className = 'reaction-panel';
-        reactionPanel.innerHTML = `
-            <div class="reactions">
-                <div class="reaction-button">
-                    <button class="reaction" data-reaction="like">
-                        <img src="/pages/dashboard/reactionIcons/like.png" alt="Like">
-                    </button>
-                    <span class="count" id="likeCount">0</span>
-                </div>
-                <div class="reaction-button">
-                    <button class="reaction" data-reaction="love">
-                        <img src="/pages/dashboard/reactionIcons/love.png" alt="Love">
-                    </button>
-                    <span class="count" id="loveCount">0</span>
-                </div>
-                <div class="reaction-button">
-                    <button class="reaction" data-reaction="haha">
-                        <img src="/pages/dashboard/reactionIcons/haha.png" alt="Haha">
-                    </button>
-                    <span class="count" id="hahaCount">0</span>
-                </div>
-                <div class="reaction-button">
-                    <button class="reaction" data-reaction="sad">
-                        <img src="/pages/dashboard/reactionIcons/sad.png" alt="Sad">
-                    </button>
-                    <span class="count" id="sadCount">0</span>
-                </div>
-                <div class="reaction-button">
-                    <button class="reaction" data-reaction="angry">
-                        <img src="/pages/dashboard/reactionIcons/angry.png" alt="Angry">
-                    </button>
-                    <span class="count" id="angryCount">0</span>
-                </div>
+        // Create reaction panel for all stories
+    reactionPanel = document.createElement('div');
+    reactionPanel.className = 'reaction-panel';
+    reactionPanel.innerHTML = `
+        <div class="reactions">
+            <div class="reaction-button">
+                <button class="reaction" data-reaction="like" data-story-id="${story._id}" ${isOwnStory ? 'disabled' : ''}>
+                    <img src="/pages/dashboard/reactionIcons/like.png" alt="Like">
+                </button>
+                <span class="count" id="likeCount-${story._id}">0</span>
             </div>
-        `;
-        viewer.appendChild(reactionPanel);
+            <div class="reaction-button">
+                <button class="reaction" data-reaction="love" data-story-id="${story._id}" ${isOwnStory ? 'disabled' : ''}>
+                    <img src="/pages/dashboard/reactionIcons/love.png" alt="Love">
+                </button>
+                <span class="count" id="loveCount-${story._id}">0</span>
+            </div>
+            <div class="reaction-button">
+                <button class="reaction" data-reaction="haha" data-story-id="${story._id}" ${isOwnStory ? 'disabled' : ''}>
+                    <img src="/pages/dashboard/reactionIcons/haha.png" alt="Haha">
+                </button>
+                <span class="count" id="hahaCount-${story._id}">0</span>
+            </div>
+            <div class="reaction-button">
+                <button class="reaction" data-reaction="sad" data-story-id="${story._id}" ${isOwnStory ? 'disabled' : ''}>
+                    <img src="/pages/dashboard/reactionIcons/sad.png" alt="Sad">
+                </button>
+                <span class="count" id="sadCount-${story._id}">0</span>
+            </div>
+            <div class="reaction-button">
+                <button class="reaction" data-reaction="angry" data-story-id="${story._id}" ${isOwnStory ? 'disabled' : ''}>
+                    <img src="/pages/dashboard/reactionIcons/angry.png" alt="Angry">
+                </button>
+                <span class="count" id="angryCount-${story._id}">0</span>
+            </div>
+        </div>
+        ${isOwnStory ? '<div class="reaction-hint">Reactions from other users</div>' : ''}
+    `;
+    viewer.appendChild(reactionPanel);
 
-        // Initialize reaction counts for this story if not exists
-        if (!reactionCounts[story._id]) {
-            reactionCounts[story._id] = { like: 0, love: 0, haha: 0, sad: 0, angry: 0 };
-        }
 
-        // Add reaction click handlers
+    // Add click handlers only for non-own stories
+    if (!isOwnStory) {
         reactionPanel.querySelectorAll('.reaction').forEach(button => {
-            button.addEventListener('click', function(event) {
+            button.onclick = async (event) => {
+                event.preventDefault();
                 event.stopPropagation();
-                const reactionType = this.getAttribute('data-reaction');
-                reactionCounts[story._id][reactionType]++;
-                updateReactionCounts(story._id);
-            });
+                
+                const reactionType = button.getAttribute('data-reaction');
+                const storyId = story._id;
+                
+                try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch('http://localhost:3000/api/reactions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            storyId,
+                            reactionType,
+                            username: localStorage.getItem('username')
+                        })
+                    });
+
+                    if (response.ok) {
+                        const updatedCounts = await response.json();
+                        
+                        // Update the reaction counts in the UI
+                        Object.entries(updatedCounts).forEach(([type, count]) => {
+                            const countElement = document.getElementById(`${type}Count-${storyId}`);
+                            if (countElement) {
+                                countElement.textContent = count;
+                            }
+                        });
+
+                        // Add visual feedback for the clicked reaction
+                        button.classList.add('reacted');
+                        setTimeout(() => button.classList.remove('reacted'), 500);
+                    } else {
+                        const errorData = await response.json();
+                        console.error('Failed to add reaction:', errorData.message);
+                    }
+                } catch (error) {
+                    console.error('Error adding reaction:', error);
+                }
+            };
         });
 
-        // Update reaction counts when viewing story
-        updateReactionCounts(story._id);
+        // Fetch initial reaction counts when viewing the story
+        fetchReactionCounts(story._id);
     }
 }
 
@@ -580,12 +615,137 @@ function resumeProgress(callback) {
     progressPaused = false;
 }
 
-// Add these helper functions
-function updateReactionCounts(storyId) {
-    const counts = reactionCounts[storyId] || { like: 0, love: 0, haha: 0, sad: 0, angry: 0 };
-    document.getElementById('likeCount').textContent = counts.like;
-    document.getElementById('loveCount').textContent = counts.love;
-    document.getElementById('hahaCount').textContent = counts.haha;
-    document.getElementById('sadCount').textContent = counts.sad;
-    document.getElementById('angryCount').textContent = counts.angry;
+// Add this function at the top level
+// Update the fetchReactionCounts function
+async function fetchReactionCounts(storyId) {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:3000/api/reactions/${storyId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const counts = await response.json();
+            // Update UI with counts
+            Object.entries(counts).forEach(([type, count]) => {
+                const countElement = document.getElementById(`${type}Count-${storyId}`);
+                if (countElement) {
+                    countElement.textContent = count || '0';
+                }
+            });
+        } else {
+            console.error('Failed to fetch reaction counts');
+        }
+    } catch (error) {
+        console.error('Error fetching reactions:', error);
+    }
+}
+
+// Update the reaction click handler in viewStory function
+reactionPanel.querySelectorAll('.reaction').forEach(button => {
+    button.addEventListener('click', async function(event) {
+        event.stopPropagation();
+        const reactionType = this.getAttribute('data-reaction');
+        
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:3000/api/reactions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    storyId: story._id,
+                    reactionType
+                })
+            });
+
+            if (response.ok) {
+                const updatedCounts = await response.json();
+                updateReactionCounts(story._id, updatedCounts);
+            }
+        } catch (error) {
+            console.error('Error adding reaction:', error);
+        }
+    });
+});
+
+function updateReactionCounts(storyId, counts = null) {
+    const reactionCounts = counts || {
+        like: 0, love: 0, haha: 0, sad: 0, angry: 0
+    };
+
+    Object.entries(reactionCounts).forEach(([type, count]) => {
+        const countElement = document.getElementById(`${type}Count-${storyId}`);
+        if (countElement) {
+            countElement.textContent = count;
+        }
+    });
+}
+
+// Update the reaction click handlers in viewStory function
+if (!isOwnStory) {
+    reactionPanel = document.createElement('div');
+    reactionPanel.className = 'reaction-panel';
+    reactionPanel.innerHTML = `
+        <div class="reactions">
+            <div class="reaction-button">
+                <button class="reaction" data-reaction="like">
+                    <img src="/pages/dashboard/reactionIcons/like.png" alt="Like">
+                </button>
+                <span class="count" id="likeCount">0</span>
+            </div>
+            <!-- ...other reaction buttons... -->
+        </div>
+    `;
+    viewer.appendChild(reactionPanel);
+
+    // Initialize reaction counts for this story
+    if (!reactionCounts[story._id]) {
+        reactionCounts[story._id] = {
+            like: 0,
+            love: 0,
+            haha: 0,
+            sad: 0,
+            angry: 0
+        };
+    }
+
+    // Add reaction click handlers with error handling
+    reactionPanel.querySelectorAll('.reaction').forEach(button => {
+        button.addEventListener('click', async function(event) {
+            event.stopPropagation();
+            const reactionType = this.getAttribute('data-reaction');
+            
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('http://localhost:3000/api/reactions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        storyId: story._id,
+                        reactionType
+                    })
+                });
+
+                if (response.ok) {
+                    const updatedCounts = await response.json();
+                    updateReactionCounts(story._id, updatedCounts);
+                } else {
+                    console.error('Failed to add reaction');
+                }
+            } catch (error) {
+                console.error('Error adding reaction:', error);
+            }
+        });
+    });
+
+    // Fetch initial reaction counts
+    fetchReactionCounts(story._id);
 }
