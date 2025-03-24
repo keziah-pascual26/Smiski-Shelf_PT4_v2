@@ -1130,6 +1130,77 @@ textarea#storyDescription {
     object-fit: contain;
 }
 
+/* Story comments styling */
+.story-comments {
+    position: absolute;
+    right: 20px; /* Position on right side */
+    bottom: 120px; /* Above reaction panel */
+    width: 300px;
+    max-height: 400px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    z-index: 1002;
+}
+
+.comments-list {
+    flex: 1;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 15px;
+    margin-bottom: 0;
+    color: white;
+}
+
+.story-comment {
+    padding: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.comment-author {
+    font-weight: bold;
+    color: #feeb29;
+    margin-right: 8px;
+}
+
+.story-comment-input {
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    gap: 8px;
+}
+
+.story-comment-input input {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    color: black;
+}
+
+.story-comment-input button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 20px;
+    background: #729c2f;
+    color: white;
+    cursor: pointer;
+}
+
+.story-comment-input button:hover {
+    background: #5e8026;
+}
+
+.story-comments.has-comments {
+    display: block;
+}
+
 #editorSection {
     padding: 20px;
     background-color: #f7f7f7;
@@ -1238,10 +1309,13 @@ button:hover {
 
 /* Container for story viewer */
 .story-viewer-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
     display: flex;
+    flex-direction: column; /* Stack content vertically */
     justify-content: center;
     align-items: center;
-    position: relative;
 }
 
 /* Style for navigation buttons */

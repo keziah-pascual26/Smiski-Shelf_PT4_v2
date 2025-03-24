@@ -37,6 +37,7 @@ const { registerUser, loginUser } = require('./auth/auth');
 const authenticateToken = require('./middleware/authMiddleware');
 
 const postRoutes = require('./routes/postRoutes');
+const storyRoutes = require('./routes/storyRoutes');
 
 const app = express();
 const port = 3000;
@@ -97,6 +98,7 @@ app.use('/api', require('./routes/friendRoutes')); // Add friend routes
 app.use('/api', require('./routes/messageRoutes')); // Add message routes
 
 app.use('/', reactionRoutes);
+app.use('/', storyRoutes);
 
 
 // Import and use routes - IMPORTANT: Only use one method for post routes

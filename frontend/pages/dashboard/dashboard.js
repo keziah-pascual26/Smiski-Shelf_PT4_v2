@@ -510,7 +510,100 @@ function viewStory(story, storyArray) {
         });
 
     }
-}
+
+    // Remove any existing comments section first
+    const existingComments = viewer.querySelector('.story-comments');
+    if (existingComments) {
+        existingComments.remove();
+    }
+    
+    // Add comments section
+    const commentsSection = document.createElement('div');
+    commentsSection.className = 'story-comments';
+
+    // Create comments list container
+    let commentsListHTML = '<div class="comments-list">';
+    if (story.comments && story.comments.length > 0) {
+        commentsListHTML += story.comments.map(comment => `
+            <div class="story-comment">
+                <span class="comment-author">${comment.username}</span>
+                <span class="comment-text">${comment.text}</span>
+            </div>
+        `).join('');
+    }
+    commentsListHTML += '</div>';
+
+    // Add comments list and input section
+    commentsSection.innerHTML = `
+        ${commentsListHTML}
+        <div class="story-comment-input">
+            <input type="text" placeholder="Add a comment..." id="storyCommentInput">
+            <button id="postCommentBtn">Send</button>
+        </div>
+    `;
+
+    viewer.appendChild(commentsSection);
+
+    // Add comment functionality
+    const commentInput = commentsSection.querySelector('#storyCommentInput');
+    const postCommentBtn = commentsSection.querySelector('#postCommentBtn');
+    const commentsList = commentsSection.querySelector('.comments-list'); // Get reference to comments list
+
+    postCommentBtn.addEventListener('click', async () => {
+        const commentText = commentInput.value.trim();
+        if (!commentText) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:3000/api/stories/${story._id}/comment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ text: commentText })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to add comment');
+            }
+
+            const { comment } = await response.json();
+            
+            // Create new comment element
+            const newComment = document.createElement('div');
+            newComment.className = 'story-comment';
+            newComment.innerHTML = `
+                <span class="comment-author">${comment.username}</span>
+                <span class="comment-text">${comment.text}</span>
+            `;
+            
+            // Append new comment to comments list
+            commentsList.appendChild(newComment);
+            
+            // Clear input
+            commentInput.value = '';
+            
+            // Update story object in memory
+            story.comments = story.comments || [];
+            story.comments.push(comment);
+        } catch (error) {
+            console.error('Error posting comment:', error);
+            alert('Failed to add comment. Please try again.');
+        }
+    });
+
+    // Enter key functionality
+    commentInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            postCommentBtn.click();
+        }
+    });
+
+    
+    }
+
+
 
 // Add helper function to handle story viewer exit
 function exitStoryViewer() {
