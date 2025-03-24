@@ -246,56 +246,69 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
     
-    // Function to load liked posts
-    async function loadLikedPosts() {
-        const userLikedFeed = document.getElementById('userLikedFeed');
-        userLikedFeed.innerHTML = '<div class="loading">Loading liked posts...</div>';
-        
-        try {
-            const response = await fetch('http://localhost:3000/api/posts/liked', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+        // Function to load liked posts
+        async function loadLikedPosts() {
+            const userLikedFeed = document.getElementById('userLikedFeed');
+            userLikedFeed.innerHTML = '<div class="loading">Loading liked posts...</div>';
+            
+            try {
+                console.log('Fetching liked posts...');
+                const response = await fetch('http://localhost:3000/posts/liked', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', errorText);
+                    throw new Error(`Failed to fetch liked posts: ${response.status} ${response.statusText}`);
                 }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to fetch liked posts');
-            }
-            
-            const likedPosts = await response.json();
-            
-            if (likedPosts.length === 0) {
+                
+                const likedPosts = await response.json();
+                console.log('Liked posts received:', likedPosts.length);
+                
+                // Verify each post has the current user in its likes array
+                const currentUsername = localStorage.getItem('username');
+                const filteredLikedPosts = likedPosts.filter(post => 
+                    post.likes && post.likes.some(like => like.username === currentUsername)
+                );
+                
+                console.log('Filtered liked posts:', filteredLikedPosts.length);
+                
+                if (filteredLikedPosts.length === 0) {
+                    userLikedFeed.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No liked posts yet</h3>
+                            <p>Like posts to see them appear here!</p>
+                            <a href="/pages/dashboard/dashboard.html" class="empty-state-action">Browse Posts</a>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Render liked posts
+                userLikedFeed.innerHTML = '';
+                filteredLikedPosts.forEach(post => {
+                    const postElement = createPostElement(post, true); // Pass true to indicate this is the liked tab
+                    userLikedFeed.appendChild(postElement);
+                });
+            } catch (error) {
+                console.error('Error loading liked posts:', error);
                 userLikedFeed.innerHTML = `
                     <div class="empty-state">
-                        <h3>No liked posts yet</h3>
-                        <p>Like posts to see them appear here!</p>
-                        <a href="/pages/dashboard/dashboard.html" class="empty-state-action">Browse Posts</a>
+                        <h3>Error loading liked posts</h3>
+                        <p>We couldn't load your liked posts. Please try again later.</p>
+                        <p class="error-details">${error.message}</p>
                     </div>
                 `;
-                return;
             }
-            
-            // Render liked posts
-            userLikedFeed.innerHTML = '';
-            likedPosts.forEach(post => {
-                const postElement = createPostElement(post);
-                userLikedFeed.appendChild(postElement);
-            });
-        } catch (error) {
-            console.error('Error loading liked posts:', error);
-            userLikedFeed.innerHTML = `
-                <div class="empty-state">
-                    <h3>Error loading liked posts</h3>
-                    <p>We couldn't load your liked posts. Please try again later.</p>
-                </div>
-            `;
         }
-    }
     
 // Helper function to create a post element
-function createPostElement(post) {
+function createPostElement(post, isLikedTab = false) {
     const postElement = document.createElement('div');
     postElement.className = 'post';
     
@@ -328,6 +341,9 @@ function createPostElement(post) {
     
     // Check if current user has liked the post
     const userLiked = (post.likes || []).some(like => like.username === currentUsername);
+    
+    // Only show edit and delete buttons if it's the user's own post and not in the liked tab
+    const showEditDelete = post.username === currentUsername && !isLikedTab;
     
     postElement.innerHTML = `
         <div class="post-header">
@@ -384,12 +400,14 @@ function createPostElement(post) {
             <button class="comment-button" data-id="${post._id}">
                 <i class="fa fa-comment"></i> ${post.comments?.length || 0}
             </button>
-            <button class="edit-button" data-id="${post._id}">
-                <i class="fa fa-edit"></i> Edit
-            </button>
-            <button class="delete-button" data-id="${post._id}">
-                <i class="fa fa-trash"></i> Delete
-            </button>
+            ${showEditDelete ? `
+                <button class="edit-button" data-id="${post._id}">
+                    <i class="fa fa-edit"></i> Edit
+                </button>
+                <button class="delete-button" data-id="${post._id}">
+                    <i class="fa fa-trash"></i> Delete
+                </button>
+            ` : ''}
         </div>
         <div class="comment-section" id="comment-section-${post._id}">
             ${(post.comments || []).map(comment => `

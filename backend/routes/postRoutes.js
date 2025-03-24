@@ -85,12 +85,16 @@ module.exports = (app) => {
     // Get posts liked by current user
     app.get('/posts/liked', authenticateToken, async (req, res) => {
         try {
+            console.log("🔍 Fetching liked posts for user:", req.user.username);
+            
             const posts = await Post.find({ 
-                'likes.userId': req.user._id 
+                'likes.username': req.user.username 
             }).sort({ createdAt: -1 });
-                
+            
+            console.log(`✅ Found ${posts.length} liked posts for user: ${req.user.username}`);
             res.json(posts);
         } catch (error) {
+            console.error("🚨 Error fetching liked posts:", error);
             res.status(500).json({ error: error.message });
         }
     });
