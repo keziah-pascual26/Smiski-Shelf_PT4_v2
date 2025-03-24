@@ -180,14 +180,29 @@ html {
 .stories-container {
     display: flex;
     gap: 15px;
-    padding: 20px;
     overflow-x: auto;
-    background: white;
-    border-radius: 10px;
-    margin: 20px 0;
-    justify-content: center;
+    padding: 20px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    align-items: flex-start;
+    width: 100%;
 }
 
+/* Hide scrollbar but keep functionality */
+.stories-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.stories-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.stories-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
 
 /* Header */
 .header {
@@ -374,8 +389,9 @@ button img {
 
 /* Updated .story */
 .story {
-    width: 120px;
-    height: 213px;
+    flex: 0 0 auto; /* Prevent stories from shrinking */
+    width: 120px; /* Fixed width */
+    height: 213px; /* Height for 9:16 ratio (120 * 16/9 ≈ 213) */
     position: relative;
     border-radius: 8px;
     overflow: hidden;
@@ -383,7 +399,6 @@ button img {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     cursor: pointer;
     transition: transform 0.3s ease;
-    margin: 0 5px;
 }
 
 .story-preview {
@@ -450,6 +465,7 @@ button img {
     font-size: 2rem;
     color: #666;
     background: #f0f0f0;
+    min-width: 120px; /* Ensure consistent width */
 }
 
 /* Style for the image and video */
