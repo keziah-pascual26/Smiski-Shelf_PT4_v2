@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
-const messageSchema = new mongoose.Schema({
-    senderId: {
+const friendSchema = new mongoose.Schema({
+    requesterId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
@@ -11,22 +11,31 @@ const messageSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    text: {
+    requesterUsername: {
         type: String,
         required: true
     },
-    read: {
-        type: Boolean,
-        default: false
+    recipientUsername: {
+        type: String,
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'accepted', 'declined'],
+        default: 'pending'
     },
     createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
         type: Date,
         default: Date.now
     }
 });
 
-// Index for efficient message retrieval
-messageSchema.index({ senderId: 1, recipientId: 1, createdAt: -1 });
-messageSchema.index({ recipientId: 1, read: 1 });
+// Create compound index to ensure uniqueness of friendship pairs
+friendSchema.index({ requesterId: 1, recipientId: 1 }, { unique: true });
 
-module.exports = mongoose.model('Message', messageSchema);
+const Friend = mongoose.model('Friend', friendSchema);
+module.exports = Friend;
