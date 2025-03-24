@@ -102,9 +102,7 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error("Logout Error:", err);
         });
         
-    
         // Redirect to the login page
         window.location.href = "/login"; // Correct the URL to match the backend route
     });
-    
 });

@@ -6,6 +6,7 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: function() {
         return !this.googleId; // Password is required only if no googleId
     }},
+    bio: { type: String, default: '' },
     googleId: { type: String },
     resetToken: { type: String, default: null },
     resetTokenExpiry: { type: Date, default: null },

@@ -1,48 +1,143 @@
 body {
     font-family: Arial, sans-serif;
-    text-align: center;
-    margin: 50px;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(to bottom right, #d4e157, #f5efd4);
+    position: relative;
+    overflow: hidden;
 }
 
-form {
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('img/smiski-login.png') no-repeat center center;
+    background-size: cover; /* Ensures the image covers the entire background */
+    z-index: 0;
+}
+
+body::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 120%;
+    height: 120%;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+}
+
+.login-container {
+    position: absolute; /* Use absolute positioning */
+    top: 50%; /* Center vertically */
+    right: 15%; /* Position near the right edge */
+    transform: translateY(-50%); /* Adjust for vertical centering */
+    text-align: center;
+    background-color: transparent;
+    padding: 2rem;
+    border-radius: 10px;
+    width: 350px;
+    z-index: 1; /* Ensure it is above the body::after pseudo-element */
+}
+
+.welcome-text {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 2rem;
+    color: #333333;
+}
+
+.form-container {
     display: flex;
     flex-direction: column;
-    width: 300px;
-    margin: auto;
+    gap: 1.5rem;
 }
 
-input {
-    margin: 10px 0;
-    padding: 10px;
-    font-size: 16px;
+.input-group {
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid #666666;
+    padding: 0.5rem 0;
+    background: none;
 }
 
-button {
-    padding: 10px;
-    background: #28a745;
-    color: white;
+.input-group .icon {
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+    color: #333333;
+}
+
+.input-group input {
     border: none;
-    cursor: pointer;
+    outline: none;
+    flex: 1;
+    font-size: 1rem;
+    background: none;
 }
 
-button:hover {
-    background: #218838;
+.form-links {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #007bff;
+}
+
+.form-links a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.form-links a:hover {
+    text-decoration: underline;
+}
+
+.login-btn {
+    background-color: #ffc107;
+    color: #ffffff;
+    border: none;
+    padding: 0.8rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.login-btn:hover {
+    background-color: #b48801;
 }
 
 .google-btn {
-    display: block;
-    width: 80%;
-    max-width: 300px;
-    margin: 20px auto;
-    padding: 10px;
-    background-color: #4285f4;
-    color: white;
+    display: inline-block;
+    background-color: #4285F4; /* Google Blue */
+    color: #ffffff;
+    border: none;
+    padding: 0.8rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: bold;
     text-align: center;
     text-decoration: none;
-    border-radius: 4px;
-    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 90%; /* Full width button */
+    margin-top: 1rem; /* Add spacing above */
 }
 
 .google-btn:hover {
-    background-color: #357abd;
+    background-color: #1e5ec5; /* Darker Google Blue */
+}
+
+.separator {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #666666;
+    margin: 1rem 0; /* Add spacing above and below */
 }

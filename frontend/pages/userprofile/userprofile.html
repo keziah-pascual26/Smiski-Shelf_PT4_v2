@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="/pages/userprofile/userprofile.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+    <!-- Back Button -->
+    <button id="back-button" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back
+    </button>
+    
+    <div class="userprofile-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="profile-summary">
+                <!-- Ensure these IDs match the ones used in userprofile.js -->
+                <div class="profile-picture"></div>
+                <div class="profile-info">
+                    <p class="profile-name" id="profile-name">Name</p>
+                    <p class="profile-email" id="profile-email">Email</p>
+                </div>
+            </div>
+            <hr>
+            <ul class="menu">
+                <li><i class="fas fa-user"></i> My Profile <span>&gt;</span></li>
+                <li><i class="fas fa-cog"></i> Privacy <span>&gt;</span></li>
+                <li><i class="fas fa-bell"></i> Notifications <span>&gt;</span></li>
+                <li><i class="fas fa-sign-out-alt"></i> Logout <span>&gt;</span></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="cover-photo">
+                <button class="edit-cover-btn">
+                    <i class="fas fa-camera"></i> Edit Cover Photo
+                </button>
+            </div>
+            <div class="profile-details">
+                <div class="profile-picture-large">
+                    <i class="fas fa-pen edit-icon"></i>
+                </div>
+                <div class="details">
+                    <div class="detail-row">
+                        <p><strong>Name</strong></p>
+                        <p id="detail-name">Name</p>
+                    </div>
+                    <div class="detail-row">
+                        <p><strong>Username</strong></p>
+                        <p id="detail-username">Name</p>
+                    </div>
+                    <div class="detail-row">
+                        <p><strong>Email account</strong></p>
+                        <p id="detail-email">Name</p>
+                    </div>
+                    <div class="detail-row">
+                        <p><strong>Bio</strong></p>
+                        <p id="detail-bio">Name</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include the userprofile.js script -->
+    <script src="/pages/userprofile/userprofile.js"></script>
+</body>
+</html>

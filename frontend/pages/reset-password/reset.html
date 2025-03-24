@@ -7,17 +7,18 @@
     <link rel="stylesheet" href="/pages/reset-password/reset.css">
 </head>
 <body>
-
-    <h1>Reset Password</h1>
-    
-    <form id="resetForm">
-        <input type="email" id="email" placeholder="Enter your email" required>
-        <button type="submit">Send Reset Link</button>
-    </form>
-
-    <button onclick="window.location.href='../login/login.html'">Back to Login</button>
-
+    <div class="reset-container">
+        <img src="/img/smiski-reset.png" alt="Smiski Reset" class="reset-image">
+        <h1 class="reset-title">Forgot Your Password?</h1>
+        <form id="resetForm" class="reset-form">
+            <div class="input-group">
+                <span class="icon">✉️</span>
+                <input type="email" id="email" placeholder="Enter Email" required>
+            </div>
+            <button type="submit" class="reset-btn">Send Reset Link</button>
+        </form>
+        <button class="back-btn" onclick="window.location.href='../login/login.html'">Back to Login</button>
+    </div>
     <script src="/pages/reset-password/reset.js"></script>
-
 </body>
 </html>
