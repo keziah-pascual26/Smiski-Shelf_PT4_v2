@@ -131,6 +131,11 @@ export async function loadStories() {
         const storyElement = document.createElement('div');
         storyElement.classList.add('story');
 
+        const isCurrentUser = story.username === localStorage.getItem('username');
+        if (isCurrentUser) {
+            storyElement.classList.add('user-story');
+        }
+
         if (story.media && story.media.length > 0) {
             const mediaPreview = document.createElement('div');
             mediaPreview.classList.add('story-preview');
@@ -174,7 +179,6 @@ export async function loadStories() {
 
             const storyInfo = document.createElement('div');
             storyInfo.classList.add('story-info');
-            const isCurrentUser = story.username === currentUsername;
             storyInfo.innerHTML = `
                 <span class="story-title">${isCurrentUser ? 'Your Story' : story.title}</span>
                 <span class="story-username">${isCurrentUser ? '' : `by ${story.username}`}</span>

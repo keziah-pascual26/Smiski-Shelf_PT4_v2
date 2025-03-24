@@ -488,6 +488,24 @@ button img {
     transform: scale(1.05);
 }
 
+.story.user-story {
+    border: 5px solid #729c2f;
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0 0 10px rgba(114, 156, 47, 0.3);
+    transition: transform 0.3s ease;
+}
+
+/* Adjust story preview for user stories */
+.story.user-story .story-preview {
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(114, 156, 47, 0.3);
+}
+
+.story.user-story .story-info {
+    background: linear-gradient(to top, rgba(89, 121, 38, 0.1), transparent);
+}
+
 .overlay {
     display: none; /* Hidden by default */
     position: fixed;
