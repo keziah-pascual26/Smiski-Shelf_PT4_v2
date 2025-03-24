@@ -79,8 +79,19 @@ function renderUsers() {
     
     // Make sure we have users to display
     if (allSuggestedUsers && allSuggestedUsers.length > 0) {
+        // Sort users - move users who are already friends to the end
+        const sortedUsers = [...allSuggestedUsers].sort((a, b) => {
+            // If user has a friendStatus property (added during checkFriendStatus)
+            if (a.friendStatus === 'accepted' && b.friendStatus !== 'accepted') {
+                return 1; // Move 'a' to the end if it's a friend
+            } else if (a.friendStatus !== 'accepted' && b.friendStatus === 'accepted') {
+                return -1; // Move 'b' to the end if it's a friend
+            }
+            return 0; // Keep original order for other cases
+        });
+        
         // Limit to currentDisplayCount users
-        const limitedUsers = allSuggestedUsers.slice(0, currentDisplayCount);
+        const limitedUsers = sortedUsers.slice(0, currentDisplayCount);
         
         // Add suggested users
         limitedUsers.forEach(user => {
@@ -91,7 +102,12 @@ function renderUsers() {
                         <div class="suggested-user-name">${user.username}</div>
                         <div class="suggested-user-bio">${user.bio || 'Smiski enthusiast'}</div>
                     </div>
-                    <button class="add-friend-btn" data-user-id="${user._id || user.id}">Add Friend</button>
+                    <button class="add-friend-btn ${user.friendStatus === 'pending' ? 'added' : ''} ${user.friendStatus === 'accepted' ? 'friends' : ''}" 
+                            data-user-id="${user._id || user.id}"
+                            ${user.friendStatus === 'accepted' ? 'disabled' : ''}>
+                        ${user.friendStatus === 'pending' ? 'Request Sent' : 
+                          user.friendStatus === 'accepted' ? 'Friends' : 'Add Friend'}
+                    </button>
                 </div>
             `;
         });
@@ -151,8 +167,10 @@ function renderUsers() {
         });
     }
     
-    // Check friend status after rendering
-    checkFriendStatus();
+    // Check friend status after rendering if we don't already have status info
+    if (!allSuggestedUsers.some(user => user.hasOwnProperty('friendStatus'))) {
+        checkFriendStatus();
+    }
 }
 
 // Separate the friend button click handler for clarity
@@ -295,6 +313,16 @@ async function checkFriendStatus() {
             const statusData = await response.json();
             console.log('Friend status data:', statusData); // Debug log
             
+            // Update user objects with friend status
+            allSuggestedUsers = allSuggestedUsers.map(user => {
+                const userId = user._id || user.id;
+                const status = statusData[userId];
+                return {
+                    ...user,
+                    friendStatus: status || null
+                };
+            });
+            
             // Update buttons based on friend status
             document.querySelectorAll('.add-friend-btn').forEach(button => {
                 const userId = button.getAttribute('data-user-id');
@@ -310,6 +338,9 @@ async function checkFriendStatus() {
                     button.disabled = true;
                 }
             });
+            
+            // Re-render the users to apply the sorting
+            renderUsers();
         } else {
             console.error('Failed to fetch friend status');
         }
