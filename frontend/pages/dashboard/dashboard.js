@@ -207,7 +207,7 @@ function viewStory(story, storyArray) {
     // Find current story index
     currentStoryIndex = storyArray.findIndex(s => s._id === story._id);
     
-   // Update media handling to use startProgress
+   // Update media handling
     if (story.media && story.media.length > 0) {
         const fileExtension = story.media[0].split('.').pop().toLowerCase();
         
@@ -220,7 +220,9 @@ function viewStory(story, storyArray) {
                 if (currentStoryIndex < storyArray.length - 1) {
                     viewStory(storyArray[currentStoryIndex + 1], storyArray);
                 } else {
+                    // Only exit if this is the last story
                     viewer.classList.remove('active');
+                    clearTimeout(progressTimeout);
                 }
             });
             
@@ -237,7 +239,13 @@ function viewStory(story, storyArray) {
                     if (currentStoryIndex < storyArray.length - 1) {
                         viewStory(storyArray[currentStoryIndex + 1], storyArray);
                     } else {
+                        // Only exit if this is the last story
                         viewer.classList.remove('active');
+                        if (currentVideo) {
+                            currentVideo.pause();
+                            currentVideo = null;
+                        }
+                        clearTimeout(progressTimeout);
                     }
                 });
             };
@@ -246,30 +254,36 @@ function viewStory(story, storyArray) {
         }
     }
 
-    // Add navigation buttons
     const previousButton = viewer.querySelector('#previousButton');
     const nextButton = viewer.querySelector('#nextButton');
 
-    // Show/hide previous button (show if not at first story)
+   // Navigation buttons - remove auto-exit from navigation
     if (previousButton) {
-        previousButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
-        previousButton.onclick = () => {
+        previousButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
+        previousButton.onclick = (e) => {
+            e.stopPropagation();
             clearTimeout(progressTimeout);
-            if (currentVideo) currentVideo.pause();
-            if (currentStoryIndex > 0) {
-                viewStory(storyArray[currentStoryIndex - 1], storyArray);
+            if (currentVideo) {
+                currentVideo.pause();
+                currentVideo = null;
+            }
+            if (currentStoryIndex < storyArray.length - 1) {
+                viewStory(storyArray[currentStoryIndex + 1], storyArray);
             }
         };
     }
 
-    // Show/hide next button (show if not at last story)
     if (nextButton) {
-        nextButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
-        nextButton.onclick = () => {
+        nextButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
+        nextButton.onclick = (e) => {
+            e.stopPropagation();
             clearTimeout(progressTimeout);
-            if (currentVideo) currentVideo.pause();
-            if (currentStoryIndex < storyArray.length - 1) {
-                viewStory(storyArray[currentStoryIndex + 1], storyArray);
+            if (currentVideo) {
+                currentVideo.pause();
+                currentVideo = null;
+            }
+            if (currentStoryIndex > 0) {
+                viewStory(storyArray[currentStoryIndex - 1], storyArray);
             }
         };
     }
