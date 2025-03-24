@@ -114,7 +114,7 @@ export async function loadStories() {
             
         const otherStories = stories
             .filter(story => story.username !== currentUsername)
-            .sort((a, b) => new Date(a.expiresAt) - new Date(b.expiresAt)); // Sort other 
+            .sort((a, b) => new Date(b.expiresAt) - new Date(a.expiresAt)); // Changed to show newest first
 
         // Function to calculate time remaining
         const getTimeRemaining = (expiresAt) => {
@@ -318,11 +318,14 @@ function viewStory(story, storyArray) {
     }
 
     // Add navigation buttons
+    // Add navigation buttons with updated logic
     const previousButton = viewer.querySelector('#previousButton');
     const nextButton = viewer.querySelector('#nextButton');
 
     if (previousButton) {
-        previousButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
+        // Show previous button if there's a previous story from same user
+        const hasPrevious = currentStoryIndex > 0;
+        previousButton.style.display = hasPrevious ? 'flex' : 'none';
         previousButton.onclick = (e) => {
             e.stopPropagation();
             clearTimeout(progressTimeout);
@@ -330,17 +333,16 @@ function viewStory(story, storyArray) {
                 currentVideo.pause();
                 currentVideo = null;
             }
-            if (currentStoryIndex > 0) {
-                const prevStory = storyArray[currentStoryIndex - 1];
-                if (prevStory.username === story.username) {
-                    viewStory(prevStory, storyArray);
-                }
+            if (hasPrevious) {
+                viewStory(storyArray[currentStoryIndex - 1], storyArray);
             }
         };
     }
 
     if (nextButton) {
-        nextButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
+        // Show next button if there's a next story from same user
+        const hasNext = currentStoryIndex < storyArray.length - 1;
+        nextButton.style.display = hasNext ? 'flex' : 'none';
         nextButton.onclick = (e) => {
             e.stopPropagation();
             clearTimeout(progressTimeout);
@@ -348,13 +350,8 @@ function viewStory(story, storyArray) {
                 currentVideo.pause();
                 currentVideo = null;
             }
-            if (currentStoryIndex < storyArray.length - 1) {
-                const nextStory = storyArray[currentStoryIndex + 1];
-                if (nextStory.username === story.username) {
-                    viewStory(nextStory, storyArray);
-                } else {
-                    exitStoryViewer();
-                }
+            if (hasNext) {
+                viewStory(storyArray[currentStoryIndex + 1], storyArray);
             } else {
                 exitStoryViewer();
             }
@@ -396,20 +393,20 @@ function createStoryIndicators(storyArray) {
     
     indicatorsContainer.innerHTML = '';
 
-    // Get the current story and its index
+    // Get the current story
     const currentStory = storyArray[currentStoryIndex];
     
     // Create indicators based on who's story is being viewed
     const indicatorsDiv = document.createElement('div');
     indicatorsDiv.classList.add(currentStory.username === currentUsername ? 'user-indicators' : 'other-indicators');
     
-    // Create indicators with correct order and active state
+    // Create indicators matching UI order
     storyArray.forEach((_, index) => {
         const indicator = document.createElement('div');
         indicator.classList.add('story-indicator');
         indicator.classList.add(currentStory.username === currentUsername ? 'user-indicator' : 'other-indicator');
+        // Set active state based on current index
         indicator.classList.add(index === currentStoryIndex ? 'active' : 'inactive');
-        indicator.dataset.index = index; // Add index for reference
         indicatorsDiv.appendChild(indicator);
     });
     
@@ -417,24 +414,26 @@ function createStoryIndicators(storyArray) {
 }
 
     // Modify the click event listener in the createStoryElement function
-    storyElement.addEventListener('click', () => {
-        const isUserStory = userStories.some(s => s._id === story._id);
-        
-        let orderedStories;
-        if (isUserStory) {
-            // For user stories, keep original order and set correct index
-            orderedStories = [...userStories];
-            currentStoryIndex = userStories.findIndex(s => s._id === story._id);
-        } else {
-            // For other users' stories
-            const clickedUsername = story.username;
-            orderedStories = otherStories.filter(s => s.username === clickedUsername);
-            currentStoryIndex = orderedStories.findIndex(s => s._id === story._id);
-        }
-        
-        // Start viewing from the clicked story
-        viewStory(story, orderedStories);
-    });
+    // Update the click event listener in createStoryElement
+        storyElement.addEventListener('click', () => {
+            const isUserStory = userStories.some(s => s._id === story._id);
+    
+            let orderedStories;
+            if (isUserStory) {
+                // For user stories, maintain original order
+                orderedStories = [...userStories];
+                currentStoryIndex = orderedStories.findIndex(s => s._id === story._id);
+            } else {
+                // For other users' stories, get stories for this user and maintain UI order
+                const clickedUsername = story.username;
+                orderedStories = otherStories
+                    .filter(s => s.username === clickedUsername)
+                    .sort((a, b) => new Date(b.expiresAt) - new Date(a.expiresAt)); // Sort newest first
+                currentStoryIndex = orderedStories.findIndex(s => s._id === story._id);
+            }
+            
+            viewStory(story, orderedStories);
+        });
 
 
 function updateActiveIndicator() {
