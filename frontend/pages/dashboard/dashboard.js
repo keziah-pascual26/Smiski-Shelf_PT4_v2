@@ -63,6 +63,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// Add this function near the top of your file, after the variable declarations
+function exitStoryViewer() {
+    const viewer = document.querySelector('.story-viewer');
+    if (viewer) {
+        // Reset viewer state
+        viewer.classList.remove('active');
+        
+        // Clear any existing timers
+        clearTimeout(progressTimeout);
+        
+        // Stop and clear video if playing
+        if (currentVideo) {
+            currentVideo.pause();
+            currentVideo = null;
+        }
+        
+        // Reset progress tracking variables
+        progressPaused = false;
+        progressStartTime = 0;
+        remainingTime = 0;
+        
+        // Reset current story index
+        currentStoryIndex = 0;
+        
+        // Remove event listeners to prevent memory leaks
+        const commentsSection = viewer.querySelector('.story-comments');
+        if (commentsSection) {
+            commentsSection.remove();
+        }
+        
+        // Clear the viewer content
+        const container = viewer.querySelector('.story-container');
+        if (container) {
+            container.innerHTML = '';
+        }
+    }
+}
+
 export async function loadStories() {
     try {
         const token = localStorage.getItem('token');
@@ -544,77 +582,119 @@ function viewStory(story, storyArray) {
 
     viewer.appendChild(commentsSection);
 
-    // Add comment functionality
+    // Add comment functionality with proper progress handling
     const commentInput = commentsSection.querySelector('#storyCommentInput');
     const postCommentBtn = commentsSection.querySelector('#postCommentBtn');
-    const commentsList = commentsSection.querySelector('.comments-list'); // Get reference to comments list
+    const commentsList = commentsSection.querySelector('.comments-list');
 
+    // Pause progress when focusing on comment input
+    commentInput.addEventListener('focus', () => {
+        console.log('Comment input focused - pausing progress');
+        if (!progressPaused) {
+            pauseProgress();
+            if (currentVideo) {
+                currentVideo.pause();
+            }
+        }
+    });
+
+    // Handle click inside comments section to prevent auto-resume
+    commentsSection.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!progressPaused) {
+            pauseProgress();
+            if (currentVideo) {
+                currentVideo.pause();
+            }
+        }
+    });
+
+        // Handle comment submission
     postCommentBtn.addEventListener('click', async () => {
         const commentText = commentInput.value.trim();
         if (!commentText) return;
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:3000/api/stories/${story._id}/comment`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ text: commentText })
-            });
+                const token = localStorage.getItem('token');
+                const response = await fetch(`http://localhost:3000/api/stories/${story._id}/comment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ text: commentText })
+                });
 
-            if (!response.ok) {
-                throw new Error('Failed to add comment');
+                if (!response.ok) {
+                    throw new Error('Failed to add comment');
+                }
+
+                const { comment } = await response.json();
+                
+                // Create and append new comment
+                const newComment = document.createElement('div');
+                newComment.className = 'story-comment';
+                newComment.innerHTML = `
+                    <span class="comment-author">${comment.username}</span>
+                    <span class="comment-text">${comment.text}</span>
+                `;
+                commentsList.appendChild(newComment);
+                
+                // Clear input and remove focus
+                commentInput.value = '';
+                commentInput.blur();
+
+                // Resume progress after successful comment
+                if (progressPaused) {
+                    resumeProgress(() => {
+                        if (currentStoryIndex < storyArray.length - 1) {
+                            const nextStory = storyArray[currentStoryIndex + 1];
+                            if (nextStory && nextStory.username === story.username) {
+                                viewStory(nextStory, storyArray);
+                            } else {
+                                exitStoryViewer();
+                            }
+                        } else {
+                            exitStoryViewer();
+                        }
+                    });
+
+                    if (currentVideo) {
+                        currentVideo.play();
+                    }
+                }
+            } catch (error) {
+                console.error('Error posting comment:', error);
+                alert('Failed to add comment. Please try again.');
             }
+        });
 
-            const { comment } = await response.json();
-            
-            // Create new comment element
-            const newComment = document.createElement('div');
-            newComment.className = 'story-comment';
-            newComment.innerHTML = `
-                <span class="comment-author">${comment.username}</span>
-                <span class="comment-text">${comment.text}</span>
-            `;
-            
-            // Append new comment to comments list
-            commentsList.appendChild(newComment);
-            
-            // Clear input
-            commentInput.value = '';
-            
-            // Update story object in memory
-            story.comments = story.comments || [];
-            story.comments.push(comment);
-        } catch (error) {
-            console.error('Error posting comment:', error);
-            alert('Failed to add comment. Please try again.');
+        // Handle clicking outside comment area
+    document.addEventListener('click', (e) => {
+        if (!commentsSection.contains(e.target)) {
+            if (progressPaused) {
+                console.log('Clicked outside comment area - resuming progress');
+                resumeProgress(() => {
+                    if (currentStoryIndex < storyArray.length - 1) {
+                        const nextStory = storyArray[currentStoryIndex + 1];
+                        if (nextStory && nextStory.username === story.username) {
+                            viewStory(nextStory, storyArray);
+                        } else {
+                            exitStoryViewer();
+                        }
+                    } else {
+                        exitStoryViewer();
+                    }
+                });
+
+                if (currentVideo) {
+                    currentVideo.play();
+                }
+            }
         }
     });
-
-    // Enter key functionality
-    commentInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            postCommentBtn.click();
-        }
-    });
-
-    
-    }
-
-
-
-// Add helper function to handle story viewer exit
-function exitStoryViewer() {
-    const viewer = document.querySelector('.story-viewer');
-    viewer.classList.remove('active');
-    if (currentVideo) {
-        currentVideo.pause();
-        currentVideo = null;
-    }
-    clearTimeout(progressTimeout);
 }
+
 
 // Update createStoryIndicators function
 function createStoryIndicators(storyArray) {
@@ -817,3 +897,6 @@ function updateReactionCounts(storyId, counts = null) {
         }
     });
 }
+
+
+
