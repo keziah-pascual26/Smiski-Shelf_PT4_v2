@@ -33,6 +33,46 @@ document.addEventListener('DOMContentLoaded', function() {
             color: #666;
             position: relative;
         }
+        
+        /* Chat message alignment styles */
+        .chat-messages {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            max-width: 70%;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            position: relative;
+        }
+        
+        .message.sent {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+            margin-left: auto;
+        }
+        
+        .message.message-received {
+            align-self: flex-start;
+            background-color: #f1f0f0;
+            margin-right: auto;
+        }
+        
+        .message-content {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message-time {
+            font-size: 0.7rem;
+            color: #888;
+            align-self: flex-end;
+            margin-top: 2px;
+        }
     `;
     document.head.appendChild(style);
 });
