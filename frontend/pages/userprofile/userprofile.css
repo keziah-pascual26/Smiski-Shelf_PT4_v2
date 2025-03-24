@@ -175,6 +175,7 @@ hr {
 .details {
     width: 100%;
     color: #ffffff; /* White text */
+    margin-bottom: 2rem; /* Add spacing below the details section */
 }
 
 .detail-row {
@@ -221,7 +222,7 @@ hr {
 }
 
 .edit-details-btn {
-    background-color: #ffc107; /* Green background */
+    background-color: #ffc107; /* Yellow background */
     color: white; /* White text */
     border: none; /* Remove border */
     padding: 10px 20px; /* Add padding */
@@ -232,11 +233,13 @@ hr {
     align-items: center; /* Center icon vertically */
     gap: 0.5rem; /* Space between icon and text */
     transition: background-color 0.3s ease; /* Smooth hover effect */
-    margin-left: auto; /* Push the button to the right */
-    margin-top: 20px; /* Move the button downward */
+    width: 150px; /* Set a fixed width to prevent movement */
+    justify-content: center; /* Center the text/icon inside the button */
+    position: absolute; /* Fix the button's position */
+    right: 20px; /* Distance from the right edge */
+    bottom: 20px; /* Increased distance from the bottom edge */
 }
 
 .edit-details-btn:hover {
-    background-color:  #e0a800; /* Darker green on hover */
+    background-color: #e0a800; /* Darker yellow on hover */
 }
-

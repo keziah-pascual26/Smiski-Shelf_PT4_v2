@@ -42,6 +42,14 @@ const transporter = nodemailer.createTransport({
 });
 
 const userRoutes = require('./routes/userRoutes');
+
+// Middleware to parse JSON request bodies
+app.use(express.json()); // This is required to parse JSON bodies
+
+// Optional: Middleware to parse URL-encoded data
+app.use(express.urlencoded({ extended: true }));
+
+
 app.use('/api/user', userRoutes);
 
 // Middleware

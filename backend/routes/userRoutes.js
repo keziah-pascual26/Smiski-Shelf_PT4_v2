@@ -15,6 +15,7 @@ router.get('/user/profile', authenticateToken, async (req, res) => {
         // Return user data without sensitive information
         res.json({
             id: user._id,
+            name: user.name || '',
             username: user.username,
             email: user.email,
             bio: user.bio || '',
@@ -79,43 +80,39 @@ router.get('/users/all', authenticateToken, async (req, res) => {
 });
 
 // Update user profile
-router.put('/user/profile', authenticateToken, async (req, res) => {
+router.put("/profile", authenticateToken, async (req, res) => {
     try {
-        const { username, bio } = req.body;
-        
-        // Check if username is being changed and is already taken
-        if (username) {
-            const existingUser = await User.findOne({ username, _id: { $ne: req.user.id } });
-            if (existingUser) {
-                return res.status(400).json({ message: 'Username is already taken' });
-            }
+        // Ensure req.body is not undefined
+        if (!req.body || Object.keys(req.body).length === 0) {
+            return res.status(400).json({ message: "Request body is missing or empty" });
         }
-        
-        // Update user profile
+
+        const { name, username, email, bio } = req.body;
+
+        console.log("Received data:", { name, username, email, bio }); // Debug log
+        console.log("User ID from authMiddleware:", req.user.id); // Debug log
+
+        // Validate required fields
+        if (!name || !username || !email || !bio) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        // Update user details
         const updatedUser = await User.findByIdAndUpdate(
             req.user.id,
-            { 
-                username: username || undefined,
-                bio: bio || undefined
-            },
-            { new: true }
+            { name, username, email, bio },
+            { new: true, runValidators: true }
         );
-        
+
         if (!updatedUser) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: "User not found" });
         }
-        
-        res.json({
-            message: 'Profile updated successfully',
-            user: {
-                id: updatedUser._id,
-                username: updatedUser.username,
-                bio: updatedUser.bio || ''
-            }
-        });
+
+        console.log("Updated user:", updatedUser); // Debug log
+        res.json({ message: "Profile updated successfully", user: updatedUser });
     } catch (error) {
-        console.error('Error updating user profile:', error);
-        res.status(500).json({ message: 'Server error' });
+        console.error("Error during user update:", error);
+        res.status(500).json({ message: "Internal server error" });
     }
 });
 
