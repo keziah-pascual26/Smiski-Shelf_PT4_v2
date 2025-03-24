@@ -3,6 +3,38 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeExploreSection();
 });
 
+document.addEventListener('DOMContentLoaded', function() {
+    // Add CSS styles for button states and clickable profiles
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+        .add-friend-btn.added {
+            background-color: #f0f0f0;
+            color: #666;
+        }
+        
+        .add-friend-btn.friends {
+            background-color: #4267B2;
+            color: white;
+        }
+        
+        .user-profile-link {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        
+        .user-profile-link:hover {
+            background-color: #f5f5f5;
+        }
+    `;
+    document.head.appendChild(styleElement);
+    
+    initializeExploreSection();
+});
+
 async function initializeExploreSection() {
     const exploreSection = document.getElementById('exploreSection');
     
@@ -97,10 +129,12 @@ function renderUsers() {
         limitedUsers.forEach(user => {
             exploreSectionHtml += `
                 <div class="suggested-user" data-user-id="${user._id || user.id}">
-                    <img src="${user.profilePicture || '/public/default-avatar.png'}" alt="${user.username}" class="suggested-user-img">
-                    <div class="suggested-user-info">
-                        <div class="suggested-user-name">${user.username}</div>
-                        <div class="suggested-user-bio">${user.bio || 'Smiski enthusiast'}</div>
+                    <div class="user-profile-link" data-username="${user.username}">
+                        <img src="${user.profilePicture || '/public/default-avatar.png'}" alt="${user.username}" class="suggested-user-img">
+                        <div class="suggested-user-info">
+                            <div class="suggested-user-name">${user.username}</div>
+                            <div class="suggested-user-bio">${user.bio || 'Smiski enthusiast'}</div>
+                        </div>
                     </div>
                     <button class="add-friend-btn ${user.friendStatus === 'pending' ? 'added' : ''} ${user.friendStatus === 'accepted' ? 'friends' : ''}" 
                             data-user-id="${user._id || user.id}"
@@ -147,6 +181,11 @@ function renderUsers() {
         button.addEventListener('click', handleFriendButtonClick);
     });
     
+    // Add event listeners for user profile links
+    document.querySelectorAll('.user-profile-link').forEach(element => {
+        element.addEventListener('click', handleUserProfileClick);
+    });
+    
     // Add event listener for See More link
     const seeMoreLink = document.getElementById('seeMoreLink');
     if (seeMoreLink) {
@@ -170,6 +209,18 @@ function renderUsers() {
     // Check friend status after rendering if we don't already have status info
     if (!allSuggestedUsers.some(user => user.hasOwnProperty('friendStatus'))) {
         checkFriendStatus();
+    }
+}
+
+// Function to handle user profile click
+function handleUserProfileClick(event) {
+    event.preventDefault();
+    const username = this.getAttribute('data-username');
+    if (username) {
+        // Store the username in localStorage or sessionStorage to retrieve in other-profile.html
+        sessionStorage.setItem('viewProfileUsername', username);
+        // Navigate to other-profile.html
+        window.location.href = '/pages/other-profile/other-profile.html';
     }
 }
 

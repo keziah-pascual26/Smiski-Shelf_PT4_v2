@@ -6,80 +6,121 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
     }
     
-    // Elements
+    // Get the username from URL or sessionStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const usernameFromUrl = urlParams.get('username');
+    const usernameFromSession = sessionStorage.getItem('viewProfileUsername');
+    
+    // Use username from URL or sessionStorage, clear sessionStorage after using it
+    let targetUsername = usernameFromUrl || usernameFromSession;
+    
+    // Store the username in sessionStorage to preserve it during page reloads
+    // Only if it came from the URL and not already in sessionStorage
+    if (usernameFromUrl && !usernameFromSession) {
+        sessionStorage.setItem('viewProfileUsername', usernameFromUrl);
+    }
+    
+    // If we have a username in sessionStorage but not in URL, update the URL
+    // This ensures the URL is correct after a page reload
+    if (!usernameFromUrl && usernameFromSession) {
+        // Update URL without reloading the page
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('username', usernameFromSession);
+        window.history.pushState({}, '', newUrl.toString());
+        targetUsername = usernameFromSession;
+    }
+    
+    if (!targetUsername) {
+        showError('No username provided. Unable to load profile.');
+        return;
+    }
+    
+    console.log('Loading profile for username:', targetUsername); // Debug log
+    
+    // Elements - Add null checks to prevent errors if elements don't exist
     const profileUsername = document.getElementById('profileUsername');
     const profileBio = document.getElementById('profileBio');
     const profilePicture = document.getElementById('profilePicture');
     const postsCount = document.getElementById('postsCount');
     const friendsCount = document.getElementById('friendsCount');
     const storiesCount = document.getElementById('storiesCount');
-    const editProfileBtn = document.getElementById('editProfileBtn');
-    const editProfilePictureBtn = document.getElementById('editProfilePictureBtn');
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
+    const friendActionBtn = document.getElementById('friendActionBtn');
     
-    // Load user profile data
-    loadUserProfile();
+    // Clear any existing error messages
+    const errorElement = document.querySelector('.error-message');
+    if (errorElement) {
+        errorElement.remove();
+    }
     
-    // Load initial content (posts tab is active by default)
-    loadUserPosts();
+    // Load the target user's profile data
+    try {
+        const userData = await loadTargetUserProfile(targetUsername);
+        if (userData) {
+            // Load initial content (posts tab is active by default)
+            loadUserPosts(targetUsername);
+        }
+    } catch (error) {
+        console.error('Failed to load profile:', error);
+        showError('Failed to load user profile. Please try again later.');
+    }
     
     // Tab switching functionality
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tabName = button.getAttribute('data-tab');
-            
-            // Update active tab button
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            
-            // Update active tab content
-            tabContents.forEach(content => content.classList.remove('active'));
-            document.getElementById(`${tabName}-content`).classList.add('active');
-            
-            // Load content based on selected tab
-            if (tabName === 'posts') {
-                loadUserPosts();
-            } else if (tabName === 'stories') {
-                loadUserStories();
-            } else if (tabName === 'liked') {
-                loadLikedPosts();
-            }
-        });
-    });
-    
-    // Edit profile button
-    if (editProfileBtn) {
-        editProfileBtn.addEventListener('click', () => {
-            window.location.href = '/pages/settings/settings.html#profile';
-        });
-    }
-    
-    // Edit profile picture button
-    if (editProfilePictureBtn) {
-        editProfilePictureBtn.addEventListener('click', () => {
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = 'image/*';
-            fileInput.style.display = 'none';
-            
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files && e.target.files[0]) {
-                    const file = e.target.files[0];
-                    uploadProfilePicture(file);
+    if (tabButtons && tabButtons.length > 0) {
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons and contents
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                
+                // Add active class to clicked button and corresponding content
+                button.classList.add('active');
+                const tabId = button.getAttribute('data-tab');
+                const tabContent = document.getElementById(tabId);
+                if (tabContent) {
+                    tabContent.classList.add('active');
+                    
+                    // Load content based on tab
+                    if (tabId === 'postsTab') {
+                        loadUserPosts(targetUsername);
+                    } else if (tabId === 'storiesTab') {
+                        loadUserStories(targetUsername);
+                    } else if (tabId === 'friendsTab') {
+                        loadUserFriends(targetUsername);
+                    }
                 }
             });
-            
-            document.body.appendChild(fileInput);
-            fileInput.click();
-            document.body.removeChild(fileInput);
         });
     }
     
-    // Function to load user profile data
-    async function loadUserProfile() {
+            // Function to load target user's profile
+    async function loadTargetUserProfile(username) {
         try {
-            const response = await fetch('http://localhost:3000/api/user/profile', {
+            console.log('Fetching profile data for:', username); // Debug log
+            
+            // Try to get user data directly first (if you have a user endpoint)
+            try {
+                const userResponse = await fetch(`http://localhost:3000/api/users/profile?username=${encodeURIComponent(username)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (userResponse.ok) {
+                    const userData = await userResponse.json();
+                    console.log('User data received directly:', userData);
+                    updateProfileUI(userData);
+                    return userData;
+                }
+            } catch (userError) {
+                console.log('Could not fetch user directly, trying posts endpoint');
+            }
+            
+            // Fallback to posts endpoint
+            let response = await fetch(`http://localhost:3000/posts?username=${encodeURIComponent(username)}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -88,45 +129,92 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
             
             if (!response.ok) {
-                throw new Error('Failed to fetch profile data');
+                throw new Error(`Failed to fetch posts: ${response.status} ${response.statusText}`);
             }
             
-            const userData = await response.json();
+            const posts = await response.json();
+            console.log('Posts data received:', posts); // Debug log
             
-            // Update profile UI with user data
-            const username = userData.username || localStorage.getItem('username') || 'User';
-            profileUsername.textContent = username;
-            
-            // Set bio text or default message
-            profileBio.textContent = userData.bio || 'No bio yet. Click "Edit Profile" to add one!';
-            
-            // Set profile picture if available
-            if (userData.profilePicture) {
-                profilePicture.src = userData.profilePicture;
-            }
-            
-            // Load stats if available (or load separately)
-            if (userData.stats) {
-                postsCount.textContent = userData.stats.posts || 0;
-                friendsCount.textContent = userData.stats.friends || 0;
-                storiesCount.textContent = userData.stats.stories || 0;
+            if (posts && posts.length > 0) {
+                // Extract user info from the first post
+                const userData = {
+                    username: posts[0].username,
+                    bio: 'No bio available', // Posts don't contain bio
+                    profilePicture: posts[0].userProfilePicture || null,
+                    _id: posts[0].userId // This might be undefined depending on your post model
+                };
+                
+                console.log('Extracted user data from posts:', userData);
+                
+                // Update profile information
+                updateProfileUI(userData);
+                return userData;
             } else {
-                // Fetch stats separately
-                loadUserStats();
+                // No posts found, create basic profile
+                const userData = {
+                    username: username,
+                    bio: 'No bio available',
+                    profilePicture: null,
+                    _id: null
+                };
+                
+                console.log('No posts found, created basic user data:', userData);
+                
+                // Update profile information with basic data
+                updateProfileUI(userData);
+                return userData;
             }
         } catch (error) {
             console.error('Error loading profile:', error);
             
-            // Fallback to localStorage data
-            profileUsername.textContent = localStorage.getItem('username') || 'User';
-            profileBio.textContent = 'Bio unavailable. Please try again later.';
+            // Even if there's an error, still create a basic profile
+            const userData = {
+                username: username,
+                bio: 'No bio available',
+                profilePicture: null,
+                _id: null
+            };
+            
+            updateProfileUI(userData);
+            return userData;
         }
     }
+        
+        // Helper function to update profile UI
+        function updateProfileUI(userData) {
+            if (profileUsername) profileUsername.textContent = userData.username;
+            if (profileBio) profileBio.textContent = userData.bio || 'No bio available';
+            
+            if (profilePicture) {
+                if (userData.profilePicture) {
+                    profilePicture.src = `/uploads/${userData.profilePicture}`;
+                } else {
+                    profilePicture.src = '/public/default-avatar.png';
+                }
+            }
+            
+            // Load user stats
+            if (postsCount || friendsCount || storiesCount) {
+                loadUserStats(userData.username);
+            }
+            
+            // Check friendship status and update UI accordingly
+            if (userData._id && friendActionBtn) {
+                checkFriendshipStatus(userData._id);
+            }
+            
+            // Store user ID for later use
+            const profileContainer = document.querySelector('.profile-container');
+            if (profileContainer) {
+                profileContainer.dataset.userId = userData._id;
+            }
+        }
     
-    // Function to load user stats
-    async function loadUserStats() {
+            // Function to load user stats
+    async function loadUserStats(username) {
         try {
-            const response = await fetch('http://localhost:3000/api/user/stats', {
+            // Since we don't have a proper stats endpoint, let's count posts manually
+            const postsResponse = await fetch(`http://localhost:3000/posts?username=${encodeURIComponent(username)}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -134,29 +222,70 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }
             });
             
-            if (response.ok) {
-                const stats = await response.json();
-                postsCount.textContent = stats.posts || 0;
-                friendsCount.textContent = stats.friends || 0;
-                storiesCount.textContent = stats.stories || 0;
-            } else {
-                // Use placeholder values if API fails
-                postsCount.textContent = '0';
-                friendsCount.textContent = '0';
-                storiesCount.textContent = '0';
+            let postsCount = 0;
+            if (postsResponse.ok) {
+                const postsData = await postsResponse.json();
+                postsCount = postsData.length;
+                console.log(`Found ${postsCount} posts for user ${username}`);
             }
+            
+            // Create a stats object with the data we have
+            const stats = {
+                posts: postsCount,
+                friends: 0, // We don't have a way to count friends easily
+                stories: 0  // We don't have a way to count stories easily
+            };
+            
+            console.log('User stats:', stats); // Debug log
+            
+            // Update stats in UI if elements exist
+            if (document.getElementById('postsCount')) document.getElementById('postsCount').textContent = stats.posts || 0;
+            if (document.getElementById('friendsCount')) document.getElementById('friendsCount').textContent = stats.friends || 0;
+            if (document.getElementById('storiesCount')) document.getElementById('storiesCount').textContent = stats.stories || 0;
         } catch (error) {
-            console.error('Error loading stats:', error);
+            console.error('Error loading user stats:', error);
+            // Set default values if stats can't be loaded
+            if (document.getElementById('postsCount')) document.getElementById('postsCount').textContent = '0';
+            if (document.getElementById('friendsCount')) document.getElementById('friendsCount').textContent = '0';
+            if (document.getElementById('storiesCount')) document.getElementById('storiesCount').textContent = '0';
         }
     }
-    
-    // Function to load user's posts
-    async function loadUserPosts() {
-        const userPostsFeed = document.getElementById('userPostsFeed');
-        userPostsFeed.innerHTML = '<div class="loading">Loading your posts...</div>';
+
+    // Function to show error message
+    function showError(message) {
+        console.error('Error:', message);
         
+        // Remove any existing error messages
+        const existingError = document.querySelector('.error-message');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Create a non-intrusive error banner at the top
+        const errorBanner = document.createElement('div');
+        errorBanner.className = 'error-message';
+        errorBanner.style.cssText = 'background-color: #f8d7da; color: #721c24; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; position: relative;';
+        
+        errorBanner.innerHTML = `
+            <span style="font-weight: bold;">Error:</span> ${message}
+            <span class="close-error" style="position: absolute; right: 10px; top: 10px; cursor: pointer; font-weight: bold;">&times;</span>
+            <a href="/pages/dashboard/dashboard.html" style="margin-left: 15px; color: #721c24; text-decoration: underline;">Return to Dashboard</a>
+        `;
+        
+        // Insert at the top of the page
+        const mainContent = document.querySelector('main') || document.body;
+        mainContent.insertBefore(errorBanner, mainContent.firstChild);
+        
+        // Add close button functionality
+        errorBanner.querySelector('.close-error').addEventListener('click', () => {
+            errorBanner.remove();
+        });
+    }
+    
+    // Function to check friendship status
+    async function checkFriendshipStatus(targetUserId) {
         try {
-            const response = await fetch('http://localhost:3000/posts?username=' + encodeURIComponent(localStorage.getItem('username')), {
+            const response = await fetch(`http://localhost:3000/api/friends/status/${targetUserId}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -165,46 +294,201 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
             
             if (!response.ok) {
-                throw new Error('Failed to fetch posts');
+                throw new Error('Failed to fetch friendship status');
             }
             
-            const posts = await response.json();
+            const { status } = await response.json();
             
-            if (posts.length === 0) {
-                userPostsFeed.innerHTML = `
-                    <div class="empty-state">
-                        <h3>No posts yet</h3>
-                        <p>Share your Smiski collection with the community!</p>
-                        <a href="/pages/dashboard/dashboard.html" class="empty-state-action">Create a Post</a>
-                    </div>
-                `;
-                return;
+            // Update friend action button based on status
+            if (friendActionBtn) {
+                switch(status) {
+                    case 'none':
+                        friendActionBtn.textContent = 'Add Friend';
+                        friendActionBtn.className = 'action-btn add-friend';
+                        friendActionBtn.onclick = () => sendFriendRequest(targetUserId);
+                        break;
+                    case 'pending_sent':
+                        friendActionBtn.textContent = 'Cancel Request';
+                        friendActionBtn.className = 'action-btn cancel-request';
+                        friendActionBtn.onclick = () => cancelFriendRequest(targetUserId);
+                        break;
+                    case 'pending_received':
+                        friendActionBtn.textContent = 'Accept Request';
+                        friendActionBtn.className = 'action-btn accept-request';
+                        friendActionBtn.onclick = () => acceptFriendRequest(targetUserId);
+                        break;
+                    case 'friends':
+                        friendActionBtn.textContent = 'Unfriend';
+                        friendActionBtn.className = 'action-btn unfriend';
+                        friendActionBtn.onclick = () => unfriend(targetUserId);
+                        break;
+                    default:
+                        friendActionBtn.style.display = 'none';
+                }
+                
+                // Show the button after status is determined
+                friendActionBtn.style.display = 'block';
             }
-            
-            // Render posts
-            userPostsFeed.innerHTML = '';
-            posts.forEach(post => {
-                const postElement = createPostElement(post);
-                userPostsFeed.appendChild(postElement);
-            });
         } catch (error) {
-            console.error('Error loading posts:', error);
-            userPostsFeed.innerHTML = `
-                <div class="empty-state">
-                    <h3>Error loading posts</h3>
-                    <p>We couldn't load your posts. Please try again later.</p>
-                </div>
-            `;
+            console.error('Error checking friendship status:', error);
+            if (friendActionBtn) {
+                friendActionBtn.style.display = 'none';
+            }
         }
     }
     
-    // Function to load user's stories
-    async function loadUserStories() {
+    // Friend action functions
+    async function sendFriendRequest(targetUserId) {
+        try {
+            const response = await fetch('http://localhost:3000/api/friends/request', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ userId: targetUserId })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to send friend request');
+            }
+            
+            // Update UI
+            checkFriendshipStatus(targetUserId);
+        } catch (error) {
+            console.error('Error sending friend request:', error);
+            alert('Failed to send friend request. Please try again.');
+        }
+    }
+    
+    async function cancelFriendRequest(targetUserId) {
+        try {
+            const response = await fetch(`http://localhost:3000/api/friends/cancel/${targetUserId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to cancel friend request');
+            }
+            
+            // Update UI
+            checkFriendshipStatus(targetUserId);
+        } catch (error) {
+            console.error('Error canceling friend request:', error);
+            alert('Failed to cancel friend request. Please try again.');
+        }
+    }
+    
+    async function acceptFriendRequest(targetUserId) {
+        try {
+            const response = await fetch(`http://localhost:3000/api/friends/accept/${targetUserId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to accept friend request');
+            }
+            
+            // Update UI
+            checkFriendshipStatus(targetUserId);
+            // Refresh friends count
+            loadUserStats(targetUsername);
+        } catch (error) {
+            console.error('Error accepting friend request:', error);
+            alert('Failed to accept friend request. Please try again.');
+        }
+    }
+    
+    async function unfriend(targetUserId) {
+        try {
+            const response = await fetch(`http://localhost:3000/api/friends/unfriend/${targetUserId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to unfriend user');
+            }
+            
+            // Update UI
+            checkFriendshipStatus(targetUserId);
+            // Refresh friends count
+            loadUserStats(targetUsername);
+        } catch (error) {
+            console.error('Error unfriending user:', error);
+            alert('Failed to unfriend user. Please try again.');
+        }
+    }
+    
+        // Function to load user posts
+        async function loadUserPosts(username) {
+            const userPostsFeed = document.getElementById('userPostsFeed');
+            userPostsFeed.innerHTML = '<div class="loading">Loading posts...</div>';
+            
+            try {
+                // Using the correct endpoint format from your postRoutes.js
+                // The route is '/posts?username=X' not '/posts/user/X'
+                const response = await fetch(`http://localhost:3000/posts?username=${encodeURIComponent(username)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch posts: ${response.status} ${response.statusText}`);
+                }
+                
+                const posts = await response.json();
+                console.log(`Loaded ${posts.length} posts for user ${username}:`, posts);
+                
+                if (posts.length === 0) {
+                    userPostsFeed.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No posts yet</h3>
+                            <p>${username} hasn't shared any posts yet.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Render posts
+                userPostsFeed.innerHTML = '';
+                posts.forEach(post => {
+                    const postElement = createPostElement(post);
+                    userPostsFeed.appendChild(postElement);
+                });
+            } catch (error) {
+                console.error('Error loading posts:', error);
+                userPostsFeed.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error loading posts</h3>
+                        <p>We couldn't load the posts. Please try again later.</p>
+                        <p class="error-details">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    
+    // Function to load user stories
+    async function loadUserStories(username) {
         const userStoriesFeed = document.getElementById('userStoriesFeed');
-        userStoriesFeed.innerHTML = '<div class="loading">Loading your stories...</div>';
+        userStoriesFeed.innerHTML = '<div class="loading">Loading stories...</div>';
         
         try {
-            const response = await fetch('http://localhost:3000/api/stories/mystories', {
+            const response = await fetch(`http://localhost:3000/api/stories/user/${encodeURIComponent(username)}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -222,8 +506,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 userStoriesFeed.innerHTML = `
                     <div class="empty-state">
                         <h3>No stories yet</h3>
-                        <p>Share your Smiski moments in a story!</p>
-                        <a href="/pages/dashboard/dashboard.html" class="empty-state-action">Create a Story</a>
+                        <p>${username} hasn't shared any stories yet.</p>
                     </div>
                 `;
                 return;
@@ -240,293 +523,137 @@ document.addEventListener('DOMContentLoaded', async function() {
             userStoriesFeed.innerHTML = `
                 <div class="empty-state">
                     <h3>Error loading stories</h3>
-                    <p>We couldn't load your stories. Please try again later.</p>
+                    <p>We couldn't load the stories. Please try again later.</p>
                 </div>
             `;
         }
     }
     
-// Function to load liked posts
-async function loadLikedPosts() {
-    const userLikedFeed = document.getElementById('userLikedFeed');
-    userLikedFeed.innerHTML = '<div class="loading">Loading liked posts...</div>';
-    
-    try {
-        console.log('Fetching liked posts...');
-        const response = await fetch('http://localhost:3000/posts/liked', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+    // Function to load user friends
+    async function loadUserFriends(username) {
+        const userFriendsFeed = document.getElementById('userFriendsFeed');
+        userFriendsFeed.innerHTML = '<div class="loading">Loading friends...</div>';
         
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Server response:', errorText);
-            throw new Error(`Failed to fetch liked posts: ${response.status} ${response.statusText}`);
-        }
-        
-        const likedPosts = await response.json();
-        console.log('Liked posts received:', likedPosts.length);
-        
-        // Verify each post has the current user in its likes array
-        const currentUsername = localStorage.getItem('username');
-        const filteredLikedPosts = likedPosts.filter(post => 
-            post.likes && post.likes.some(like => like.username === currentUsername)
-        );
-        
-        // Sort posts by the most recently liked first using the createdAt timestamp in the like object
-        filteredLikedPosts.sort((a, b) => {
-            const aLike = a.likes.find(like => like.username === currentUsername);
-            const bLike = b.likes.find(like => like.username === currentUsername);
+        try {
+            const response = await fetch(`http://localhost:3000/api/friends/list/${encodeURIComponent(username)}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
             
-            // If both likes have timestamps, compare them
-            if (aLike && aLike.createdAt && bLike && bLike.createdAt) {
-                return new Date(bLike.createdAt) - new Date(aLike.createdAt);
+            if (!response.ok) {
+                throw new Error('Failed to fetch friends');
             }
             
-            // If only one has a timestamp, prioritize the one with timestamp
-            if (aLike && aLike.createdAt) return -1;
-            if (bLike && bLike.createdAt) return 1;
+            const friends = await response.json();
             
-            // If neither has a timestamp, fall back to post creation date
-            return new Date(b.createdAt) - new Date(a.createdAt);
-        });
-        
-        console.log('Filtered and sorted liked posts:', filteredLikedPosts.length);
-        
-        if (filteredLikedPosts.length === 0) {
-            userLikedFeed.innerHTML = `
-                <div class="empty-state">
-                    <h3>No liked posts yet</h3>
-                    <p>Like posts to see them appear here!</p>
-                    <a href="/pages/dashboard/dashboard.html" class="empty-state-action">Browse Posts</a>
-                </div>
-            `;
-            return;
-        }
-        
-        // Render liked posts
-        userLikedFeed.innerHTML = '';
-        filteredLikedPosts.forEach(post => {
-            const postElement = createPostElement(post, true); // Pass true to indicate this is the liked tab
-            userLikedFeed.appendChild(postElement);
-        });
-    } catch (error) {
-        console.error('Error loading liked posts:', error);
-        userLikedFeed.innerHTML = `
-            <div class="empty-state">
-                <h3>Error loading liked posts</h3>
-                <p>We couldn't load your liked posts. Please try again later.</p>
-                <p class="error-details">${error.message}</p>
-            </div>
-        `;
-    }
-}
-    
-// Helper function to create a post element
-function createPostElement(post, isLikedTab = false) {
-    const postElement = document.createElement('div');
-    postElement.className = 'post';
-    
-    // Format timestamp
-    const timestamp = formatTimestamp(post.createdAt);
-    
-    // Create media HTML if post has media
-    let mediaContent = '';
-    if (post.media && post.media.length > 0) {
-        mediaContent = `
-            <div class="post-media">
-                ${post.media.map(file => {
-                    const fileExtension = file.split('.').pop().toLowerCase();
-                    if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
-                        return `
-                            <video controls>
-                                <source src="/uploads/${file}" type="video/${fileExtension}">
-                                Your browser does not support the video tag.
-                            </video>`;
-                    } else {
-                        return `<img src="/uploads/${file}" alt="Post Image">`;
-                    }
-                }).join('')}
-            </div>
-        `;
-    }
-    
-    // Get current username from localStorage
-    const currentUsername = localStorage.getItem('username');
-    
-    // Check if current user has liked the post
-    const userLiked = (post.likes || []).some(like => like.username === currentUsername);
-    
-    // Only show edit and delete buttons if it's the user's own post and not in the liked tab
-    const showEditDelete = post.username === currentUsername && !isLikedTab;
-    
-    postElement.innerHTML = `
-        <div class="post-header">
-            <img src="/public/no-profile.png" alt="User Profile">
-            <span class="username">${post.username}</span>
-            <span class="timestamp">• ${timestamp}</span>
-            ${post.originalPostId ? `• Reposted from original post` : ''}
-        </div>
-        <div class="post-content" id="post-content-${post._id}">
-            <p>${post.text}</p>
-            ${mediaContent}
-        </div>
-        <div class="post-edit-form" id="post-edit-form-${post._id}" style="display: none;">
-            <textarea id="edit-text-${post._id}" class="edit-post-textarea">${post.text}</textarea>
-            
-            ${post.media && post.media.length > 0 ? `
-                <div class="current-media-preview">
-                    <p>Current media:</p>
-                    <div class="media-preview-container">
-                        ${post.media.map(file => {
-                            const fileExtension = file.split('.').pop().toLowerCase();
-                            if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
-                                return `<div class="media-preview-item">
-                                    <video controls>
-                                        <source src="/uploads/${file}" type="video/${fileExtension}">
-                                        Your browser does not support the video tag.
-                                    </video>
-                                </div>`;
-                            } else {
-                                return `<div class="media-preview-item">
-                                    <img src="/uploads/${file}" alt="Post Image">
-                                </div>`;
-                            }
-                        }).join('')}
+            if (friends.length === 0) {
+                userFriendsFeed.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No friends yet</h3>
+                        <p>${username} hasn't added any friends yet.</p>
                     </div>
-                    <p class="media-note">Uploading new media will replace the current media</p>
-                </div>
-            ` : ''}
+                `;
+                return;
+            }
             
-            <div class="media-upload-container">
-                <label for="edit-media-${post._id}">Upload new media (optional):</label>
-                <input type="file" id="edit-media-${post._id}" class="edit-media-input" multiple accept="image/*,video/*">
-            </div>
+            // Render friends
+            userFriendsFeed.innerHTML = '<div class="friends-grid"></div>';
+            const friendsGrid = userFriendsFeed.querySelector('.friends-grid');
             
-            <div class="edit-actions">
-                <button class="save-edit-button" data-id="${post._id}">Save</button>
-                <button class="cancel-edit-button" data-id="${post._id}">Cancel</button>
-            </div>
-        </div>
-        <div class="post-footer">
-            <button class="like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
-                <i class="fa fa-heart"></i> ${post.likes?.length || 0}
-            </button>
-            <button class="comment-button" data-id="${post._id}">
-                <i class="fa fa-comment"></i> ${post.comments?.length || 0}
-            </button>
-            ${showEditDelete ? `
-                <button class="edit-button" data-id="${post._id}">
-                    <i class="fa fa-edit"></i> Edit
-                </button>
-                <button class="delete-button" data-id="${post._id}">
-                    <i class="fa fa-trash"></i> Delete
-                </button>
-            ` : ''}
-        </div>
-        <div class="comment-section" id="comment-section-${post._id}">
-            ${(post.comments || []).map(comment => `
-                <div class="comment" data-comment-id="${comment._id}">
-                    <span class="comment-username">${comment.username}</span>: 
-                    <span class="comment-text">${comment.text}</span>
-                    ${comment.username === currentUsername ? `
-                        <button class="delete-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">
-                            <i class="fa fa-times"></i>
-                        </button>
-                    ` : ''}
+            friends.forEach(friend => {
+                const friendElement = document.createElement('div');
+                friendElement.className = 'friend-card';
+                friendElement.innerHTML = `
+                    <img src="${friend.profilePicture ? `/uploads/${friend.profilePicture}` : '/public/no-profile.png'}" alt="${friend.username}" class="friend-avatar">
+                    <h3 class="friend-name">${friend.username}</h3>
+                    <p class="friend-bio">${friend.bio || 'No bio available'}</p>
+                    <a href="/pages/other-profile/other-profile.html?username=${encodeURIComponent(friend.username)}" class="view-profile-btn">View Profile</a>
+                `;
+                friendsGrid.appendChild(friendElement);
+            });
+        } catch (error) {
+            console.error('Error loading friends:', error);
+            userFriendsFeed.innerHTML = `
+                <div class="empty-state">
+                    <h3>Error loading friends</h3>
+                    <p>We couldn't load the friends list. Please try again later.</p>
                 </div>
-            `).join('') || '<div>No comments yet</div>'}
-            <input type="text" class="comment-input" placeholder="Add a comment..." data-id="${post._id}">
-        </div>
-    `;
+            `;
+        }
+    }
     
-    // Add some CSS for the edit form
-    const style = document.createElement('style');
-    style.textContent = `
-        .post-edit-form {
-            padding: 10px;
-            background-color: #f9f9f9;
-            border-radius: 5px;
-            margin-bottom: 10px;
+    // Helper function to create a post element
+    function createPostElement(post) {
+        const postElement = document.createElement('div');
+        postElement.className = 'post';
+        
+        // Format timestamp
+        const timestamp = formatTimestamp(post.createdAt);
+        
+        // Create media HTML if post has media
+        let mediaContent = '';
+        if (post.media && post.media.length > 0) {
+            mediaContent = `
+                <div class="post-media">
+                    ${post.media.map(file => {
+                        const fileExtension = file.split('.').pop().toLowerCase();
+                        if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                            return `
+                                <video controls>
+                                    <source src="/uploads/${file}" type="video/${fileExtension}">
+                                    Your browser does not support the video tag.
+                                </video>`;
+                        } else {
+                            return `<img src="/uploads/${file}" alt="Post Image">`;
+                        }
+                    }).join('')}
+                </div>
+            `;
         }
         
-        .edit-post-textarea {
-            width: 100%;
-            min-height: 80px;
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            resize: vertical;
-        }
+        // Get current username from localStorage
+        const currentUsername = localStorage.getItem('username');
         
-        .media-upload-container {
-            margin: 10px 0;
-        }
+        // Check if current user has liked the post
+        const userLiked = (post.likes || []).some(like => like.username === currentUsername);
         
-        .edit-media-input {
-            margin-top: 5px;
-        }
-        
-        .edit-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .save-edit-button, .cancel-edit-button {
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .save-edit-button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-        }
-        
-        .cancel-edit-button {
-            background-color: #f1f1f1;
-            border: 1px solid #ddd;
-        }
-        
-        .current-media-preview {
-            margin: 10px 0;
-        }
-        
-        .media-preview-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin: 10px 0;
-        }
-        
-        .media-preview-item {
-            width: 100px;
-            height: 100px;
-            overflow: hidden;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-        }
-        
-        .media-preview-item img, .media-preview-item video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .media-note {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
-    `;
-    document.head.appendChild(style);
+        postElement.innerHTML = `
+            <div class="post-header">
+                <img src="${post.userProfilePicture || '/public/no-profile.png'}" alt="User Profile">
+                <span class="username">${post.username}</span>
+                <span class="timestamp">• ${timestamp}</span>
+                ${post.originalPostId ? `• Reposted from original post` : ''}
+            </div>
+            <div class="post-content">
+                <p>${post.text}</p>
+                ${mediaContent}
+            </div>
+            <div class="post-footer">
+                <button class="like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
+                    <i class="fa fa-heart"></i> ${post.likes?.length || 0}
+                </button>
+                <button class="comment-button" data-id="${post._id}">
+                    <i class="fa fa-comment"></i> ${post.comments?.length || 0}
+                </button>
+            </div>
+            <div class="comment-section" id="comment-section-${post._id}">
+                ${(post.comments || []).map(comment => `
+                    <div class="comment" data-comment-id="${comment._id}">
+                        <span class="comment-username">${comment.username}</span>: 
+                        <span class="comment-text">${comment.text}</span>
+                        ${comment.username === currentUsername ? `
+                            <button class="delete-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                `).join('') || '<div>No comments yet</div>'}
+                <input type="text" class="comment-input" placeholder="Add a comment..." data-id="${post._id}">
+            </div>
+        `;
         
         // Add event listeners
         const likeButton = postElement.querySelector('.like-button');
@@ -541,39 +668,6 @@ function createPostElement(post, isLikedTab = false) {
             commentInput.addEventListener('keypress', e => {
                 if (e.key === 'Enter') {
                     addComment(post._id, commentInput);
-                }
-            });
-        }
-        
-        // Edit button functionality
-        const editButton = postElement.querySelector('.edit-button');
-        if (editButton) {
-            editButton.addEventListener('click', () => {
-                toggleEditMode(post._id);
-            });
-        }
-        
-        // Save edit button functionality
-        const saveEditButton = postElement.querySelector('.save-edit-button');
-        if (saveEditButton) {
-            saveEditButton.addEventListener('click', () => {
-                savePostEdit(post._id);
-            });
-        }
-        
-        // Cancel edit button functionality
-        const cancelEditButton = postElement.querySelector('.cancel-edit-button');
-        if (cancelEditButton) {
-            cancelEditButton.addEventListener('click', () => {
-                toggleEditMode(post._id, false);
-            });
-        }
-        
-        const deleteButton = postElement.querySelector('.delete-button');
-        if (deleteButton) {
-            deleteButton.addEventListener('click', () => {
-                if (confirm('Are you sure you want to delete this post?')) {
-                    deletePost(post._id);
                 }
             });
         }
@@ -635,9 +729,6 @@ function createPostElement(post, isLikedTab = false) {
             <p class="story-description">${story.description}</p>
             <div class="story-footer">
                 <button class="view-story-btn" data-id="${story._id}">View Story</button>
-                <button class="delete-story-btn" data-id="${story._id}">
-                    <i class="fa fa-trash"></i>
-                </button>
             </div>
         `;
         
@@ -646,20 +737,64 @@ function createPostElement(post, isLikedTab = false) {
         if (viewButton) {
             viewButton.addEventListener('click', () => {
                 // Implement story viewer functionality
-                alert('Story viewer will be implemented here!');
-            });
-        }
-        
-        const deleteButton = storyElement.querySelector('.delete-story-btn');
-        if (deleteButton) {
-            deleteButton.addEventListener('click', () => {
-                if (confirm('Are you sure you want to delete this story?')) {
-                    deleteStory(story._id);
-                }
+                viewStory(story);
             });
         }
         
         return storyElement;
+    }
+    
+    // Function to view a story
+    function viewStory(story) {
+        // Create a modal for viewing the story
+        const modal = document.createElement('div');
+        modal.className = 'story-modal';
+        
+        let mediaContent = '';
+        if (story.media && story.media.length > 0) {
+            const mediaFile = story.media[0];
+            const fileExtension = mediaFile.split('.').pop().toLowerCase();
+            
+            if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                mediaContent = `
+                    <video controls autoplay>
+                        <source src="/uploads/${mediaFile}" type="video/${fileExtension}">
+                        Your browser does not support the video tag.
+                    </video>
+                `;
+            } else {
+                mediaContent = `<img src="/uploads/${mediaFile}" alt="Story Image">`;
+            }
+        }
+        
+        modal.innerHTML = `
+            <div class="story-modal-content">
+                <span class="close-modal">&times;</span>
+                <h2>${story.title}</h2>
+                <div class="story-media-container">
+                    ${mediaContent}
+                </div>
+                <p>${story.description}</p>
+                <div class="story-info">
+                    <span>Posted by ${story.username}</span>
+                    <span>${formatTimestamp(story.createdAt)}</span>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Close modal when clicking the close button
+        modal.querySelector('.close-modal').addEventListener('click', () => {
+            document.body.removeChild(modal);
+        });
+        
+        // Close modal when clicking outside the content
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                document.body.removeChild(modal);
+            }
+        });
     }
     
     // Function to toggle like on a post
@@ -715,7 +850,7 @@ function createPostElement(post, isLikedTab = false) {
             }
             
             // Reload posts to show new comment
-            loadUserPosts();
+            loadUserPosts(targetUsername);
             
             // Clear input
             commentInput.value = '';
@@ -725,135 +860,6 @@ function createPostElement(post, isLikedTab = false) {
             alert('Failed to add comment. Please try again.');
         }
     }
-    
-    // Function to delete a post
-    async function deletePost(postId) {
-        try {
-            // Get token inside the function to ensure it's available
-            const token = localStorage.getItem('token');
-            
-            if (!token) {
-                alert('You need to be logged in to delete posts');
-                return;
-            }
-            
-            console.log('Attempting to delete post:', postId); // Debug log
-            
-            // Changed endpoint to match the backend route structure
-            const response = await fetch(`http://localhost:3000/posts/${postId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            console.log('Delete response status:', response.status); // Debug log
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Server response:', errorText);
-                throw new Error(`Failed to delete post: ${response.status} ${response.statusText}`);
-            }
-            
-            // Reload posts to reflect changes
-            loadUserPosts();
-            
-            // Also update user stats
-            loadUserStats();
-            
-            // Show success message
-            alert('Post deleted successfully');
-            
-        } catch (error) {
-            console.error('Error deleting post:', error);
-            alert(`Failed to delete post: ${error.message}`);
-        }
-    }
-
-// Function to toggle edit mode for a post
-function toggleEditMode(postId, showEditForm = true) {
-    const contentElement = document.getElementById(`post-content-${postId}`);
-    const editFormElement = document.getElementById(`post-edit-form-${postId}`);
-    
-    // Check if elements exist before trying to modify them
-    if (!contentElement || !editFormElement) {
-        console.error(`Could not find post elements for post ID: ${postId}`);
-        return;
-    }
-    
-    if (showEditForm) {
-        contentElement.style.display = 'none';
-        editFormElement.style.display = 'block';
-    } else {
-        contentElement.style.display = 'block';
-        editFormElement.style.display = 'none';
-    }
-}
-
-// Function to save post edits
-async function savePostEdit(postId) {
-    const editTextarea = document.getElementById(`edit-text-${postId}`);
-    const mediaInput = document.getElementById(`edit-media-${postId}`);
-    const newText = editTextarea.value.trim();
-    
-    // Check if we have either text or media files
-    if (!newText && (!mediaInput.files || mediaInput.files.length === 0)) {
-        alert('Post content cannot be empty. Please add text or media.');
-        return;
-    }
-    
-    // Confirmation dialog
-    if (!confirm('Are you sure you want to save these changes?')) {
-        return;
-    }
-    
-    console.log('Saving post edit:', { postId, text: newText, mediaFiles: mediaInput.files });
-    
-    try {
-        const token = localStorage.getItem('token');
-        
-        // Use FormData to handle both text and files
-        const formData = new FormData();
-        formData.append('text', newText);
-        
-        // Add media files if selected
-        if (mediaInput.files && mediaInput.files.length > 0) {
-            for (let i = 0; i < mediaInput.files.length; i++) {
-                formData.append('media', mediaInput.files[i]);
-            }
-        }
-        
-        const response = await fetch(`http://localhost:3000/posts/${postId}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`
-                // Don't set Content-Type when using FormData
-            },
-            body: formData
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || 'Failed to update post');
-        }
-        
-        console.log('Post updated successfully');
-        
-        // Reload posts to reflect changes
-        loadUserPosts();
-        
-        // Hide edit form
-        toggleEditMode(postId, false);
-        
-        // Show success message
-        alert('Post updated successfully');
-        
-    } catch (error) {
-        console.error('Error updating post:', error);
-        alert(`Failed to update post: ${error.message}`);
-    }
-}
     
     // Function to delete a comment
     async function deleteComment(postId, commentId) {
@@ -870,8 +876,8 @@ async function savePostEdit(postId) {
                 throw new Error('Failed to delete comment');
             }
             
-            // Reload posts to reflect changes
-            loadUserPosts();
+            // Reload posts to reflect the deleted comment
+            loadUserPosts(targetUsername);
             
         } catch (error) {
             console.error('Error deleting comment:', error);
@@ -879,90 +885,38 @@ async function savePostEdit(postId) {
         }
     }
     
-    // Function to delete a story
-    async function deleteStory(storyId) {
-        try {
-            const response = await fetch(`http://localhost:3000/api/stories/${storyId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to delete story');
-            }
-            
-            // Reload stories to reflect changes
-            loadUserStories();
-            
-            // Also update user stats
-            loadUserStats();
-            
-        } catch (error) {
-            console.error('Error deleting story:', error);
-            alert('Failed to delete story. Please try again.');
-        }
-    }
-    
-    // Function to upload a profile picture
-    async function uploadProfilePicture(file) {
-        const formData = new FormData();
-        formData.append('profilePicture', file);
-        
-        try {
-            const response = await fetch('http://localhost:3000/api/user/profile/picture', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to upload profile picture');
-            }
-            
-            const data = await response.json();
-            
-            // Update profile picture in UI
-            profilePicture.src = data.profilePicture;
-            
-            alert('Profile picture updated successfully!');
-            
-        } catch (error) {
-            console.error('Error uploading profile picture:', error);
-            alert('Failed to upload profile picture. Please try again.');
-        }
-    }
-    
     // Helper function to format timestamp
     function formatTimestamp(timestamp) {
-        if (!timestamp) return 'Just now';
-        
         const date = new Date(timestamp);
         const now = new Date();
-        const diffMs = now - date;
-        const diffSec = Math.floor(diffMs / 1000);
-        const diffMin = Math.floor(diffSec / 60);
-        const diffHour = Math.floor(diffMin / 60);
-        const diffDay = Math.floor(diffHour / 24);
+        const diffInSeconds = Math.floor((now - date) / 1000);
         
-        if (diffSec < 60) {
-            return `${diffSec} seconds ago`;
-        } else if (diffMin < 60) {
-            return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
-        } else if (diffHour < 24) {
-            return `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`;
-        } else if (diffDay < 7) {
-            return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
+        if (diffInSeconds < 60) {
+            return `${diffInSeconds}s ago`;
+        } else if (diffInSeconds < 3600) {
+            return `${Math.floor(diffInSeconds / 60)}m ago`;
+        } else if (diffInSeconds < 86400) {
+            return `${Math.floor(diffInSeconds / 3600)}h ago`;
+        } else if (diffInSeconds < 604800) {
+            return `${Math.floor(diffInSeconds / 86400)}d ago`;
         } else {
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
+            return date.toLocaleDateString();
+        }
+    }
+    
+    // Function to show error message
+    function showError(message) {
+        const container = document.querySelector('.profile-container');
+        if (container) {
+            container.innerHTML = `
+                <div class="error-message">
+                    <h2>Error</h2>
+                    <p>${message}</p>
+                    <a href="/pages/dashboard/dashboard.html" class="btn">Return to Dashboard</a>
+                </div>
+            `;
+        } else {
+            alert(message);
         }
     }
 });
