@@ -122,7 +122,7 @@ async function initializeProfileSection() {
         
         // Add event listener for the edit profile button
         document.getElementById('editProfileBtn').addEventListener('click', function() {
-            window.location.href = '/pages/settings/settings.html#profile';
+            window.location.href = '/pages/userprofile/userprofile.html';
         });
         
     } catch (error) {
