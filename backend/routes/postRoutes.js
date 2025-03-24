@@ -117,10 +117,18 @@ module.exports = (app) => {
                 return res.status(200).json({ message: "Like removed", likes: post.likes });
             }
 
-            // User has not liked the post, so add the like
-            post.likes.push({ username: req.user.username });
+            // User has not liked the post, so add the like with timestamp
+            const now = new Date();
+            post.likes.push({ 
+                username: req.user.username,
+                createdAt: now
+            });
+            
+            // Ensure the post is modified and saved correctly
+            post.markModified('likes');
             await post.save();
-            console.log(`✅ Post ${req.params.id} liked by ${req.user.username}`);
+            
+            console.log(`✅ Post ${req.params.id} liked by ${req.user.username} at ${now}`);
             res.status(200).json({ message: "Post liked successfully", likes: post.likes });
         } catch (error) {
             console.error("🚨 Error toggling like on post:", error);
