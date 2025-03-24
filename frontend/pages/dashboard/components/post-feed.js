@@ -182,6 +182,26 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
     
             console.log("🔄 Fetching posts for feed...");
+            
+            // First, fetch the user's friends list
+            const friendsResponse = await fetch('http://localhost:3000/api/friends', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                },
+            });
+
+            if (!friendsResponse.ok) {
+                console.error("Failed to fetch friends list:", friendsResponse.status);
+            }
+
+            // Get friends usernames
+            const friends = await friendsResponse.json();
+            const friendUsernames = friends.map(friend => friend.username);
+            console.log("📋 Friends list:", friendUsernames);
+
+            // Then fetch all posts
             const response = await fetch(`http://localhost:3000/feed`, {
                 method: 'GET',
                 headers: {
@@ -196,19 +216,30 @@ document.addEventListener("DOMContentLoaded", async () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
-            console.log("📦 Received posts:", data);
+            const allPosts = await response.json();
+            console.log("📦 Received all posts:", allPosts);
 
-            if (!Array.isArray(data)) {
+            if (!Array.isArray(allPosts)) {
                 throw new Error("Server returned invalid data format");
             }
 
-            if (data.length === 0) {
-                postFeed.innerHTML = '<div class="no-posts">No posts yet. Be the first to post!</div>';
+            // Filter posts to only show the user's own posts and their friends' posts
+            const filteredPosts = allPosts.filter(post => {
+                return post.username === loggedInUsername || friendUsernames.includes(post.username);
+            });
+
+            console.log("🔍 Filtered posts for feed:", filteredPosts);
+
+            if (filteredPosts.length === 0) {
+                postFeed.innerHTML = `
+                    <div class="no-posts">
+                        No posts from you or your friends yet. 
+                        <br>Add more friends or create a post!
+                    </div>`;
                 return;
             }
 
-            renderPosts(data);
+            renderPosts(filteredPosts);
 
         } catch (error) {
             console.error("🚨 Error fetching posts:", error);
