@@ -9,6 +9,8 @@ let progressStartTime = 0;
 let remainingTime = 0;
 let progressPaused = false;
 
+let reactionCounts = {};
+
 
 // Single DOMContentLoaded event listener to handle both normal and OAuth login
 document.addEventListener('DOMContentLoaded', async () => {
@@ -372,6 +374,75 @@ function viewStory(story, storyArray) {
     }
 
     viewer.classList.add('active');
+
+    // Add reaction panel only for other users' stories
+    let reactionPanel = viewer.querySelector('.reaction-panel');
+    const currentUsername = localStorage.getItem('username');
+    const isOwnStory = story.username === currentUsername;
+
+    // Remove existing reaction panel if it exists
+    if (reactionPanel) {
+        reactionPanel.remove();
+    }
+
+    // Only create and add reaction panel for other users' stories
+    if (!isOwnStory) {
+        reactionPanel = document.createElement('div');
+        reactionPanel.className = 'reaction-panel';
+        reactionPanel.innerHTML = `
+            <div class="reactions">
+                <div class="reaction-button">
+                    <button class="reaction" data-reaction="like">
+                        <img src="/pages/dashboard/reactionIcons/like.png" alt="Like">
+                    </button>
+                    <span class="count" id="likeCount">0</span>
+                </div>
+                <div class="reaction-button">
+                    <button class="reaction" data-reaction="love">
+                        <img src="/pages/dashboard/reactionIcons/love.png" alt="Love">
+                    </button>
+                    <span class="count" id="loveCount">0</span>
+                </div>
+                <div class="reaction-button">
+                    <button class="reaction" data-reaction="haha">
+                        <img src="/pages/dashboard/reactionIcons/haha.png" alt="Haha">
+                    </button>
+                    <span class="count" id="hahaCount">0</span>
+                </div>
+                <div class="reaction-button">
+                    <button class="reaction" data-reaction="sad">
+                        <img src="/pages/dashboard/reactionIcons/sad.png" alt="Sad">
+                    </button>
+                    <span class="count" id="sadCount">0</span>
+                </div>
+                <div class="reaction-button">
+                    <button class="reaction" data-reaction="angry">
+                        <img src="/pages/dashboard/reactionIcons/angry.png" alt="Angry">
+                    </button>
+                    <span class="count" id="angryCount">0</span>
+                </div>
+            </div>
+        `;
+        viewer.appendChild(reactionPanel);
+
+        // Initialize reaction counts for this story if not exists
+        if (!reactionCounts[story._id]) {
+            reactionCounts[story._id] = { like: 0, love: 0, haha: 0, sad: 0, angry: 0 };
+        }
+
+        // Add reaction click handlers
+        reactionPanel.querySelectorAll('.reaction').forEach(button => {
+            button.addEventListener('click', function(event) {
+                event.stopPropagation();
+                const reactionType = this.getAttribute('data-reaction');
+                reactionCounts[story._id][reactionType]++;
+                updateReactionCounts(story._id);
+            });
+        });
+
+        // Update reaction counts when viewing story
+        updateReactionCounts(story._id);
+    }
 }
 
 // Add helper function to handle story viewer exit
@@ -507,4 +578,14 @@ function resumeProgress(callback) {
     }, remainingTime);
 
     progressPaused = false;
+}
+
+// Add these helper functions
+function updateReactionCounts(storyId) {
+    const counts = reactionCounts[storyId] || { like: 0, love: 0, haha: 0, sad: 0, angry: 0 };
+    document.getElementById('likeCount').textContent = counts.like;
+    document.getElementById('loveCount').textContent = counts.love;
+    document.getElementById('hahaCount').textContent = counts.haha;
+    document.getElementById('sadCount').textContent = counts.sad;
+    document.getElementById('angryCount').textContent = counts.angry;
 }

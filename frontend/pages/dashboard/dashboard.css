@@ -1283,36 +1283,27 @@ button:hover {
 }
 
 .reactions {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    display: none; /* Reactions are hidden by default */
-    align-items: center;
-    cursor: pointer;
     display: flex;
-    justify-content: center;
-    gap: 10px; /* Space between buttons */
+    gap: 12px;
 }
 
-.reaction-btn {
-    margin: 5px;
-    padding: 10px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    cursor: pointer;
-}
 
-.reaction-panel {
+.reaction-button {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 4px;
+}
+
+.reaction-panel {
     position: absolute;
-    bottom: 40px;
-    left: 0;
-    padding: 5px;
-    border-radius: 20px;
-    display: flex;
-    gap: 8px;
+    bottom: 60px; /* Positioned below description */
+    left: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    border-radius: 12px;
+    padding: 10px;
+    z-index: 1002;
 }
 
 .reaction-panel span {
@@ -1337,7 +1328,11 @@ button:hover {
 }
 
 .reaction-counts {
-    display: none;  /* Hidden by default */
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 10px;
+    color: white;
 }
 
 .story-viewer.active .reactions {
@@ -1373,23 +1368,30 @@ button:hover {
 }
 
 .reaction img {
-    width: 24px; /* Adjust the width of the icons */
-    height: 24px; /* Adjust the height of the icons */
-    vertical-align: middle; /* Align images properly */
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
 }
 
 .reaction {
-    background: none; /* Remove default background */
-    border: none; /* Remove borders */
-    padding: 5px; /* Adjust padding for spacing */
+    background: none;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
 }
 
-/* Style for the character counter */
-.char-counter {
-    font-size: 0.8rem; /* Makes text smaller */
-    color: #555; /* Slightly dim color */
-    margin-top: 1px; /* Adds space between textarea and counter */
-    display: block; /* Ensures it appears on a new line */
+.reaction:hover {
+    transform: scale(1.2);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.count {
+    color: white;
+    font-size: 12px;
+    min-width: 20px;
+    text-align: center;
 }
 
 
@@ -1408,14 +1410,17 @@ button:hover {
 
 .story-description-container {
     position: absolute;
-    bottom: 100px; /* Adjust distance from the bottom */
-    left: 10px;   /* Adjust distance from the left */
-    background-color: rgba(0, 0, 0, 0.5); /* Optional: adds a semi-transparent background */
-    color: white; /* Optional: makes the text white for better visibility */
-    padding: 5px;
-    border-radius: 5px;
-    max-width: 90%; /* Optional: prevent the description from overflowing */
+    bottom: 150px;
+    left: 20px;
+    max-width: 80%;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    z-index: 1001;
 }
+
 #storyDescriptionDisplay {
     color: white; /* Set text color to white */
     position: relative; /* Ensure you can adjust its position */
