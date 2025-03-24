@@ -82,7 +82,7 @@ async function initializeFriendsSection() {
             ];
         }
         
-        // Also fetch unread message counts
+        // Fetch unread message counts
         const unreadResponse = await fetch('http://localhost:3000/api/messages/unread/count', {
             method: 'GET',
             headers: {
@@ -90,12 +90,15 @@ async function initializeFriendsSection() {
                 'Content-Type': 'application/json'
             }
         }).catch(() => ({ ok: false }));
-        
+
         let unreadCounts = {};
-        
+
         if (unreadResponse && unreadResponse.ok) {
             const unreadData = await unreadResponse.json();
             unreadCounts = unreadData.unreadCounts || {};
+        } else {
+            console.error('Failed to fetch unread message counts:', 
+                unreadResponse ? await unreadResponse.text().catch(() => 'Unknown error') : 'Network error');
         }
         
         // Create friends section HTML with tabs
@@ -511,20 +514,46 @@ async function unfriendUser(userId, username) {
     }
 }
 
-// This function will be called when a friend is clicked
-function openChat(userId, username) {
-    // Existing code...
+// Add this function to update global unread indicator
+function updateUnreadIndicator(count) {
+    // Remove existing indicator if any
+    const existingIndicator = document.getElementById('global-unread-indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+    
+    if (count > 0) {
+        // Create a floating indicator
+        const indicator = document.createElement('div');
+        indicator.id = 'global-unread-indicator';
+        indicator.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 1000;
+        `;
+        indicator.textContent = count > 99 ? '99+' : count;
+        
+        // Add click event to show unread messages
+        indicator.addEventListener('click', showUnreadChats);
+        
+        document.body.appendChild(indicator);
+    }
 }
 
-// Function to load messages for a chat
-async function loadMessages(userId) {
-    // Existing code...
-}
 
-// Function to send a message
-async function sendMessage(userId) {
-    // Existing code...
-}
+
 
 // Add CSS for tabs and other elements
 const style = document.createElement('style');
@@ -575,7 +604,7 @@ style.textContent = `
     }
     
     .unread-badge {
-        background-color: #ff3b30;
+        background-color:rgb(48, 255, 65);
         color: white;
         border-radius: 50%;
         padding: 2px 6px;
