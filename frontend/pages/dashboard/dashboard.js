@@ -204,10 +204,12 @@ function viewStory(story, storyArray) {
     }
     clearTimeout(progressTimeout);
     
-    // Find current story index
+    // Find current story index and check if it's the last story by expiration time
     currentStoryIndex = storyArray.findIndex(s => s._id === story._id);
-    
-   // Update media handling
+    const isLastStory = currentStoryIndex === storyArray.length - 1;
+    const isLastByExpiration = story.expiresAt === Math.min(...storyArray.map(s => new Date(s.expiresAt).getTime()));
+
+    // Update media handling with new exit condition
     if (story.media && story.media.length > 0) {
         const fileExtension = story.media[0].split('.').pop().toLowerCase();
         
@@ -217,10 +219,10 @@ function viewStory(story, storyArray) {
             container.appendChild(img);
             
             startProgress(5000, () => {
-                if (currentStoryIndex < storyArray.length - 1) {
+                if (!isLastStory && !isLastByExpiration) {
                     viewStory(storyArray[currentStoryIndex + 1], storyArray);
                 } else {
-                    // Only exit if this is the last story
+                    // Exit if this is the last story or the story with least time
                     viewer.classList.remove('active');
                     clearTimeout(progressTimeout);
                 }
@@ -236,10 +238,10 @@ function viewStory(story, storyArray) {
             video.onloadedmetadata = () => {
                 const duration = Math.min(video.duration * 1000, 15000);
                 startProgress(duration, () => {
-                    if (currentStoryIndex < storyArray.length - 1) {
+                    if (!isLastStory && !isLastByExpiration) {
                         viewStory(storyArray[currentStoryIndex + 1], storyArray);
                     } else {
-                        // Only exit if this is the last story
+                        // Exit if this is the last story or the story with least time
                         viewer.classList.remove('active');
                         if (currentVideo) {
                             currentVideo.pause();
@@ -257,9 +259,9 @@ function viewStory(story, storyArray) {
     const previousButton = viewer.querySelector('#previousButton');
     const nextButton = viewer.querySelector('#nextButton');
 
-   // Navigation buttons - remove auto-exit from navigation
+   // Update navigation buttons with new conditions
     if (previousButton) {
-        previousButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
+        previousButton.style.display = !isLastStory && !isLastByExpiration ? 'flex' : 'none';
         previousButton.onclick = (e) => {
             e.stopPropagation();
             clearTimeout(progressTimeout);
@@ -267,7 +269,7 @@ function viewStory(story, storyArray) {
                 currentVideo.pause();
                 currentVideo = null;
             }
-            if (currentStoryIndex < storyArray.length - 1) {
+            if (!isLastStory && !isLastByExpiration) {
                 viewStory(storyArray[currentStoryIndex + 1], storyArray);
             }
         };
