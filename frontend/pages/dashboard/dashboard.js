@@ -232,9 +232,12 @@ function viewStory(story, storyArray) {
         progressBar.offsetHeight; // Force reflow
     }
     clearTimeout(progressTimeout);
+
+    createStoryIndicators(storyArray);
     
     // Find current story index
     currentStoryIndex = storyArray.findIndex(s => s._id === story._id);
+    updateActiveIndicator();
     
    // Update media handling
     if (story.media && story.media.length > 0) {
@@ -334,6 +337,38 @@ if (nextButton) {
 
     // Show the viewer
     viewer.classList.add('active');
+}
+
+function createStoryIndicators(storyArray) {
+    // Create indicators container if it doesn't exist
+    let indicatorsContainer = document.querySelector('.story-indicators');
+    if (!indicatorsContainer) {
+        indicatorsContainer = document.createElement('div');
+        indicatorsContainer.classList.add('story-indicators');
+        document.querySelector('.story-viewer').prepend(indicatorsContainer);
+    }
+    
+    indicatorsContainer.innerHTML = '';
+
+    storyArray.forEach((story, index) => {
+        const indicator = document.createElement('div');
+        indicator.classList.add('story-indicator');
+        indicator.classList.add(index === currentStoryIndex ? 'active' : 'inactive');
+        indicatorsContainer.appendChild(indicator);
+    });
+}
+
+function updateActiveIndicator() {
+    const indicators = document.querySelectorAll('.story-indicator');
+    indicators.forEach((indicator, index) => {
+        if (index === currentStoryIndex) {
+            indicator.classList.remove('inactive');
+            indicator.classList.add('active');
+        } else {
+            indicator.classList.remove('active');
+            indicator.classList.add('inactive');
+        }
+    });
 }
 
 function startProgress(duration, callback) {
