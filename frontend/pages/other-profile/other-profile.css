@@ -1,0 +1,257 @@
+/* Profile Page Container */
+.profile-page-container {
+    max-width: 1200px;
+    margin: 70px auto 0; /* Top margin to accommodate navbar */
+    padding: 0 20px 40px;
+}
+
+/* Profile Header */
+.profile-header {
+    background-color: white;
+    border-radius: 10px;
+    padding: 30px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.profile-header-content {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+.profile-picture-container {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.profile-picture {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #729c2f;
+}
+
+.edit-profile-picture-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 5px;
+    background-color: #729c2f;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.edit-profile-picture-btn:hover {
+    background-color: #5e8026;
+    transform: scale(1.05);
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-info h1 {
+    font-size: 28px;
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.profile-info p {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 15px;
+    line-height: 1.4;
+    max-width: 600px;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.stat {
+    font-size: 16px;
+    color: #444;
+}
+
+.stat span {
+    font-weight: bold;
+    font-size: 18px;
+    margin-right: 5px;
+    color: #333;
+}
+
+.edit-profile-btn {
+    background-color: #729c2f;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.edit-profile-btn:hover {
+    background-color: #5e8026;
+}
+
+/* Profile Tabs */
+.profile-tabs {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+    background-color: white;
+    border-radius: 10px 10px 0 0;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 15px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-size: 16px;
+    font-weight: bold;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    background-color: #f5f5f5;
+    color: #729c2f;
+}
+
+.tab-btn.active {
+    border-bottom-color: #729c2f;
+    color: #729c2f;
+}
+
+/* Profile Content */
+.profile-content {
+    background-color: white;
+    border-radius: 0 0 10px 10px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.tab-content h2 {
+    font-size: 20px;
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Post Feed Styling */
+.user-posts-feed, .user-stories-feed, .user-liked-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Loading Indicator */
+.loading {
+    text-align: center;
+    padding: 30px;
+    color: #777;
+    font-style: italic;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    margin: 20px 0;
+}
+
+.empty-state h3 {
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: #555;
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+    color: #777;
+}
+
+.empty-state-action {
+    display: inline-block;
+    padding: 8px 20px;
+    background-color: #729c2f;
+    color: white;
+    border-radius: 5px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.empty-state-action:hover {
+    background-color: #5e8026;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+    
+    .profile-info {
+        width: 100%;
+    }
+    
+    .profile-stats {
+        justify-content: center;
+    }
+    
+    .edit-profile-btn {
+        display: block;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .profile-tabs {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        border-left: 3px solid transparent;
+        border-bottom: none;
+        text-align: left;
+        padding-left: 20px;
+    }
+    
+    .tab-btn.active {
+        border-left-color: #729c2f;
+        border-bottom: none;
+    }
+}

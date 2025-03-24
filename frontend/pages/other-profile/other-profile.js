@@ -76,110 +76,52 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
     
-// ... existing code ...
-
-async function loadUserProfile() {
-    try {
-        const response = await fetch('http://localhost:3000/api/user/profile', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+    // Function to load user profile data
+    async function loadUserProfile() {
+        try {
+            const response = await fetch('http://localhost:3000/api/user/profile', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch profile data');
             }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch profile');
-        }
-        
-        const userData = await response.json();
-        
-        // Update profile information
-        profileUsername.textContent = userData.username;
-        profileBio.textContent = userData.bio || 'No bio yet';
-        
-        // Update profile picture if available
-        if (userData.profilePicture) {
-            profilePicture.src = `/uploads/${userData.profilePicture}`;
-        }
-        
-        // Get the username from the profile data
-        const username = userData.username;
-        
-        // Fetch and update posts count
-        await updatePostsCount(username);
-        
-        // Fetch and update friends count
-        await updateFriendsCount();
-        
-        // Update stories count (if you have this functionality)
-        // await updateStoriesCount(username);
-        
-    } catch (error) {
-        console.error('Error loading profile:', error);
-        alert('Failed to load profile. Please try again.');
-    }
-}
-
-// Add a new function to fetch and update friends count
-async function updateFriendsCount() {
-    try {
-        const response = await fetch('http://localhost:3000/api/friends', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+            
+            const userData = await response.json();
+            
+            // Update profile UI with user data
+            const username = userData.username || localStorage.getItem('username') || 'User';
+            profileUsername.textContent = username;
+            
+            // Set bio text or default message
+            profileBio.textContent = userData.bio || 'No bio yet. Click "Edit Profile" to add one!';
+            
+            // Set profile picture if available
+            if (userData.profilePicture) {
+                profilePicture.src = userData.profilePicture;
             }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch friends');
-        }
-        
-        const friendsData = await response.json();
-        
-        // Update the friends count in the UI
-        const count = friendsData.length;
-        friendsCount.textContent = count;
-        
-        console.log(`✅ Updated friends count: ${count}`);
-        return count;
-    } catch (error) {
-        console.error('Error fetching friends count:', error);
-        friendsCount.textContent = '0';
-        return 0;
-    }
-}
-
-// Add a new function to fetch and update posts count
-async function updatePostsCount(username) {
-    try {
-        const response = await fetch(`http://localhost:3000/posts?username=${encodeURIComponent(username)}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+            
+            // Load stats if available (or load separately)
+            if (userData.stats) {
+                postsCount.textContent = userData.stats.posts || 0;
+                friendsCount.textContent = userData.stats.friends || 0;
+                storiesCount.textContent = userData.stats.stories || 0;
+            } else {
+                // Fetch stats separately
+                loadUserStats();
             }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch posts');
+        } catch (error) {
+            console.error('Error loading profile:', error);
+            
+            // Fallback to localStorage data
+            profileUsername.textContent = localStorage.getItem('username') || 'User';
+            profileBio.textContent = 'Bio unavailable. Please try again later.';
         }
-        
-        const posts = await response.json();
-        
-        // Update the posts count in the UI
-        const count = posts.length;
-        postsCount.textContent = count;
-        
-        console.log(`✅ Updated posts count: ${count}`);
-        return count;
-    } catch (error) {
-        console.error('Error fetching posts count:', error);
-        postsCount.textContent = '0';
-        return 0;
     }
-}
     
     // Function to load user stats
     async function loadUserStats() {
