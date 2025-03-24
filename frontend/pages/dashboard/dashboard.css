@@ -640,25 +640,27 @@ button img {
 
 .close-button {
     position: absolute;
-    top: 10px;
-    right: 50px; /* Adjusted for proper alignment */
-    background: none;
+    top: 20px;
+    right: 20px;
+    background-color: red;
+    color: white;
     border: none;
-    font-size: 24px; /* Increased for better visibility */
+    padding: 10px 20px;
     cursor: pointer;
-    color: #333; /* Adjust color as needed */
-    width: 32px; /* Ensures proper size */
-    height: 32px;
+    font-size: 18px;
+    border-radius: 5px;
+    width: 40px;
+    height: 40px;
     display: flex;
-    align-items: center;
     justify-content: center;
-    border-radius: 50%; /* Optional: Makes it circular */
-    max-width: 32px; /* Ensures proper size */
+    align-items: center;
+    z-index: 1003; /* Ensure it's above other elements */
 }
 
 .close-button:hover {
-    background: rgba(0, 0, 0, 0.1); /* Optional hover effect */
-    color: red;
+    background-color: darkred;
+    transform: scale(1.1);
+    transition: all 0.2s ease;
 }
 
 .story-input-container {
@@ -937,10 +939,37 @@ textarea#storyDescription {
 }
 
 .story-viewer-title {
+    position: absolute;
+    top: 40px; /* Reduced from 60px to bring it closer to story */
+    left: 0;
+    right: 0;
     color: #fff;
-    margin-bottom: 20px;
-    font-size: 1.5rem;
     text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding: 10px;
+    z-index: 1001;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Story description styling */
+.story-description-container {
+    position: absolute;
+    bottom: 80px; /* Position above the reaction buttons */
+    left: 20px;
+    max-width: 80%;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    z-index: 1001;
+}
+
+/* Make description container more visible */
+.story-description-container p {
+    margin: 0;
+    line-height: 1.4;
 }
 
 .story-viewer-content {
@@ -1056,13 +1085,13 @@ textarea#storyDescription {
 .story-container {
     position: relative;
     width: auto;
-    height: 90vh;
+    height: calc(90vh - 100px); /* Reduced from 120px */
+    margin-top: 0px; /* Reduced from 120px to bring content up */
     aspect-ratio: 9/16;
     background-color: black;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: auto;
 }
 
 /* Media styling */
@@ -1140,14 +1169,15 @@ button:hover {
 /*story number indicators */
 .story-indicators {
     position: absolute;
-    top: 20px;
+    top: 10px;
     left: 0;
     right: 0;
     display: flex;
     justify-content: center;
     gap: 5px;
-    z-index: 1000;
+    z-index: 1002; /* Increased z-index to be above title */
     padding: 10px;
+    background: none;
 }
 
 .story-indicator {

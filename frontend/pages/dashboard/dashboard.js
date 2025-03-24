@@ -234,6 +234,24 @@ function viewStory(story, storyArray) {
     clearTimeout(progressTimeout);
 
     createStoryIndicators(storyArray);
+
+    // Create or update title element
+    let titleElement = viewer.querySelector('.story-viewer-title');
+    if (!titleElement) {
+        titleElement = document.createElement('div');
+        titleElement.className = 'story-viewer-title';
+        viewer.appendChild(titleElement);
+    }
+    titleElement.textContent = story.title || 'Untitled Story';
+
+    // Create or update description container
+    let descriptionContainer = viewer.querySelector('.story-description-container');
+    if (!descriptionContainer) {
+        descriptionContainer = document.createElement('div');
+        descriptionContainer.className = 'story-description-container';
+        viewer.appendChild(descriptionContainer);
+    }
+    descriptionContainer.innerHTML = `<p>${story.description || ''}</p>`;
     
     // Find current story index
     currentStoryIndex = storyArray.findIndex(s => s._id === story._id);
