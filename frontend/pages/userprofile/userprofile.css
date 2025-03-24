@@ -219,3 +219,24 @@ hr {
 .back-button:hover {
     background-color: #5aa43d; /* Darker green on hover */
 }
+
+.edit-details-btn {
+    background-color: #ffc107; /* Green background */
+    color: white; /* White text */
+    border: none; /* Remove border */
+    padding: 10px 20px; /* Add padding */
+    border-radius: 25px; /* Rounded corners */
+    font-size: 1rem; /* Font size */
+    cursor: pointer; /* Pointer cursor on hover */
+    display: flex; /* Flex for icon alignment */
+    align-items: center; /* Center icon vertically */
+    gap: 0.5rem; /* Space between icon and text */
+    transition: background-color 0.3s ease; /* Smooth hover effect */
+    margin-left: auto; /* Push the button to the right */
+    margin-top: 20px; /* Move the button downward */
+}
+
+.edit-details-btn:hover {
+    background-color:  #e0a800; /* Darker green on hover */
+}
+
