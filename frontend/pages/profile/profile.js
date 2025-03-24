@@ -353,6 +353,16 @@ async function loadLikedPosts() {
         });
         
         console.log('Filtered and sorted liked posts:', filteredLikedPosts.length);
+        console.log('First few posts after sorting:', filteredLikedPosts.slice(0, 3).map(post => {
+            const like = post.likes.find(like => like.username === currentUsername);
+            return {
+                postId: post._id,
+                postCreatedAt: post.createdAt,
+                likeCreatedAt: like?.createdAt,
+                username: post.username,
+                text: post.text.substring(0, 30) + '...'
+            };
+        }));
         
         if (filteredLikedPosts.length === 0) {
             userLikedFeed.innerHTML = `
