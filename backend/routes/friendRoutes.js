@@ -306,4 +306,36 @@ router.get('/users/suggestions', authenticateToken, async (req, res) => {
     }
 });
 
+// Unfriend a user by username
+router.delete('/friends/unfriend-by-username/:username', authenticateToken, async (req, res) => {
+    try {
+        const { username } = req.params;
+        const currentUserId = req.user.id;
+        
+        // First, find the user by username
+        const user = await User.findOne({ username });
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        // Find and remove the friendship record (check both directions)
+        const result = await Friend.deleteOne({
+            $or: [
+                { requesterId: currentUserId, recipientId: user._id, status: 'accepted' },
+                { requesterId: user._id, recipientId: currentUserId, status: 'accepted' }
+            ]
+        });
+        
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: 'Friendship not found' });
+        }
+        
+        res.json({ message: 'Friend removed successfully' });
+    } catch (error) {
+        console.error('Error in unfriend by username:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 module.exports = router;

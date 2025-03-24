@@ -145,6 +145,9 @@ async function initializeFriendsSection() {
                             <div class="friend-name">${friend.username} ${unreadBadge}</div>
                             ${statusText}
                         </div>
+                        <button class="unfriend-btn" data-user-id="${friend.id}" data-username="${friend.username}">
+                            <i class="fas fa-user-times"></i>
+                        </button>
                     </div>
                 `;
             });
@@ -217,10 +220,33 @@ async function initializeFriendsSection() {
         
         // Add event listeners for friend items to open chat
         document.querySelectorAll('.friend-item').forEach(item => {
-            item.addEventListener('click', function() {
+            item.addEventListener('click', function(e) {
+                // Don't open chat if the unfriend button was clicked
+                if (e.target.closest('.unfriend-btn')) {
+                    return;
+                }
+                
                 const userId = this.getAttribute('data-user-id');
                 const username = this.querySelector('.friend-name').textContent;
                 openChat(userId, username);
+            });
+        });
+        
+        // Add event listeners for unfriend buttons
+        document.querySelectorAll('.unfriend-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent event bubbling
+                const userId = this.getAttribute('data-user-id');
+                const username = this.getAttribute('data-username');
+                
+                console.log('Unfriend button clicked:', { userId, username });
+                
+                if (!userId) {
+                    console.error('Error: userId is undefined on button', this);
+                    return;
+                }
+                
+                unfriendUser(userId, username);
             });
         });
         
@@ -305,14 +331,29 @@ async function initializeFriendsSection() {
             });
         });
         
-        // Add event listeners for friend items in the fallback UI
-        document.querySelectorAll('.friend-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const userId = this.getAttribute('data-user-id');
-                const username = this.querySelector('.friend-name').textContent;
-                openChat(userId, username);
+               // Add event listeners for friend items in the fallback UI
+               document.querySelectorAll('.friend-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    // Don't open chat if the unfriend button was clicked
+                    if (e.target.closest('.unfriend-btn')) {
+                        return;
+                    }
+                    
+                    const userId = this.getAttribute('data-user-id');
+                    const username = this.querySelector('.friend-name').textContent;
+                    openChat(userId, username);
+                });
             });
-        });
+            
+            // Add event listeners for unfriend buttons in the fallback UI
+            document.querySelectorAll('.unfriend-btn').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent event bubbling
+                    const userId = this.getAttribute('data-user-id');
+                    const username = this.getAttribute('data-username');
+                    unfriendUser(userId, username);
+                });
+            });
     }
 }
 
@@ -405,6 +446,67 @@ async function declineFriendRequest(requestId) {
         }
     } catch (error) {
         console.error('Error declining friend request:', error);
+        alert('Network error. Please try again later.');
+    }
+}
+
+// Function to unfriend a user
+async function unfriendUser(userId, username) {
+    // Now we'll use username as the primary identifier
+    if (!username) {
+        console.error('Error: username is undefined');
+        alert('Error: Cannot unfriend user. Username is missing.');
+        return;
+    }
+    
+    // Confirm before unfriending
+    if (!confirm(`Are you sure you want to unfriend ${username}?`)) {
+        return;
+    }
+    
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+        console.log(`Attempting to unfriend user: ${username}`);
+        
+        const response = await fetch(`http://localhost:3000/api/friends/unfriend-by-username/${encodeURIComponent(username)}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            console.log('Friend removed successfully');
+            
+            // Remove the friend item from UI - now using username to find the element
+            const friendItem = document.querySelector(`.friend-item[data-user-id="${userId}"]`);
+            if (friendItem) {
+                friendItem.innerHTML = '<div class="friend-removed">Friend removed</div>';
+                setTimeout(() => {
+                    friendItem.remove();
+                    
+                    // Check if there are no more friends
+                    const friendsList = document.querySelector('.friends-list');
+                    if (friendsList && friendsList.querySelectorAll('.friend-item').length === 0) {
+                        friendsList.innerHTML = `
+                            <div class="no-friends">
+                                <p>You haven't added any friends yet.</p>
+                                <p>Find friends in the Explore section above!</p>
+                            </div>
+                        `;
+                    }
+                }, 2000);
+            }
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Failed to unfriend user:', errorData.message || 'Unknown error');
+            alert(`Failed to unfriend user: ${errorData.message || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('Error unfriending user:', error);
         alert('Network error. Please try again later.');
     }
 }
@@ -596,6 +698,32 @@ style.textContent = `
         text-align: center;
         padding: 20px;
         color: #666;
+    }
+
+    /* Unfriend button styling */
+    .unfriend-btn {
+        background-color: transparent;
+        color: #f44336;
+        border: 1px solid #f44336;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        margin-left: auto;
+        opacity: 0.7;
+        transition: opacity 0.2s, background-color 0.2s;
+    }
+    
+    .unfriend-btn:hover {
+        opacity: 1;
+        background-color: #ffebee;
+    }
+    
+    .friend-removed {
+        color: #f44336;
+        font-style: italic;
+        padding: 10px;
+        text-align: center;
     }
 `;
 document.head.appendChild(style);
