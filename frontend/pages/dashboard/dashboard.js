@@ -112,7 +112,9 @@ export async function loadStories() {
             .filter(story => story.username === currentUsername)
             .sort((a, b) => new Date(a.expiresAt) - new Date(b.expiresAt)); // Changed sorting order
             
-        const otherStories = stories.filter(story => story.username !== currentUsername);
+        const otherStories = stories
+            .filter(story => story.username !== currentUsername)
+            .sort((a, b) => new Date(a.expiresAt) - new Date(b.expiresAt)); // Sort other 
 
         // Function to calculate time remaining
         const getTimeRemaining = (expiresAt) => {
@@ -162,7 +164,34 @@ export async function loadStories() {
             storyElement.appendChild(storyInfo);
 
             storyElement.addEventListener('click', () => {
-                viewStory(story, [...userStories, ...otherStories]);
+               // First determine if this is a user story
+                const isUserStory = userStories.some(s => s._id === story._id);
+                
+                let orderedStories;
+                if (isUserStory) {
+                    // If clicked story is user's story, get index in user stories
+                    const userStoryIndex = userStories.findIndex(s => s._id === story._id);
+                    
+                    // Create array with remaining user stories first, then other stories
+                    orderedStories = [
+                        // Start from clicked story
+                        ...userStories.slice(userStoryIndex).reverse(),
+                        // Add remaining user stories in reverse order
+                        ...userStories.slice(0, userStoryIndex).reverse(),
+                        // Add other stories at the end
+                        ...otherStories
+                    ];
+                } else {
+                    // If clicked story is from another user, start from that story
+                    const otherStoryIndex = otherStories.findIndex(s => s._id === story._id);
+                    orderedStories = [
+                        ...otherStories.slice(otherStoryIndex),
+                        ...otherStories.slice(0, otherStoryIndex)
+                    ];
+                }
+                
+                // Start viewing from the clicked story directly
+                viewStory(story, orderedStories);  // Changed this line to use clicked story
             });
 
             return storyElement;
@@ -204,12 +233,10 @@ function viewStory(story, storyArray) {
     }
     clearTimeout(progressTimeout);
     
-    // Find current story index and check if it's the last story by expiration time
+    // Find current story index
     currentStoryIndex = storyArray.findIndex(s => s._id === story._id);
-    const isLastStory = currentStoryIndex === storyArray.length - 1;
-    const isLastByExpiration = story.expiresAt === Math.min(...storyArray.map(s => new Date(s.expiresAt).getTime()));
-
-    // Update media handling with new exit condition
+    
+   // Update media handling
     if (story.media && story.media.length > 0) {
         const fileExtension = story.media[0].split('.').pop().toLowerCase();
         
@@ -219,10 +246,10 @@ function viewStory(story, storyArray) {
             container.appendChild(img);
             
             startProgress(5000, () => {
-                if (!isLastStory && !isLastByExpiration) {
+                if (currentStoryIndex < storyArray.length - 1) {
                     viewStory(storyArray[currentStoryIndex + 1], storyArray);
                 } else {
-                    // Exit if this is the last story or the story with least time
+                    // Only exit if this is the last story
                     viewer.classList.remove('active');
                     clearTimeout(progressTimeout);
                 }
@@ -238,10 +265,10 @@ function viewStory(story, storyArray) {
             video.onloadedmetadata = () => {
                 const duration = Math.min(video.duration * 1000, 15000);
                 startProgress(duration, () => {
-                    if (!isLastStory && !isLastByExpiration) {
+                    if (currentStoryIndex < storyArray.length - 1) {
                         viewStory(storyArray[currentStoryIndex + 1], storyArray);
                     } else {
-                        // Exit if this is the last story or the story with least time
+                        // Only exit if this is the last story
                         viewer.classList.remove('active');
                         if (currentVideo) {
                             currentVideo.pause();
@@ -259,36 +286,38 @@ function viewStory(story, storyArray) {
     const previousButton = viewer.querySelector('#previousButton');
     const nextButton = viewer.querySelector('#nextButton');
 
-   // Update navigation buttons with new conditions
-    if (previousButton) {
-        previousButton.style.display = !isLastStory && !isLastByExpiration ? 'flex' : 'none';
-        previousButton.onclick = (e) => {
-            e.stopPropagation();
-            clearTimeout(progressTimeout);
-            if (currentVideo) {
-                currentVideo.pause();
-                currentVideo = null;
-            }
-            if (!isLastStory && !isLastByExpiration) {
-                viewStory(storyArray[currentStoryIndex + 1], storyArray);
-            }
-        };
-    }
+   // In viewStory function, update the navigation button handlers
+if (previousButton) {
+    previousButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
+    previousButton.onclick = (e) => {
+        e.stopPropagation();
+        clearTimeout(progressTimeout);
+        if (currentVideo) {
+            currentVideo.pause();
+            currentVideo = null;
+        }
+        if (currentStoryIndex > 0) {
+            // Move to previous story (left in UI)
+            viewStory(storyArray[currentStoryIndex - 1], storyArray);
+        }
+    };
+}
 
-    if (nextButton) {
-        nextButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
-        nextButton.onclick = (e) => {
-            e.stopPropagation();
-            clearTimeout(progressTimeout);
-            if (currentVideo) {
-                currentVideo.pause();
-                currentVideo = null;
-            }
-            if (currentStoryIndex > 0) {
-                viewStory(storyArray[currentStoryIndex - 1], storyArray);
-            }
-        };
-    }
+if (nextButton) {
+    nextButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
+    nextButton.onclick = (e) => {
+        e.stopPropagation();
+        clearTimeout(progressTimeout);
+        if (currentVideo) {
+            currentVideo.pause();
+            currentVideo = null;
+        }
+        if (currentStoryIndex < storyArray.length - 1) {
+            // Move to next story (right in UI)
+            viewStory(storyArray[currentStoryIndex + 1], storyArray);
+        }
+    };
+}
 
     // Add close button
     if (!viewer.querySelector('.close-button')) {
