@@ -4,6 +4,11 @@ let currentStoryIndex = 0;
 let progressTimeout;
 let currentVideo = null;
 
+// Add these variables at the top of your file with other declarations
+let progressStartTime = 0;
+let remainingTime = 0;
+let progressPaused = false;
+
 
 // Single DOMContentLoaded event listener to handle both normal and OAuth login
 document.addEventListener('DOMContentLoaded', async () => {
@@ -188,17 +193,21 @@ export async function loadStories() {
 function viewStory(story, storyArray) {
     const viewer = document.querySelector('.story-viewer');
     const container = viewer.querySelector('.story-container');
-    const progressBar = viewer.querySelector('.progress');
+    const progressBar = viewer.querySelector('.progress'); // Changed from #progressBar
     
-    // Clear previous content and reset progress
+      // Clear previous content and reset progress
     container.innerHTML = '';
-    if (progressBar) progressBar.style.width = '0%';
+    if (progressBar) {
+        progressBar.style.width = '0%';
+        progressBar.style.transition = 'none';
+        progressBar.offsetHeight; // Force reflow
+    }
     clearTimeout(progressTimeout);
     
     // Find current story index
     currentStoryIndex = storyArray.findIndex(s => s._id === story._id);
     
-    // Create media element based on file type
+   // Update media handling to use startProgress
     if (story.media && story.media.length > 0) {
         const fileExtension = story.media[0].split('.').pop().toLowerCase();
         
@@ -207,7 +216,6 @@ function viewStory(story, storyArray) {
             img.src = `http://localhost:3000/uploads/${story.media[0]}`;
             container.appendChild(img);
             
-            // Start 5-second timer for images
             startProgress(5000, () => {
                 if (currentStoryIndex < storyArray.length - 1) {
                     viewStory(storyArray[currentStoryIndex + 1], storyArray);
@@ -221,8 +229,8 @@ function viewStory(story, storyArray) {
             video.src = `http://localhost:3000/uploads/${story.media[0]}`;
             video.controls = true;
             video.autoplay = true;
+            container.appendChild(video);
             
-            // Limit video duration to 15 seconds
             video.onloadedmetadata = () => {
                 const duration = Math.min(video.duration * 1000, 15000);
                 startProgress(duration, () => {
@@ -235,7 +243,6 @@ function viewStory(story, storyArray) {
             };
             
             currentVideo = video;
-            container.appendChild(video);
         }
     }
 
@@ -243,10 +250,10 @@ function viewStory(story, storyArray) {
     const previousButton = viewer.querySelector('#previousButton');
     const nextButton = viewer.querySelector('#nextButton');
 
-    // Show/hide next button
-    if (nextButton) {
-        nextButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
-        nextButton.onclick = () => {
+    // Show/hide previous button (show if not at first story)
+    if (previousButton) {
+        previousButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
+        previousButton.onclick = () => {
             clearTimeout(progressTimeout);
             if (currentVideo) currentVideo.pause();
             if (currentStoryIndex > 0) {
@@ -255,10 +262,10 @@ function viewStory(story, storyArray) {
         };
     }
 
-    // Show/hide previous button
-    if (previousButton) {
-        previousButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
-        previousButton.onclick = () => {
+    // Show/hide next button (show if not at last story)
+    if (nextButton) {
+        nextButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
+        nextButton.onclick = () => {
             clearTimeout(progressTimeout);
             if (currentVideo) currentVideo.pause();
             if (currentStoryIndex < storyArray.length - 1) {
@@ -285,20 +292,59 @@ function viewStory(story, storyArray) {
 }
 
 function startProgress(duration, callback) {
-    const progressBar = document.querySelector('.progress');
+    const progressBar = document.querySelector('.progress'); // Changed from #progressBar
     if (!progressBar) return;
 
     clearTimeout(progressTimeout);
     progressBar.style.width = '0%';
     progressBar.style.transition = 'none';
+    progressBar.offsetHeight; // Force reflow
 
-    // Force a reflow
-    progressBar.offsetHeight;
+    // Start progress
+    setTimeout(() => {
+        progressBar.style.transition = `width ${duration}ms linear`;
+        progressBar.style.width = '100%';
+    }, 50);
 
-    progressBar.style.transition = `width ${duration}ms linear`;
+    progressStartTime = Date.now();
+    remainingTime = duration;
+    progressPaused = false;
+
+    progressTimeout = setTimeout(() => {
+        progressPaused = false;
+        callback();
+    }, duration);
+}
+
+function pauseProgress() {
+    const progressBar = document.querySelector('.progress');
+    if (!progressBar || progressPaused) return;
+
+    const elapsedTime = Date.now() - progressStartTime;
+    remainingTime -= elapsedTime;
+
+    progressBar.style.transition = 'none';
+    const currentWidth = (elapsedTime / (elapsedTime + remainingTime)) * 100;
+    progressBar.style.width = `${currentWidth}%`;
+
+    progressPaused = true;
+    clearTimeout(progressTimeout);
+}
+
+function resumeProgress(callback) {
+    const progressBar = document.querySelector('.progress');
+    if (!progressBar || !progressPaused) return;
+
+    progressBar.style.transition = `width ${remainingTime}ms linear`;
     progressBar.style.width = '100%';
 
-    progressTimeout = setTimeout(callback, duration);  
+    progressStartTime = Date.now();
+    progressTimeout = setTimeout(() => {
+        progressPaused = false;
+        callback();
+    }, remainingTime);
+
+    progressPaused = false;
 }
 
     
