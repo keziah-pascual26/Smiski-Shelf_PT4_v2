@@ -128,25 +128,44 @@ export async function loadStories() {
 
          // Function to create story element
         const createStoryElement = (story) => {
-            const storyElement = document.createElement('div');
-            storyElement.classList.add('story');
+        const storyElement = document.createElement('div');
+        storyElement.classList.add('story');
 
-            if (story.media && story.media.length > 0) {
-                const mediaPreview = document.createElement('div');
-                mediaPreview.classList.add('story-preview');
-                
-                const fileExtension = story.media[0].split('.').pop().toLowerCase();
-                
+        if (story.media && story.media.length > 0) {
+            const mediaPreview = document.createElement('div');
+            mediaPreview.classList.add('story-preview');
+            
+            const fileExtension = story.media[0].split('.').pop().toLowerCase();
+            
                 if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
-                    mediaPreview.style.backgroundImage = `url(http://localhost:3000/uploads/${story.media[0]})`;
+                    // Image preview
+                    const img = document.createElement('img');
+                    img.src = `http://localhost:3000/uploads/${story.media[0]}`;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    mediaPreview.appendChild(img);
                 } else if (['mp4', 'webm'].includes(fileExtension)) {
+                    // Video preview
                     const video = document.createElement('video');
                     video.src = `http://localhost:3000/uploads/${story.media[0]}`;
                     video.muted = true;
                     video.playsInline = true;
+                    video.loop = true;
                     video.style.width = '100%';
                     video.style.height = '100%';
                     video.style.objectFit = 'cover';
+                    
+                    // Add hover events for video preview
+                    mediaPreview.addEventListener('mouseenter', () => {
+                        video.play().catch(err => console.log('Preview autoplay prevented'));
+                    });
+                    
+                    mediaPreview.addEventListener('mouseleave', () => {
+                        video.pause();
+                        video.currentTime = 0;
+                    });
+                    
                     mediaPreview.appendChild(video);
                 }
                 
@@ -164,34 +183,34 @@ export async function loadStories() {
             storyElement.appendChild(storyInfo);
 
             storyElement.addEventListener('click', () => {
-               // First determine if this is a user story
+              // First determine if this is a user story
                 const isUserStory = userStories.some(s => s._id === story._id);
                 
                 let orderedStories;
                 if (isUserStory) {
-                    // If clicked story is user's story, get index in user stories
-                    const userStoryIndex = userStories.findIndex(s => s._id === story._id);
-                    
-                    // Create array with remaining user stories first, then other stories
+                    // For user stories, show only their stories
+                    orderedStories = userStories;
+                    // Find the index of clicked story
+                    const storyIndex = orderedStories.findIndex(s => s._id === story._id);
+                    // Reorder to start from clicked story
                     orderedStories = [
-                        // Start from clicked story
-                        ...userStories.slice(userStoryIndex).reverse(),
-                        // Add remaining user stories in reverse order
-                        ...userStories.slice(0, userStoryIndex).reverse(),
-                        // Add other stories at the end
-                        ...otherStories
+                        ...orderedStories.slice(storyIndex),
+                        ...orderedStories.slice(0, storyIndex)
                     ];
                 } else {
-                    // If clicked story is from another user, start from that story
-                    const otherStoryIndex = otherStories.findIndex(s => s._id === story._id);
+                    // For other users' stories, only show that user's stories
+                    const clickedUsername = story.username;
+                    orderedStories = otherStories.filter(s => s.username === clickedUsername);
+                    const storyIndex = orderedStories.findIndex(s => s._id === story._id);
+                    // Reorder to start from clicked story
                     orderedStories = [
-                        ...otherStories.slice(otherStoryIndex),
-                        ...otherStories.slice(0, otherStoryIndex)
+                        ...orderedStories.slice(storyIndex),
+                        ...orderedStories.slice(0, storyIndex)
                     ];
                 }
                 
-                // Start viewing from the clicked story directly
-                viewStory(story, orderedStories);  // Changed this line to use clicked story
+                // Start viewing from the clicked story
+                viewStory(story, orderedStories);
             });
 
             return storyElement;
@@ -219,17 +238,18 @@ export async function loadStories() {
 }
         
 
+
 function viewStory(story, storyArray) {
     const viewer = document.querySelector('.story-viewer');
     const container = viewer.querySelector('.story-container');
-    const progressBar = viewer.querySelector('.progress'); // Changed from #progressBar
+    const progressBar = viewer.querySelector('.progress');
     
-      // Clear previous content and reset progress
+    // Clear previous content and reset progress
     container.innerHTML = '';
     if (progressBar) {
         progressBar.style.width = '0%';
         progressBar.style.transition = 'none';
-        progressBar.offsetHeight; // Force reflow
+        progressBar.offsetHeight;
     }
     clearTimeout(progressTimeout);
 
@@ -257,7 +277,7 @@ function viewStory(story, storyArray) {
     currentStoryIndex = storyArray.findIndex(s => s._id === story._id);
     updateActiveIndicator();
     
-   // Update media handling
+    // Check if story has media
     if (story.media && story.media.length > 0) {
         const fileExtension = story.media[0].split('.').pop().toLowerCase();
         
@@ -268,11 +288,14 @@ function viewStory(story, storyArray) {
             
             startProgress(5000, () => {
                 if (currentStoryIndex < storyArray.length - 1) {
-                    viewStory(storyArray[currentStoryIndex + 1], storyArray);
+                    const nextStory = storyArray[currentStoryIndex + 1];
+                    if (nextStory && nextStory.username === story.username) {
+                        viewStory(nextStory, storyArray);
+                    } else {
+                        exitStoryViewer();
+                    }
                 } else {
-                    // Only exit if this is the last story
-                    viewer.classList.remove('active');
-                    clearTimeout(progressTimeout);
+                    exitStoryViewer();
                 }
             });
             
@@ -282,83 +305,95 @@ function viewStory(story, storyArray) {
             video.controls = true;
             video.autoplay = true;
             container.appendChild(video);
+            currentVideo = video;
             
             video.onloadedmetadata = () => {
                 const duration = Math.min(video.duration * 1000, 15000);
                 startProgress(duration, () => {
                     if (currentStoryIndex < storyArray.length - 1) {
-                        viewStory(storyArray[currentStoryIndex + 1], storyArray);
-                    } else {
-                        // Only exit if this is the last story
-                        viewer.classList.remove('active');
-                        if (currentVideo) {
-                            currentVideo.pause();
-                            currentVideo = null;
+                        const nextStory = storyArray[currentStoryIndex + 1];
+                        if (nextStory && nextStory.username === story.username) {
+                            viewStory(nextStory, storyArray);
+                        } else {
+                            exitStoryViewer();
                         }
-                        clearTimeout(progressTimeout);
+                    } else {
+                        exitStoryViewer();
                     }
                 });
             };
-            
-            currentVideo = video;
         }
     }
 
+    // Add navigation buttons
     const previousButton = viewer.querySelector('#previousButton');
     const nextButton = viewer.querySelector('#nextButton');
 
-   // In viewStory function, update the navigation button handlers
-if (previousButton) {
-    previousButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
-    previousButton.onclick = (e) => {
-        e.stopPropagation();
-        clearTimeout(progressTimeout);
-        if (currentVideo) {
-            currentVideo.pause();
-            currentVideo = null;
-        }
-        if (currentStoryIndex > 0) {
-            // Move to previous story (left in UI)
-            viewStory(storyArray[currentStoryIndex - 1], storyArray);
-        }
-    };
-}
+    if (previousButton) {
+        previousButton.style.display = currentStoryIndex > 0 ? 'flex' : 'none';
+        previousButton.onclick = (e) => {
+            e.stopPropagation();
+            clearTimeout(progressTimeout);
+            if (currentVideo) {
+                currentVideo.pause();
+                currentVideo = null;
+            }
+            if (currentStoryIndex > 0) {
+                const prevStory = storyArray[currentStoryIndex - 1];
+                if (prevStory.username === story.username) {
+                    viewStory(prevStory, storyArray);
+                }
+            }
+        };
+    }
 
-if (nextButton) {
-    nextButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
-    nextButton.onclick = (e) => {
-        e.stopPropagation();
-        clearTimeout(progressTimeout);
-        if (currentVideo) {
-            currentVideo.pause();
-            currentVideo = null;
-        }
-        if (currentStoryIndex < storyArray.length - 1) {
-            // Move to next story (right in UI)
-            viewStory(storyArray[currentStoryIndex + 1], storyArray);
-        }
-    };
-}
+    if (nextButton) {
+        nextButton.style.display = currentStoryIndex < storyArray.length - 1 ? 'flex' : 'none';
+        nextButton.onclick = (e) => {
+            e.stopPropagation();
+            clearTimeout(progressTimeout);
+            if (currentVideo) {
+                currentVideo.pause();
+                currentVideo = null;
+            }
+            if (currentStoryIndex < storyArray.length - 1) {
+                const nextStory = storyArray[currentStoryIndex + 1];
+                if (nextStory.username === story.username) {
+                    viewStory(nextStory, storyArray);
+                } else {
+                    exitStoryViewer();
+                }
+            } else {
+                exitStoryViewer();
+            }
+        };
+    }
 
-    // Add close button
+    // Add close button if not already present
     if (!viewer.querySelector('.close-button')) {
         const closeButton = document.createElement('button');
         closeButton.classList.add('close-button');
         closeButton.innerHTML = '×';
-        closeButton.onclick = () => {
-            clearTimeout(progressTimeout);
-            if (currentVideo) currentVideo.pause();
-            viewer.classList.remove('active');
-        };
+        closeButton.onclick = () => exitStoryViewer();
         viewer.appendChild(closeButton);
     }
 
-    // Show the viewer
     viewer.classList.add('active');
 }
 
+// Add helper function to handle story viewer exit
+function exitStoryViewer() {
+    const viewer = document.querySelector('.story-viewer');
+    viewer.classList.remove('active');
+    if (currentVideo) {
+        currentVideo.pause();
+        currentVideo = null;
+    }
+    clearTimeout(progressTimeout);
+}
+
 function createStoryIndicators(storyArray) {
-    // Create indicators container if it doesn't exist
+    const currentUsername = localStorage.getItem('username');
     let indicatorsContainer = document.querySelector('.story-indicators');
     if (!indicatorsContainer) {
         indicatorsContainer = document.createElement('div');
@@ -368,13 +403,42 @@ function createStoryIndicators(storyArray) {
     
     indicatorsContainer.innerHTML = '';
 
-    storyArray.forEach((story, index) => {
-        const indicator = document.createElement('div');
-        indicator.classList.add('story-indicator');
-        indicator.classList.add(index === currentStoryIndex ? 'active' : 'inactive');
-        indicatorsContainer.appendChild(indicator);
-    });
+    // Get the current story
+    const currentStory = storyArray[currentStoryIndex];
+    
+    // Filter stories by user
+    const userStories = storyArray.filter(s => s.username === currentUsername);
+    const otherStories = storyArray.filter(s => s.username !== currentUsername);
+
+    // Create user stories indicators if viewing a user story
+    if (currentStory.username === currentUsername) {
+        const userIndicators = document.createElement('div');
+        userIndicators.classList.add('user-indicators');
+        userStories.forEach((_, index) => {
+            const indicator = document.createElement('div');
+            indicator.classList.add('story-indicator', 'user-indicator');
+            // Set active state based on position in user stories array
+            const userStoryIndex = userStories.findIndex(s => s._id === currentStory._id);
+            indicator.classList.add(index === userStoryIndex ? 'active' : 'inactive');
+            userIndicators.appendChild(indicator);
+        });
+        indicatorsContainer.appendChild(userIndicators);
+    } else {
+        // Create other stories indicators if viewing another user's story
+        const otherIndicators = document.createElement('div');
+        otherIndicators.classList.add('other-indicators');
+        otherStories.forEach((_, index) => {
+            const indicator = document.createElement('div');
+            indicator.classList.add('story-indicator', 'other-indicator');
+            // Set active state based on position in other stories array
+            const otherStoryIndex = otherStories.findIndex(s => s._id === currentStory._id);
+            indicator.classList.add(index === otherStoryIndex ? 'active' : 'inactive');
+            otherIndicators.appendChild(indicator);
+        });
+        indicatorsContainer.appendChild(otherIndicators);
+    }
 }
+
 
 function updateActiveIndicator() {
     const indicators = document.querySelectorAll('.story-indicator');
@@ -444,5 +508,3 @@ function resumeProgress(callback) {
 
     progressPaused = false;
 }
-
-    
