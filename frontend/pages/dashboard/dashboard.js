@@ -425,6 +425,9 @@ function viewStory(story, storyArray) {
     `;
     viewer.appendChild(reactionPanel);
 
+     // Always fetch initial reaction counts regardless of story ownership
+    fetchReactionCounts(story._id);
+
 
     // Add click handlers only for non-own stories
     if (!isOwnStory) {
@@ -475,8 +478,6 @@ function viewStory(story, storyArray) {
             };
         });
 
-        // Fetch initial reaction counts when viewing the story
-        fetchReactionCounts(story._id);
     }
 }
 
@@ -615,7 +616,6 @@ function resumeProgress(callback) {
     progressPaused = false;
 }
 
-// Add this function at the top level
 // Update the fetchReactionCounts function
 async function fetchReactionCounts(storyId) {
     try {
@@ -628,6 +628,8 @@ async function fetchReactionCounts(storyId) {
 
         if (response.ok) {
             const counts = await response.json();
+            console.log('Fetched counts for story:', storyId, counts); // Debug log
+            
             // Update UI with counts
             Object.entries(counts).forEach(([type, count]) => {
                 const countElement = document.getElementById(`${type}Count-${storyId}`);
@@ -636,12 +638,13 @@ async function fetchReactionCounts(storyId) {
                 }
             });
         } else {
-            console.error('Failed to fetch reaction counts');
+            console.error('Failed to fetch reaction counts:', await response.text());
         }
     } catch (error) {
         console.error('Error fetching reactions:', error);
     }
 }
+
 
 // Update the reaction click handler in viewStory function
 reactionPanel.querySelectorAll('.reaction').forEach(button => {
@@ -673,79 +676,20 @@ reactionPanel.querySelectorAll('.reaction').forEach(button => {
     });
 });
 
+// Update the updateReactionCounts function
 function updateReactionCounts(storyId, counts = null) {
     const reactionCounts = counts || {
         like: 0, love: 0, haha: 0, sad: 0, angry: 0
     };
 
+    console.log('Updating counts for story:', storyId, reactionCounts); // Debug log
+
     Object.entries(reactionCounts).forEach(([type, count]) => {
         const countElement = document.getElementById(`${type}Count-${storyId}`);
         if (countElement) {
             countElement.textContent = count;
+        } else {
+            console.warn(`Count element not found for ${type} reaction on story ${storyId}`);
         }
     });
-}
-
-// Update the reaction click handlers in viewStory function
-if (!isOwnStory) {
-    reactionPanel = document.createElement('div');
-    reactionPanel.className = 'reaction-panel';
-    reactionPanel.innerHTML = `
-        <div class="reactions">
-            <div class="reaction-button">
-                <button class="reaction" data-reaction="like">
-                    <img src="/pages/dashboard/reactionIcons/like.png" alt="Like">
-                </button>
-                <span class="count" id="likeCount">0</span>
-            </div>
-            <!-- ...other reaction buttons... -->
-        </div>
-    `;
-    viewer.appendChild(reactionPanel);
-
-    // Initialize reaction counts for this story
-    if (!reactionCounts[story._id]) {
-        reactionCounts[story._id] = {
-            like: 0,
-            love: 0,
-            haha: 0,
-            sad: 0,
-            angry: 0
-        };
-    }
-
-    // Add reaction click handlers with error handling
-    reactionPanel.querySelectorAll('.reaction').forEach(button => {
-        button.addEventListener('click', async function(event) {
-            event.stopPropagation();
-            const reactionType = this.getAttribute('data-reaction');
-            
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch('http://localhost:3000/api/reactions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        storyId: story._id,
-                        reactionType
-                    })
-                });
-
-                if (response.ok) {
-                    const updatedCounts = await response.json();
-                    updateReactionCounts(story._id, updatedCounts);
-                } else {
-                    console.error('Failed to add reaction');
-                }
-            } catch (error) {
-                console.error('Error adding reaction:', error);
-            }
-        });
-    });
-
-    // Fetch initial reaction counts
-    fetchReactionCounts(story._id);
 }
