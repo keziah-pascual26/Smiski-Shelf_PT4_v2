@@ -82,25 +82,6 @@ async function initializeFriendsSection() {
             ];
         }
         
-        // Fetch unread message counts
-        const unreadResponse = await fetch('http://localhost:3000/api/messages/unread/count', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        }).catch(() => ({ ok: false }));
-
-        let unreadCounts = {};
-
-        if (unreadResponse && unreadResponse.ok) {
-            const unreadData = await unreadResponse.json();
-            unreadCounts = unreadData.unreadCounts || {};
-        } else {
-            console.error('Failed to fetch unread message counts:', 
-                unreadResponse ? await unreadResponse.text().catch(() => 'Unknown error') : 'Network error');
-        }
-        
         // Create friends section HTML with tabs
         let friendsSectionHtml = `
             <h3 class="section-title">Friends</h3>
@@ -136,16 +117,11 @@ async function initializeFriendsSection() {
                     }
                 }
                 
-                // Add unread message indicator if there are unread messages
-                const unreadCount = unreadCounts[friend.id] || 0;
-                const unreadBadge = unreadCount > 0 ? 
-                    `<span class="unread-badge">${unreadCount}</span>` : '';
-                
                 friendsSectionHtml += `
                     <div class="friend-item" data-user-id="${friend.id}">
                         <img src="${friend.profilePicture || '/public/no-profile.png'}" alt="${friend.username}" class="friend-profile-img">
                         <div class="friend-info">
-                            <div class="friend-name">${friend.username} ${unreadBadge}</div>
+                            <div class="friend-name">${friend.username}</div>
                             ${statusText}
                         </div>
                         <button class="unfriend-btn" data-user-id="${friend.id}" data-username="${friend.username}">
@@ -514,47 +490,6 @@ async function unfriendUser(userId, username) {
     }
 }
 
-// Add this function to update global unread indicator
-function updateUnreadIndicator(count) {
-    // Remove existing indicator if any
-    const existingIndicator = document.getElementById('global-unread-indicator');
-    if (existingIndicator) {
-        existingIndicator.remove();
-    }
-    
-    if (count > 0) {
-        // Create a floating indicator
-        const indicator = document.createElement('div');
-        indicator.id = 'global-unread-indicator';
-        indicator.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #ff4757;
-            color: white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            cursor: pointer;
-            z-index: 1000;
-        `;
-        indicator.textContent = count > 99 ? '99+' : count;
-        
-        // Add click event to show unread messages
-        indicator.addEventListener('click', showUnreadChats);
-        
-        document.body.appendChild(indicator);
-    }
-}
-
-
-
-
 // Add CSS for tabs and other elements
 const style = document.createElement('style');
 style.textContent = `
@@ -595,16 +530,6 @@ style.textContent = `
     
     .request-count {
         background-color: #ff3b30;
-        color: white;
-        border-radius: 50%;
-        padding: 2px 6px;
-        font-size: 0.7rem;
-        margin-left: 5px;
-        font-weight: bold;
-    }
-    
-    .unread-badge {
-        background-color:rgb(48, 255, 65);
         color: white;
         border-radius: 50%;
         padding: 2px 6px;
