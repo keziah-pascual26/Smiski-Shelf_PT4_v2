@@ -19,11 +19,11 @@ router.get('/stories/all', authenticateToken, async (req, res) => {
     }
 });
 
-// Create a new story with image upload
-router.post('/stories', authenticateToken, upload.single('image'), async (req, res) => {
+// Create a new story with media upload
+router.post('/stories', authenticateToken, upload.single('media'), async (req, res) => {
     try {
         if (!req.file) {
-            return res.status(400).json({ error: 'Image file is required' });
+            return res.status(400).json({ error: 'Media file is required' });
         }
 
         const { title, description } = req.body;
@@ -32,9 +32,9 @@ router.post('/stories', authenticateToken, upload.single('image'), async (req, r
             return res.status(400).json({ error: 'Title and description are required' });
         }
 
-        // Create new story with user information from auth token
+        // Create new story
         const story = new Story({
-            userId: req.user.id, // Changed from _id to id to match the token payload
+            userId: req.user.id,
             username: req.user.username,
             title,
             description,

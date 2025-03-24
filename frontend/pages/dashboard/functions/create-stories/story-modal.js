@@ -196,7 +196,7 @@ async function addStories() {
     }
 
     if (files.length === 0) {
-        alert('Please select an image for your story.');
+        alert('Please select an image or video for your story.');
         return;
     }
 
@@ -210,7 +210,7 @@ async function addStories() {
         const formData = new FormData();
         formData.append('title', storyTitle);
         formData.append('description', storyDescription);
-        formData.append('image', files[0]);
+        formData.append('media', files[0]); // Changed from 'image' to 'media'
 
         const response = await fetch('http://localhost:3000/api/stories', {
             method: 'POST',
