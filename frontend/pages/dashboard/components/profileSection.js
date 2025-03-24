@@ -102,9 +102,9 @@ async function initializeProfileSection() {
                         </a>
                     </li>
                     <li>
-                        <a href="/pages/settings/settings.html" class="${isSettings && !isSecurity ? 'active' : ''}">
-                            <i class="fas fa-cog"></i>
-                            <span>Settings</span>
+                        <a href="/pages/profile/profile.html" class="${isSettings && !isSecurity ? 'active' : ''}">
+                            <i class="fas fa-user"></i>
+                            <span>Profile</span>
                         </a>
                     </li>
                     <li>
