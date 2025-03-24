@@ -1408,9 +1408,72 @@ button:hover {
     flex-wrap: nowrap; /* Prevents wrapping to the next line */
 }
 
+/* Own story reactions styling */
+.own-story-reactions {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.own-story-reactions h3 {
+    color: white;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.reaction-counts-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    justify-items: center;
+}
+
+.reaction-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.reaction-stat img {
+    width: 24px;
+    height: 24px;
+    opacity: 0.8;
+}
+
+.reaction-stat .count {
+    color: white;
+    font-size: 14px;
+}
+
+/* Other users' stories reactions styling */
+.other-story-reactions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px 20px;
+    border-radius: 12px;
+}
+
+.other-story-reactions .reaction {
+    transform-origin: center;
+    transition: transform 0.2s ease;
+}
+
+.other-story-reactions .reaction:hover {
+    transform: scale(1.2);
+}
+
+.other-story-reactions .reaction.reacted {
+    animation: pulse 0.5s ease;
+}
+
+
 .story-description-container {
     position: absolute;
-    bottom: 150px;
+    bottom: 200px;
     left: 20px;
     max-width: 80%;
     background-color: rgba(0, 0, 0, 0.5);

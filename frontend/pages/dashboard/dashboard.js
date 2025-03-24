@@ -388,44 +388,75 @@ function viewStory(story, storyArray) {
         // Create reaction panel for all stories
     reactionPanel = document.createElement('div');
     reactionPanel.className = 'reaction-panel';
-    reactionPanel.innerHTML = `
-        <div class="reactions">
-            <div class="reaction-button">
-                <button class="reaction" data-reaction="like" data-story-id="${story._id}" ${isOwnStory ? 'disabled' : ''}>
-                    <img src="/pages/dashboard/reactionIcons/like.png" alt="Like">
-                </button>
-                <span class="count" id="likeCount-${story._id}">0</span>
-            </div>
-            <div class="reaction-button">
-                <button class="reaction" data-reaction="love" data-story-id="${story._id}" ${isOwnStory ? 'disabled' : ''}>
-                    <img src="/pages/dashboard/reactionIcons/love.png" alt="Love">
-                </button>
-                <span class="count" id="loveCount-${story._id}">0</span>
-            </div>
-            <div class="reaction-button">
-                <button class="reaction" data-reaction="haha" data-story-id="${story._id}" ${isOwnStory ? 'disabled' : ''}>
-                    <img src="/pages/dashboard/reactionIcons/haha.png" alt="Haha">
-                </button>
-                <span class="count" id="hahaCount-${story._id}">0</span>
-            </div>
-            <div class="reaction-button">
-                <button class="reaction" data-reaction="sad" data-story-id="${story._id}" ${isOwnStory ? 'disabled' : ''}>
-                    <img src="/pages/dashboard/reactionIcons/sad.png" alt="Sad">
-                </button>
-                <span class="count" id="sadCount-${story._id}">0</span>
-            </div>
-            <div class="reaction-button">
-                <button class="reaction" data-reaction="angry" data-story-id="${story._id}" ${isOwnStory ? 'disabled' : ''}>
-                    <img src="/pages/dashboard/reactionIcons/angry.png" alt="Angry">
-                </button>
-                <span class="count" id="angryCount-${story._id}">0</span>
-            </div>
-        </div>
-        ${isOwnStory ? '<div class="reaction-hint">Reactions from other users</div>' : ''}
-    `;
+
+     if (isOwnStory) {
+        // For user's own stories - show only reaction counts
+        reactionPanel.innerHTML = `
+            <div class="reactions own-story-reactions">
+                <h3>Reactions from others</h3>
+                <div class="reaction-counts-grid">
+                    <div class="reaction-stat">
+                        <img src="/pages/dashboard/reactionIcons/like.png" alt="Like">
+                        <span class="count" id="likeCount-${story._id}">0</span>
+                    </div>
+                    <div class="reaction-stat">
+                        <img src="/pages/dashboard/reactionIcons/love.png" alt="Love">
+                        <span class="count" id="loveCount-${story._id}">0</span>
+                    </div>
+                    <div class="reaction-stat">
+                        <img src="/pages/dashboard/reactionIcons/haha.png" alt="Haha">
+                        <span class="count" id="hahaCount-${story._id}">0</span>
+                    </div>
+                    <div class="reaction-stat">
+                        <img src="/pages/dashboard/reactionIcons/sad.png" alt="Sad">
+                        <span class="count" id="sadCount-${story._id}">0</span>
+                    </div>
+                    <div class="reaction-stat">
+                        <img src="/pages/dashboard/reactionIcons/angry.png" alt="Angry">
+                        <span class="count" id="angryCount-${story._id}">0</span>
+                    </div>
+                </div>
+            </div>`;
+    } else {
+        // For other users' stories - show interactive reaction buttons
+        reactionPanel.innerHTML = `
+            <div class="reactions other-story-reactions">
+                <div class="reaction-button">
+                    <button class="reaction" data-reaction="like" data-story-id="${story._id}">
+                        <img src="/pages/dashboard/reactionIcons/like.png" alt="Like">
+                    </button>
+                    <span class="count" id="likeCount-${story._id}">0</span>
+                </div>
+                <div class="reaction-button">
+                    <button class="reaction" data-reaction="love" data-story-id="${story._id}">
+                        <img src="/pages/dashboard/reactionIcons/love.png" alt="Love">
+                    </button>
+                    <span class="count" id="loveCount-${story._id}">0</span>
+                </div>
+                <div class="reaction-button">
+                    <button class="reaction" data-reaction="haha" data-story-id="${story._id}">
+                        <img src="/pages/dashboard/reactionIcons/haha.png" alt="Haha">
+                    </button>
+                    <span class="count" id="hahaCount-${story._id}">0</span>
+                </div>
+                <div class="reaction-button">
+                    <button class="reaction" data-reaction="sad" data-story-id="${story._id}">
+                        <img src="/pages/dashboard/reactionIcons/sad.png" alt="Sad">
+                    </button>
+                    <span class="count" id="sadCount-${story._id}">0</span>
+                </div>
+                <div class="reaction-button">
+                    <button class="reaction" data-reaction="angry" data-story-id="${story._id}">
+                        <img src="/pages/dashboard/reactionIcons/angry.png" alt="Angry">
+                    </button>
+                    <span class="count" id="angryCount-${story._id}">0</span>
+                </div>
+            </div>`;
+    }
+    
     viewer.appendChild(reactionPanel);
 
-     // Always fetch initial reaction counts regardless of story ownership
+    // Always fetch initial reaction counts
     fetchReactionCounts(story._id);
 
 
