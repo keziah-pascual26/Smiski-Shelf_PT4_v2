@@ -46,6 +46,22 @@ async function initializeFriendsSection() {
             ];
         }
         
+        // Fetch pending friend requests
+        const requestsResponse = await fetch('http://localhost:3000/api/friends/requests', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        }).catch(() => ({ ok: false }));
+        
+        let pendingRequests = [];
+        
+        if (requestsResponse && requestsResponse.ok) {
+            pendingRequests = await requestsResponse.json();
+            console.log('Pending friend requests:', pendingRequests);
+        }
+        
         // Also fetch unread message counts
         const unreadResponse = await fetch('http://localhost:3000/api/messages/unread/count', {
             method: 'GET',
@@ -65,54 +81,46 @@ async function initializeFriendsSection() {
         // Create friends section HTML
         let friendsSectionHtml = `
             <h3 class="section-title">Friends</h3>
-            <div class="friends-list">
         `;
         
-        // Add friends
-        if (friends.length > 0) {
-            friends.forEach(friend => {
-                // Format last active time
-                let statusText = '';
-                if (friend.online) {
-                    statusText = '<span class="friend-status online">Online</span>';
-                } else if (friend.lastActive) {
-                    const lastActive = new Date(friend.lastActive);
-                    const now = new Date();
-                    const diffMinutes = Math.floor((now - lastActive) / (1000 * 60));
-                    
-                    if (diffMinutes < 60) {
-                        statusText = `<span class="friend-status">Active ${diffMinutes} min ago</span>`;
-                    } else if (diffMinutes < 24 * 60) {
-                        const hours = Math.floor(diffMinutes / 60);
-                        statusText = `<span class="friend-status">Active ${hours} hr ago</span>`;
-                    } else {
-                        const days = Math.floor(diffMinutes / (24 * 60));
-                        statusText = `<span class="friend-status">Active ${days} day ago</span>`;
-                    }
-                }
-                
-                // Add unread message indicator if there are unread messages
-                const unreadCount = unreadCounts[friend.id] || 0;
-                const unreadBadge = unreadCount > 0 ? 
-                    `<span class="unread-badge">${unreadCount}</span>` : '';
-                
+        // Add pending friend requests section if there are any
+        if (pendingRequests.length > 0) {
+            friendsSectionHtml += `
+                <div class="friend-requests-section">
+                    <h4 class="subsection-title">Friend Requests (${pendingRequests.length})</h4>
+                    <div class="friend-requests-list">
+            `;
+            
+            pendingRequests.forEach(request => {
+                const user = request.user || {};
                 friendsSectionHtml += `
-                    <div class="friend-item" data-user-id="${friend.id}">
-                        <img src="${friend.profilePicture || '/public/no-profile.png'}" alt="${friend.username}" class="friend-profile-img">
+                    <div class="friend-request-item" data-request-id="${request.requestId}">
+                        <img src="${user.profilePicture || '/public/no-profile.png'}" alt="${user.username}" class="friend-profile-img">
                         <div class="friend-info">
-                            <div class="friend-name">${friend.username} ${unreadBadge}</div>
-                            ${statusText}
+                            <div class="friend-name">${user.username}</div>
+                            <div class="friend-request-actions">
+                                <button class="accept-request-btn" data-request-id="${request.requestId}">Accept</button>
+                                <button class="decline-request-btn" data-request-id="${request.requestId}">Decline</button>
+                            </div>
                         </div>
                     </div>
                 `;
             });
-        } else {
+            
             friendsSectionHtml += `
-                <div class="no-friends">
-                    <p>You haven't added any friends yet.</p>
-                    <p>Find friends in the Explore section above!</p>
+                    </div>
                 </div>
             `;
+        }
+        
+        // Add friends list
+        friendsSectionHtml += `<div class="friends-list">`;
+        
+        // Add friends
+        if (friends.length > 0) {
+            // ... existing code for rendering friends ...
+        } else {
+            // ... existing code for no friends message ...
         }
         
         friendsSectionHtml += `
@@ -130,49 +138,110 @@ async function initializeFriendsSection() {
             });
         });
         
-    } catch (error) {
-        console.error('Error loading friends:', error);
-        
-        // Fallback with dummy data if API fails
-        friendsSection.innerHTML = `
-            <h3 class="section-title">Friends</h3>
-            <div class="friends-list">
-                <div class="friend-item" data-user-id="101">
-                    <img src="/public/no-profile.png" alt="smiski_fan1" class="friend-profile-img">
-                    <div class="friend-info">
-                        <div class="friend-name">smiski_fan1</div>
-                        <span class="friend-status online">Online</span>
-                    </div>
-                </div>
-                
-                <div class="friend-item" data-user-id="102">
-                    <img src="/public/no-profile.png" alt="collector123" class="friend-profile-img">
-                    <div class="friend-info">
-                        <div class="friend-name">collector123</div>
-                        <span class="friend-status">Active 30 min ago</span>
-                    </div>
-                </div>
-                
-                <div class="friend-item" data-user-id="103">
-                    <img src="/public/no-profile.png" alt="glow_master" class="friend-profile-img">
-                    <div class="friend-info">
-                        <div class="friend-name">glow_master</div>
-                        <span class="friend-status online">Online</span>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Add event listeners for friend items in the fallback UI
-        document.querySelectorAll('.friend-item').forEach(item => {
-            item.addEventListener('click', function() {
-                const userId = this.getAttribute('data-user-id');
-                const username = this.querySelector('.friend-name').textContent;
-                openChat(userId, username);
+        // Add event listeners for friend request buttons
+        document.querySelectorAll('.accept-request-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent event bubbling
+                const requestId = this.getAttribute('data-request-id');
+                acceptFriendRequest(requestId);
             });
         });
+        
+        document.querySelectorAll('.decline-request-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation(); // Prevent event bubbling
+                const requestId = this.getAttribute('data-request-id');
+                declineFriendRequest(requestId);
+            });
+        });
+        
+    } catch (error) {
+        // ... existing error handling code ...
     }
 }
+
+// Function to accept a friend request
+async function acceptFriendRequest(requestId) {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+        const response = await fetch(`http://localhost:3000/api/friends/accept/${requestId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            console.log('Friend request accepted successfully');
+            // Remove the request item from UI
+            const requestItem = document.querySelector(`.friend-request-item[data-request-id="${requestId}"]`);
+            if (requestItem) {
+                requestItem.innerHTML = '<div class="request-success">Friend request accepted!</div>';
+                setTimeout(() => {
+                    requestItem.remove();
+                    // Refresh the friends section to show the new friend
+                    initializeFriendsSection();
+                }, 2000);
+            }
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Failed to accept friend request:', errorData.message || 'Unknown error');
+            alert(`Failed to accept friend request: ${errorData.message || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('Error accepting friend request:', error);
+        alert('Network error. Please try again later.');
+    }
+}
+
+// Function to decline a friend request
+async function declineFriendRequest(requestId) {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+        const response = await fetch(`http://localhost:3000/api/friends/decline/${requestId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            console.log('Friend request declined successfully');
+            // Remove the request item from UI
+            const requestItem = document.querySelector(`.friend-request-item[data-request-id="${requestId}"]`);
+            if (requestItem) {
+                requestItem.innerHTML = '<div class="request-declined">Friend request declined</div>';
+                setTimeout(() => {
+                    requestItem.remove();
+                    
+                    // Check if there are no more requests
+                    const requestsList = document.querySelector('.friend-requests-list');
+                    if (requestsList && requestsList.children.length === 0) {
+                        const requestsSection = document.querySelector('.friend-requests-section');
+                        if (requestsSection) {
+                            requestsSection.remove();
+                        }
+                    }
+                }, 2000);
+            }
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Failed to decline friend request:', errorData.message || 'Unknown error');
+            alert(`Failed to decline friend request: ${errorData.message || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('Error declining friend request:', error);
+        alert('Network error. Please try again later.');
+    }
+}
+
+
 
 // This function will be called when a friend is clicked
 function openChat(userId, username) {
@@ -354,6 +423,121 @@ style.textContent = `
         font-size: 0.7rem;
         margin-left: 5px;
         font-weight: bold;
+    }
+    /* Friend requests styling */
+    .friend-requests-section {
+        margin-bottom: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    
+    .subsection-title {
+        font-size: 0.9rem;
+        color: #666;
+        margin: 5px 0 10px 0;
+    }
+    
+    .friend-request-item {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .friend-request-actions {
+        display: flex;
+        gap: 5px;
+        margin-top: 5px;
+    }
+    
+    .accept-request-btn, .decline-request-btn {
+        padding: 4px 8px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.8rem;
+    }
+    
+    .accept-request-btn {
+        background-color: #4CAF50;
+        color: white;
+    }
+    
+    .decline-request-btn {
+        background-color: #f44336;
+        color: white;
+    }
+    
+    .request-success {
+        color: #4CAF50;
+        font-weight: bold;
+        padding: 10px;
+        text-align: center;
+    }
+    
+    .request-declined {
+        color: #f44336;
+        font-style: italic;
+        padding: 10px;
+        text-align: center;
+    }
+    
+    /* Friends list styling */
+    .friends-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .friend-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .friend-item:hover {
+        background-color: #f0f0f0;
+    }
+    
+    .friend-profile-img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+        object-fit: cover;
+    }
+    
+    .friend-info {
+        flex: 1;
+    }
+    
+    .friend-name {
+        font-weight: bold;
+        margin-bottom: 2px;
+    }
+    
+    .friend-status {
+        font-size: 0.8rem;
+        color: #666;
+    }
+    
+    .friend-status.online {
+        color: #4CAF50;
+    }
+    
+    .no-friends {
+        text-align: center;
+        padding: 20px;
+        color: #666;
     }
 `;
 document.head.appendChild(style);
