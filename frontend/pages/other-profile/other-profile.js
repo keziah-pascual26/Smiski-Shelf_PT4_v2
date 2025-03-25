@@ -54,46 +54,137 @@ document.addEventListener('DOMContentLoaded', async function() {
         errorElement.remove();
     }
     
-    // Load the target user's profile data
-    try {
-        const userData = await loadTargetUserProfile(targetUsername);
-        if (userData) {
-            // Load initial content (posts tab is active by default)
-            loadUserPosts(targetUsername);
+        // Load the target user's profile data
+        try {
+            const userData = await loadTargetUserProfile(targetUsername);
+            if (userData) {
+                // Load initial content (posts tab is active by default)
+                loadUserPosts(targetUsername);
+            }
+        } catch (error) {
+            console.error('Failed to load profile:', error);
+            showError('Failed to load user profile. Please try again later.');
         }
-    } catch (error) {
-        console.error('Failed to load profile:', error);
-        showError('Failed to load user profile. Please try again later.');
-    }
+        
+        // Tab switching functionality
+if (tabButtons && tabButtons.length > 0) {
+    // Initialize tab content containers
+    tabContents.forEach(content => {
+        // Hide all tabs except the active one
+        if (!content.classList.contains('active')) {
+            content.style.display = 'none';
+        } else {
+            content.style.display = 'block';
+        }
+    });
     
-    // Tab switching functionality
-    if (tabButtons && tabButtons.length > 0) {
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                // Remove active class from all buttons and contents
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                tabContents.forEach(content => content.classList.remove('active'));
+    // Track which tabs have been loaded
+    const loadedTabs = {
+        'posts-content': true, // Posts tab is loaded by default
+        'stories-content': false,
+        'liked-content': false
+    };
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            button.classList.add('active');
+            
+            // Get the tab ID from the button
+            const tabName = button.getAttribute('data-tab');
+            const tabId = `${tabName}-content`;
+            
+            // Hide all tab contents
+            tabContents.forEach(content => {
+                content.style.display = 'none';
+                content.classList.remove('active');
+            });
+            
+            // Show the selected tab content
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) {
+                tabContent.style.display = 'block';
+                tabContent.classList.add('active');
                 
-                // Add active class to clicked button and corresponding content
-                button.classList.add('active');
-                const tabId = button.getAttribute('data-tab');
-                const tabContent = document.getElementById(tabId);
-                if (tabContent) {
-                    tabContent.classList.add('active');
-                    
-                    // Load content based on tab
-                    if (tabId === 'postsTab') {
+                // Load content if it hasn't been loaded before
+                if (!loadedTabs[tabId]) {
+                    if (tabId === 'posts-content') {
                         loadUserPosts(targetUsername);
-                    } else if (tabId === 'storiesTab') {
+                    } else if (tabId === 'stories-content') {
                         loadUserStories(targetUsername);
-                    } else if (tabId === 'friendsTab') {
-                        loadUserFriends(targetUsername);
+                    } else if (tabId === 'liked-content') {
+                        loadUserLikedPosts(targetUsername);
+                    }
+                    loadedTabs[tabId] = true;
+                } else {
+                    // Reload content even if it was loaded before
+                    // This ensures content is always displayed
+                    if (tabId === 'posts-content') {
+                        loadUserPosts(targetUsername);
+                    } else if (tabId === 'stories-content') {
+                        loadUserStories(targetUsername);
+                    } else if (tabId === 'liked-content') {
+                        loadUserLikedPosts(targetUsername);
                     }
                 }
-            });
+            }
         });
-    }
+    });
+}
     
+// Update the loadUserLikedPosts function to match the pattern of loadUserPosts
+async function loadUserLikedPosts(username) {
+    const userLikedFeed = document.getElementById('userLikedFeed');
+    userLikedFeed.innerHTML = '<div class="loading">Loading liked posts...</div>';
+    
+    try {
+        // Make sure we're passing the visited user's username, not the logged-in user
+        const response = await fetch(`http://localhost:3000/posts/liked?username=${encodeURIComponent(username)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch liked posts: ${response.status} ${response.statusText}`);
+        }
+        
+        const posts = await response.json();
+        console.log(`Loaded ${posts.length} liked posts for user ${username}:`, posts);
+        
+        if (posts.length === 0) {
+            userLikedFeed.innerHTML = `
+                <div class="empty-state">
+                    <h3>No liked posts yet</h3>
+                    <p>${username} hasn't liked any posts yet.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Render posts
+        userLikedFeed.innerHTML = '';
+        posts.forEach(post => {
+            const postElement = createPostElement(post);
+            userLikedFeed.appendChild(postElement);
+        });
+    } catch (error) {
+        console.error('Error loading liked posts:', error);
+        userLikedFeed.innerHTML = `
+            <div class="empty-state">
+                <h3>Error loading liked posts</h3>
+                <p>We couldn't load the liked posts. Please try again later.</p>
+                <p class="error-details">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
             // Function to load target user's profile
     async function loadTargetUserProfile(username) {
         try {

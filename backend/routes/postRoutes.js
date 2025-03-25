@@ -82,20 +82,26 @@ module.exports = (app) => {
         }
     });
 
-    // Get posts liked by current user
+    // Get posts liked by any user (current or specific user)
     app.get('/posts/liked', authenticateToken, async (req, res) => {
         try {
-            console.log("🔍 Fetching liked posts for user:", req.user.username);
+            // Get username from query params, fallback to current user if not provided
+            const targetUsername = req.query.username || req.user.username;
+            
+            console.log("🔍 Fetching liked posts for user:", targetUsername);
             
             const posts = await Post.find({ 
-                'likes.username': req.user.username 
+                'likes.username': targetUsername 
             }).sort({ createdAt: -1 });
             
-            console.log(`✅ Found ${posts.length} liked posts for user: ${req.user.username}`);
-            res.json(posts);
+            console.log(`✅ Found ${posts.length} liked posts for user: ${targetUsername}`);
+            res.status(200).json(posts);
         } catch (error) {
             console.error("🚨 Error fetching liked posts:", error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({
+                error: "Failed to fetch liked posts",
+                details: error.message
+            });
         }
     });
 
