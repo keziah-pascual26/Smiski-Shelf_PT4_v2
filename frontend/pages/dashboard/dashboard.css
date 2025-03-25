@@ -595,15 +595,64 @@ button img {
 }
 
 /* Preview Box */
-.create-story-modal .preview-section {
-    width: 45%;
-    min-height: 200px;
-    background: #f6f0f0;
+.preview-section {
     display: flex;
+    flex-direction: column;
     align-items: center;
+}
+
+
+#imagePreview {
+    transition: transform 0.3s ease;
+    max-width: 100%;
+    max-height: 400px;
+}
+
+.cropper-container {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.crop-control-buttons {
+    display: flex;
+    gap: 10px;
     justify-content: center;
-    text-align: center;
-    border-radius: 10px;
+    margin-top: 15px;
+    width: 100%;
+}
+
+.crop-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    width: auto !important; /* Override any default width */
+    margin: 5px !important; /* Override any default margin */
+}
+
+.crop-btn.done {
+    background-color: #4CAF50 !important;
+    color: white;
+}
+
+.crop-btn.cancel {
+    background-color: #f44336 !important;
+    color: white;
+}
+
+.crop-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+#cropControls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+    width: 100%;
 }
 
 /* Edit Button */
@@ -799,6 +848,34 @@ textarea#storyDescription {
 }
 
 .image-crop-controls button:hover {
+    background-color: #0056b3;
+}
+
+.image-resize-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+#resizeControls {
+    display: none;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.resize-btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.resize-btn:hover {
     background-color: #0056b3;
 }
 
@@ -1264,6 +1341,15 @@ button:hover {
     margin-top: 20px;
 }
 
+#cropPreview {
+    overflow: hidden;
+    width: 180px;
+    height: 320px;
+    margin: 10px auto;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+}
+
 /*story number indicators */
 .story-indicators {
     position: absolute;
@@ -1424,14 +1510,12 @@ button:hover {
 
 #previewContainer {
     position: relative;
-    width: 100%; /* Ensures responsiveness */
-    max-width: 300px; /* Optional: limit the size */
-    aspect-ratio: 9 / 16; /* Maintains 9:16 ratio */
-    background-color: black; /* Optional: adds contrast */
-    overflow: hidden; /* Prevents overflow */
+    overflow: hidden;
+    transition: all 0.3s ease;
+    margin: 20px auto;
     display: flex;
-    justify-content: center; /* Horizontally centers the content */
-    align-items: center; /* Vertically centers the content */
+    justify-content: center;
+    align-items: center;
 }
 
 #imagePreview,

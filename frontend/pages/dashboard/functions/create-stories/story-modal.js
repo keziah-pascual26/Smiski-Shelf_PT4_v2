@@ -10,8 +10,15 @@ storyModalCSS.rel = 'stylesheet';
 storyModalCSS.href = '/pages/dashboard/functions/create-stories/story-modal.css';
 document.head.appendChild(storyModalCSS);
 
+let uploadedFileType = null;
+let cropper = null;
 
+const MIN_SCALE = 0.5;
+const MAX_SCALE = 2.0;
+const SCALE_STEP = 0.1;
+let currentScale = 1.0;
 
+// Update the modal HTML where the rotate button is defined
 const storyModalHTML = `
     <!-- Create Story Modal -->
     <div id="createStoryModal" class="create-story-modal">
@@ -53,12 +60,16 @@ const storyModalHTML = `
                 <div id="imageEditor" style="display: none;">
                     <h3>Edit Image</h3>
                     <div>
-                        <button onclick="rotateImage()">Rotate</button>
+                        <button type="button" id="rotateButton">Rotate</button>
                         <button id="cropImage">Enable Cropping</button>
                         <div class="image-resize-controls">
                             <span>Resize:</span>
-                            <button id="minimizeButton" onclick="minimizeImage()">-</button>
-                            <button id="maximizeButton" onclick="maximizeImage()">+</button>
+                                <button id="minimizeButton" type="button">-</button>
+                                <button id="maximizeButton" type="button">+</button>
+                                <div id="resizeControls" style="display: none;">
+                                    <button type="button" id="doneResizing" class="crop-btn done">Done</button>
+                                    <button type="button" id="cancelResizing" class="crop-btn cancel">Cancel</button>
+                                </div>
                         </div>
                     </div>
                     <div id="cropper-container"></div>
@@ -87,6 +98,116 @@ const storyModalHTML = `
         </div>
     </div>
 `;
+
+// Update handleMediaUpload to reset rotation when new image is loaded
+function handleMediaUpload(event) {
+    const file = event.target.files[0];
+    const imageEditor = document.getElementById('imageEditor');
+    const videoEditor = document.getElementById('videoEditor');
+    const imagePreview = document.getElementById('imagePreview');
+    const videoPreview = document.getElementById('videoPreview');
+    const videoSource = document.getElementById('videoSource');
+    const previewContainer = document.getElementById('previewContainer');
+    const cropButton = document.getElementById('cropImage');
+    const editorSection = document.getElementById('editorSection');
+    const editButton = document.querySelector('.edit-button');
+
+    // Reset all editors and controls
+    imageEditor.style.display = 'none';
+    videoEditor.style.display = 'none';
+    imagePreview.style.display = 'none';
+    videoPreview.style.display = 'none';
+    editorSection.style.display = 'none';
+    cropButton.style.display = 'none';
+    editButton.textContent = 'Edit';
+
+    currentRotation = 0;
+    // Reset scale and transform
+    currentScale = 1;
+    if (imagePreview) {
+        imagePreview.style.transform = 'scale(1)';
+    }
+
+    // Reset cropper if it exists
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+
+    // Remove any existing crop controls
+    const existingControls = document.getElementById('cropControls');
+    if (existingControls) {
+        existingControls.remove();
+    }
+
+    if (file) {
+        const fileType = file.type;
+        uploadedFileType = fileType;
+
+        if (fileType.startsWith('image/')) {
+            // Reset cropper and button state for new image upload
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+            
+            editButton.style.display = 'block';
+            editButton.onclick = () => {
+                editorSection.style.display = editorSection.style.display === 'none' ? 'block' : 'none';
+                imageEditor.style.display = 'block';
+                videoEditor.style.display = 'none';
+                // Show crop button when edit section is displayed
+                cropButton.style.display = editorSection.style.display === 'block' ? 'block' : 'none';
+                if (editorSection.style.display === 'block') {
+                    editButton.textContent = 'Hide Edit Options';
+                } else {
+                    editButton.textContent = 'Edit';
+                }
+            };
+
+            const reader = new FileReader();
+            reader.onload = function () {
+                imagePreview.src = reader.result;
+                imagePreview.style.display = 'block';
+                
+                // Reset cropper and button state
+                if (cropper) {
+                    cropper.destroy();
+                    cropper = null;
+                }
+                cropButton.textContent = 'Enable Cropping';
+                // Only show crop button if editor section is visible
+                cropButton.style.display = editorSection.style.display === 'block' ? 'block' : 'none';
+                cropButton.onclick = toggleCropping;
+            };
+            reader.readAsDataURL(file);
+        } else if (fileType.startsWith('video/')) {
+            // Enable edit button for videos
+            editButton.style.display = 'block';
+            editButton.onclick = () => {
+                editorSection.style.display = editorSection.style.display === 'none' ? 'block' : 'none';
+                videoEditor.style.display = 'block';
+                imageEditor.style.display = 'none';
+                if (editorSection.style.display === 'block') {
+                    editButton.textContent = 'Hide Edit Options';
+                } else {
+                    editButton.textContent = 'Edit';
+                }
+            };
+
+            const reader = new FileReader();
+            reader.onload = function () {
+                videoSource.src = reader.result;
+                videoPreview.style.display = 'block';
+                videoPreview.load();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Show the preview container once the media is selected
+    previewContainer.style.display = 'block';
+}
 
 export function openStoryModal() {
     const modal = document.getElementById('createStoryModal');
@@ -158,6 +279,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (overlay) {
         overlay.addEventListener('click', closeModalButton);
     }
+
+    
 });
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -179,12 +302,58 @@ document.addEventListener('DOMContentLoaded', () => {
     if (postButton) {
         postButton.addEventListener('click', addStories);
     }
+
+    // Add this new event listener
+    const mediaInput = document.getElementById('mediaInput');
+    if (mediaInput) {
+        mediaInput.addEventListener('change', handleMediaUpload);
+    }
+
+    // Add rotate button listener
+    const rotateButton = document.getElementById('rotateButton');
+    if (rotateButton) {
+        rotateButton.addEventListener('click', rotateImage);
+    }
+
+    // Add resize button listeners
+    const minimizeBtn = document.getElementById('minimizeButton');
+    const maximizeBtn = document.getElementById('maximizeButton');
+    
+    if (minimizeBtn) {
+        minimizeBtn.addEventListener('click', minimizeImage);
+    }
+    
+    if (maximizeBtn) {
+        maximizeBtn.addEventListener('click', maximizeImage);
+    }
+
+    const doneResizingBtn = document.getElementById('doneResizing');
+    const cancelResizingBtn = document.getElementById('cancelResizing');
+    
+    if (doneResizingBtn) {
+        doneResizingBtn.addEventListener('click', () => {
+            // Keep the current scale
+            hideResizeControls();
+        });
+    }
+    
+    if (cancelResizingBtn) {
+        cancelResizingBtn.addEventListener('click', () => {
+            // Reset scale to original
+            currentScale = 1;
+            const imagePreview = document.getElementById('imagePreview');
+            applyScale(imagePreview);
+            hideResizeControls();
+        });
+    }
 });
+
 
 async function addStories() {
     const mediaInput = document.getElementById('mediaInput');
     const storyTitleInput = document.getElementById('storyTitle');
     const storyDescriptionInput = document.getElementById('storyDescription');
+    const imagePreview = document.getElementById('imagePreview');
     
     const files = mediaInput.files;
     const storyTitle = storyTitleInput.value.trim();
@@ -210,7 +379,52 @@ async function addStories() {
         const formData = new FormData();
         formData.append('title', storyTitle);
         formData.append('description', storyDescription);
-        formData.append('media', files[0]); // Changed from 'image' to 'media'
+
+        // Handle media upload (image or video)
+        // Handle media upload (image or video)
+        if (uploadedFileType.startsWith('image/')) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            img.src = imagePreview.src;
+            await new Promise(resolve => img.onload = resolve);
+        
+            // Get the original image dimensions
+            const originalWidth = img.naturalWidth;
+            const originalHeight = img.naturalHeight;
+        
+            // Calculate the scaled dimensions based on the preview state
+            const scaledWidth = originalWidth * currentScale;
+            const scaledHeight = originalHeight * currentScale;
+        
+            // Set canvas size to match the scaled dimensions
+            if (currentRotation === 90 || currentRotation === 270) {
+                canvas.width = scaledHeight;
+                canvas.height = scaledWidth;
+            } else {
+                canvas.width = scaledWidth;
+                canvas.height = scaledHeight;
+            }
+        
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+            // Apply transformations in the correct order
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(currentRotation * Math.PI / 180);
+            ctx.scale(currentScale, currentScale);
+            ctx.drawImage(img, -originalWidth / 2, -originalHeight / 2, originalWidth, originalHeight);
+            ctx.restore();
+        
+            // Convert to high-quality blob
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 1.0));
+            formData.append('media', blob, 'edited-image.jpg');
+        } else {
+            formData.append('media', files[0]);
+        }
+
 
         const response = await fetch('http://localhost:3000/api/stories', {
             method: 'POST',
@@ -232,6 +446,10 @@ async function addStories() {
         storyTitleInput.value = '';
         storyDescriptionInput.value = '';
         mediaInput.value = '';
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
         closeModalButton();
 
         // Refresh stories list
@@ -264,9 +482,197 @@ async function fetchStories() {
     }
 }
 
+// Add this variable at the top with other global variables
+let currentRotation = 0;
+
+// Add this function to handle image rotation
+function rotateImage() {
+    const imagePreview = document.getElementById('imagePreview');
+    currentRotation = (currentRotation + 90) % 360;
+    
+    if (cropper) {
+        // If cropper exists, rotate within the cropper
+        cropper.rotate(90);
+    } else {
+        // If no cropper, rotate the image directly
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create temporary image to get dimensions
+        const img = new Image();
+        img.src = imagePreview.src;
+        
+        img.onload = function() {
+            // Swap dimensions for rotation
+            if (currentRotation === 90 || currentRotation === 270) {
+                canvas.width = img.height;
+                canvas.height = img.width;
+            } else {
+                canvas.width = img.width;
+                canvas.height = img.height;
+            }
+            
+            // Translate and rotate context
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.rotate(currentRotation * Math.PI/180);
+            ctx.drawImage(img, -img.width/2, -img.height/2);
+            
+            // Update preview with rotated image
+            imagePreview.src = canvas.toDataURL();
+        };
+    }
+}
 
 
+
+function initializeCropper() {
+    const imagePreview = document.getElementById('imagePreview');
+    const cropButton = document.getElementById('cropImage');
+    const previewContainer = document.getElementById('previewContainer');
+    
+    if (cropper) {
+        cropper.destroy();
+    }
+
+    // Remove existing crop controls if they exist
+    const existingControls = document.getElementById('cropControls');
+    if (existingControls) {
+        existingControls.remove();
+    }
+
+    // Create new crop controls
+    const cropControls = document.createElement('div');
+    cropControls.id = 'cropControls';
+    cropControls.innerHTML = `
+        <button type="button" id="doneCropping" class="crop-btn done">Done</button>
+        <button type="button" id="cancelCropping" class="crop-btn cancel">Cancel</button>
+    `;
+    
+    // Insert controls after the preview container
+    previewContainer.insertAdjacentElement('afterend', cropControls);
+
+    // Add event listeners
+    document.getElementById('doneCropping').addEventListener('click', () => {
+        const croppedCanvas = cropper.getCroppedCanvas();
+        imagePreview.src = croppedCanvas.toDataURL();
+        toggleCropping();
+    });
+
+    document.getElementById('cancelCropping').addEventListener('click', () => {
+        toggleCropping();
+    });
+
+    // Initialize cropper
+    cropper = new Cropper(imagePreview, {
+        aspectRatio: 9 / 16,
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 1,
+        restore: false,
+        guides: true,
+        center: true,
+        highlight: false,
+        cropBoxMovable: true,
+        cropBoxResizable: true,
+        toggleDragModeOnDblclick: false,
+        initialRotation: currentRotation,
+        // Add this to maintain scale
+        scale: currentScale
+    });
+
+    cropButton.textContent = 'Disable Cropping';
+}
+
+// Add this function to handle crop button clicks
+function toggleCropping() {
+    const imagePreview = document.getElementById('imagePreview');
+    const cropButton = document.getElementById('cropImage');
+    const cropPreview = document.getElementById('cropPreview');
+    const cropControls = document.getElementById('cropControls');
+
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+        cropButton.textContent = 'Enable Cropping';
+        if (cropPreview) {
+            cropPreview.remove();
+        }
+        if (cropControls) {
+            cropControls.remove();
+        }
+    } else {
+        initializeCropper();
+    }
+}
+
+// Update maximize and minimize functions
+function maximizeImage() {
+    const imagePreview = document.getElementById('imagePreview');
+    if (currentScale < MAX_SCALE) {
+        currentScale += SCALE_STEP;
+        applyScale(imagePreview);
+    }
+}
+
+function minimizeImage() {
+    const imagePreview = document.getElementById('imagePreview');
+    if (currentScale > MIN_SCALE) {
+        currentScale -= SCALE_STEP;
+        applyScale(imagePreview);
+    }
+}
+
+// Update the applyScale function
+function applyScale(imageElement) {
+    if (!imageElement) return;
+    
+    imageElement.style.transform = `scale(${currentScale})`;
+    
+    // Show resize controls when scale changes
+    showResizeControls();
+    
+    // Update preview container size
+    const previewContainer = document.getElementById('previewContainer');
+    if (previewContainer) {
+        const newWidth = imageElement.naturalWidth * currentScale;
+        const newHeight = imageElement.naturalHeight * currentScale;
+        previewContainer.style.width = `${newWidth}px`;
+        previewContainer.style.height = `${newHeight}px`;
+    }
+}
+
+
+function showResizeControls() {
+    const resizeControls = document.getElementById('resizeControls');
+    if (resizeControls) {
+        resizeControls.style.display = 'flex';
+        resizeControls.innerHTML = `
+            <button type="button" id="doneResizing" class="crop-btn done">Done</button>
+            <button type="button" id="cancelResizing" class="crop-btn cancel">Cancel</button>
+        `;
+        
+        // Add event listeners
+        document.getElementById('doneResizing').onclick = () => {
+            hideResizeControls();
+            // Keep the current scale
+        };
+        
+        document.getElementById('cancelResizing').onclick = () => {
+            currentScale = 1.0;
+            const imagePreview = document.getElementById('imagePreview');
+            applyScale(imagePreview);
+            hideResizeControls();
+        };
+    }
+}
+
+function hideResizeControls() {
+    const resizeControls = document.getElementById('resizeControls');
+    if (resizeControls) {
+        resizeControls.style.display = 'none';
+    }
+}
 
 document.body.insertAdjacentHTML('beforeend', storyModalHTML);
 
-export { addStories };
+export { addStories, handleMediaUpload };
