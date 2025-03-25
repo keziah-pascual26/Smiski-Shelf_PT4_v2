@@ -89,7 +89,6 @@ const storyModalHTML = `
     </div>
 `;
 
-// Update handleMediaUpload to reset rotation when new image is loaded
 function handleMediaUpload(event) {
     const files = event.target.files;
     const imageEditor = document.getElementById('imageEditor');
@@ -153,9 +152,19 @@ function handleMediaUpload(event) {
                 cropper = null;
             }
             cropButton.textContent = 'Enable Cropping';
-            // Only show crop button if editor section is visible
-            cropButton.style.display = editorSection.style.display === 'block' ? 'block' : 'none';
-            cropButton.onclick = toggleCropping;
+            
+            // Set up edit button for images
+            editButton.onclick = () => {
+                editorSection.style.display = editorSection.style.display === 'none' ? 'block' : 'none';
+                imageEditor.style.display = 'block';
+                videoEditor.style.display = 'none';
+                cropButton.style.display = 'block';
+                if (editorSection.style.display === 'block') {
+                    editButton.textContent = 'Hide Edit Options';
+                } else {
+                    editButton.textContent = 'Edit';
+                }
+            };
         };
         reader.readAsDataURL(file);
     } else if (fileType.startsWith('video/')) {
@@ -192,26 +201,49 @@ function handleMediaUpload(event) {
         videoPreview.load(); // Important: load the video after changing source
         videoPreview.style.display = 'block';
         
+        // Set up edit button for videos immediately (don't wait for metadata)
+        editButton.style.display = 'block';
+        editButton.onclick = () => {
+            editorSection.style.display = editorSection.style.display === 'none' ? 'block' : 'none';
+            videoEditor.style.display = 'block';
+            imageEditor.style.display = 'none';
+            if (editorSection.style.display === 'block') {
+                editButton.textContent = 'Hide Edit Options';
+            } else {
+                editButton.textContent = 'Edit';
+            }
+        };
+        
         // Set up video metadata loading
         videoPreview.onloadedmetadata = function() {
             // Set max value for end time input
             const endTimeInput = document.getElementById('endTimeInput');
+            const maxDuration = Math.min(videoPreview.duration, 15);
+            
             if (endTimeInput) {
-                endTimeInput.value = Math.min(videoPreview.duration, 15);
+                endTimeInput.value = maxDuration;
             }
             
-            // Enable edit button for videos
-            editButton.style.display = 'block';
-            editButton.onclick = () => {
-                editorSection.style.display = editorSection.style.display === 'none' ? 'block' : 'none';
-                videoEditor.style.display = 'block';
-                imageEditor.style.display = 'none';
-                if (editorSection.style.display === 'block') {
-                    editButton.textContent = 'Hide Edit Options';
-                } else {
-                    editButton.textContent = 'Edit';
+            // Show warning if video is longer than 15 seconds
+            if (videoPreview.duration > 15) {
+                const warningDiv = document.createElement('div');
+                warningDiv.id = 'videoLengthWarning';
+                warningDiv.style.color = '#ff4d4d';
+                warningDiv.style.marginTop = '5px';
+                warningDiv.style.fontSize = '14px';
+                warningDiv.textContent = 'Video exceeds 15 seconds. Only the first 15 seconds will be used.';
+                
+                // Remove existing warning if any
+                const existingWarning = document.getElementById('videoLengthWarning');
+                if (existingWarning) {
+                    existingWarning.remove();
                 }
-            };
+                
+                previewContainer.appendChild(warningDiv);
+            }
+            
+            // Set up progress bar update on timeupdate
+            setupVideoProgressBar(videoPreview);
         };
     }
 
@@ -325,11 +357,17 @@ document.addEventListener('DOMContentLoaded', () => {
         rotateButton.addEventListener('click', rotateImage);
     }
 
-        // Add video trim preview button listener
-        const previewTrimButton = document.getElementById('previewTrimButton');
-        if (previewTrimButton) {
-            previewTrimButton.addEventListener('click', trimAndRecordVideo);
-        }
+     // Add crop button listener
+     const cropButton = document.getElementById('cropImage');
+     if (cropButton) {
+         cropButton.addEventListener('click', toggleCropping);
+     }
+ 
+     // Add video trim preview button listener
+     const previewTrimButton = document.getElementById('previewTrimButton');
+     if (previewTrimButton) {
+         previewTrimButton.addEventListener('click', trimAndRecordVideo);
+     }
 
         // Add video time input listeners
         const startTimeInput = document.getElementById('startTimeInput');
@@ -374,274 +412,297 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-async function addStories() {
-        // Declare all variables at the start of the function
-        const mediaInput = document.getElementById('mediaInput');
-        const storyTitleInput = document.getElementById('storyTitle');
-        const storyDescriptionInput = document.getElementById('storyDescription');
-        const imagePreview = document.getElementById('imagePreview');
-        const videoPreview = document.getElementById('videoPreview');
-        const previewContainer = document.getElementById('previewContainer');
-        const editorSection = document.getElementById('editorSection');
-        const editButton = document.querySelector('.edit-button');
-        const charCount = document.getElementById('charCount');
+        async function addStories() {
+            // Declare all variables at the start of the function
+            const mediaInput = document.getElementById('mediaInput');
+            const storyTitleInput = document.getElementById('storyTitle');
+            const storyDescriptionInput = document.getElementById('storyDescription');
+            const imagePreview = document.getElementById('imagePreview');
+            const videoPreview = document.getElementById('videoPreview');
+            const previewContainer = document.getElementById('previewContainer');
+            const editorSection = document.getElementById('editorSection');
+            const editButton = document.querySelector('.edit-button');
+            const charCount = document.getElementById('charCount');
+            
+            const files = mediaInput.files;
+            const storyTitle = storyTitleInput.value.trim();
+            const storyDescription = storyDescriptionInput.value.trim();
         
-        const files = mediaInput.files;
-        const storyTitle = storyTitleInput.value.trim();
-        const storyDescription = storyDescriptionInput.value.trim();
-    
-        // Validation checks
-        if (!storyTitle || !storyDescription) {
-            alert('Please enter both a title and description for your story.');
-            return;
-        }
-    
-        if (files.length === 0) {
-            alert('Please select an image or video for your story.');
-            return;
-        }
-    
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                alert('Please log in to post a story.');
+            // Validation checks
+            if (!storyTitle || !storyDescription) {
+                alert('Please enter both a title and description for your story.');
                 return;
             }
-
-            
-    
-            // Show loading state
-        const postButton = document.getElementById('postStoryButton');
-        const originalButtonText = postButton.textContent;
-        postButton.textContent = 'Uploading...';
-        postButton.disabled = true;
-
-        const formData = new FormData();
-        formData.append('title', storyTitle);
-        formData.append('description', storyDescription);
-    
-            // Handle media upload with transformations
-            if (files[0].type.startsWith('image/')) {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
-                
-                await new Promise((resolve, reject) => {
-                    img.onload = resolve;
-                    img.onerror = reject;
-                    img.src = imagePreview.src;
-                });
-    
-                // Use the current preview dimensions
-                canvas.width = img.width;
-                canvas.height = img.height;
-    
-                // Simply draw the image as it appears in preview
-                ctx.drawImage(img, 0, 0);
-    
-                const finalImageBlob = await new Promise(resolve => {
-                    canvas.toBlob(resolve, 'image/jpeg', 0.95);
-                });
-                formData.append('media', finalImageBlob, 'edited-image.jpg');
-            } else if (files[0].type.startsWith('video/')) {
-                    // For videos, check if trimming is needed
-                const trimVideoCheckbox = document.getElementById('trimVideoCheckbox');
-                const videoFile = files[0];
-                
-                // Log video details for debugging
-                console.log('Video details:', {
-                    name: videoFile.name,
-                    type: videoFile.type,
-                    size: `${(videoFile.size / (1024 * 1024)).toFixed(2)} MB`
-                });
-                
-                if (trimVideoCheckbox && trimVideoCheckbox.checked) {
-                    const startTime = parseFloat(document.getElementById('startTimeInput').value) || 0;
-                    const endTime = parseFloat(document.getElementById('endTimeInput').value) || videoPreview.duration;
-                    
-                    if (endTime - startTime > 15) {
-                        alert('Final video duration cannot exceed 15 seconds. Please adjust your trim points.');
-                        postButton.textContent = originalButtonText;
-                        postButton.disabled = false;
-                        return;
-                    }
-                    
-                    // Enhanced trim information with more details
-                formData.append('media', videoFile);
-                formData.append('isTrimmed', 'true');
-                formData.append('trimStart', startTime.toString());
-                formData.append('trimEnd', endTime.toString());
-                formData.append('videoDuration', videoPreview.duration.toString());
-                formData.append('videoFormat', videoFile.type.split('/')[1] || 'mp4');
-                formData.append('trimDuration', (endTime - startTime).toString());
-                formData.append('videoCodec', 'h264'); // Most common codec, adjust if needed
-                
-                // Add a flag to indicate this is a trimmed video that needs server-side processing
-                formData.append('requiresProcessing', 'true');
-
-                    console.log('Trim details:', {
-                        start: startTime,
-                        end: endTime,
-                        duration: videoPreview.duration,
-                        trimDuration: endTime - startTime,
-                        format: videoFile.type.split('/')[1] || 'mp4'
-                    });
-                } else {
-                    // No trimming needed
-                    formData.append('media', videoFile);
-                    formData.append('isTrimmed', 'false');
-                }
+        
+            if (files.length === 0) {
+                alert('Please select an image or video for your story.');
+                return;
             }
-
-            async function clientSideTrimVideo(videoFile, startTime, endTime) {
-                try {
-                    // Create a video element to load the file
-                    const video = document.createElement('video');
-                    video.src = URL.createObjectURL(videoFile);
-                    
-                    // Wait for video metadata to load
-                    await new Promise((resolve, reject) => {
-                        video.onloadedmetadata = resolve;
-                        video.onerror = reject;
-                    });
-                    
-                    // Create a canvas to capture frames
+        
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    alert('Please log in to post a story.');
+                    return;
+                }
+                
+                // Show loading state
+                const postButton = document.getElementById('postStoryButton');
+                const originalButtonText = postButton.textContent;
+                postButton.textContent = 'Uploading...';
+                postButton.disabled = true;
+        
+                const formData = new FormData();
+                formData.append('title', storyTitle);
+                formData.append('description', storyDescription);
+        
+                // Handle media upload with transformations
+                if (files[0].type.startsWith('image/')) {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
+                    const img = new Image();
                     
-                    // For simplicity, we'll just capture a frame at the start time
-                    // This is a fallback and not a real trim
-                    video.currentTime = startTime;
-                    
-                    // Wait for the seek to complete
-                    await new Promise((resolve) => {
-                        video.onseeked = resolve;
+                    await new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = reject;
+                        img.src = imagePreview.src;
                     });
-                    
-                    // Draw the frame to canvas
-                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    
-                    // Convert canvas to blob
-                    const blob = await new Promise(resolve => {
+        
+                    // Use the current preview dimensions
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+        
+                    // Simply draw the image as it appears in preview
+                    ctx.drawImage(img, 0, 0);
+        
+                    const finalImageBlob = await new Promise(resolve => {
                         canvas.toBlob(resolve, 'image/jpeg', 0.95);
                     });
+                    formData.append('media', finalImageBlob, 'edited-image.jpg');
+                } else if (files[0].type.startsWith('video/')) {
+                    // For videos, check if trimming is needed
+                    const trimVideoCheckbox = document.getElementById('trimVideoCheckbox');
+                    const videoFile = files[0];
                     
-                    return blob;
-                } catch (error) {
-                    console.error('Client-side trim failed:', error);
-                    return null;
+                    // Log video details for debugging
+                    console.log('Video details:', {
+                        name: videoFile.name,
+                        type: videoFile.type,
+                        size: `${(videoFile.size / (1024 * 1024)).toFixed(2)} MB`,
+                        duration: videoPreview.duration
+                    });
+                    
+                    // Check if video exceeds 15 seconds
+                    if (videoPreview.duration > 15) {
+                        // If user hasn't explicitly set trim points, set them automatically
+                        if (!trimVideoCheckbox || !trimVideoCheckbox.checked) {
+                            const startTime = 0;
+                            const endTime = 15;
+                            
+                            // Add warning about automatic trimming
+                            console.log('Video exceeds 15 seconds. Automatically trimming to first 15 seconds.');
+                            
+                            // Set trim parameters
+                            formData.append('media', videoFile);
+                            formData.append('isTrimmed', 'true');
+                            formData.append('trimStart', startTime.toString());
+                            formData.append('trimEnd', endTime.toString());
+                            formData.append('videoDuration', videoPreview.duration.toString());
+                            formData.append('videoFormat', videoFile.type.split('/')[1] || 'mp4');
+                            formData.append('trimDuration', '15');
+                            formData.append('videoCodec', 'h264');
+                            formData.append('requiresProcessing', 'true');
+                            
+                            console.log('Auto trim details:', {
+                                start: startTime,
+                                end: endTime,
+                                duration: videoPreview.duration,
+                                trimDuration: endTime - startTime,
+                                format: videoFile.type.split('/')[1] || 'mp4'
+                            });
+                        } else {
+                            // User has set custom trim points
+                            const startTime = parseFloat(document.getElementById('startTimeInput').value) || 0;
+                            const endTime = parseFloat(document.getElementById('endTimeInput').value) || 15;
+                            
+                            if (endTime - startTime > 15) {
+                                alert('Final video duration cannot exceed 15 seconds. Please adjust your trim points.');
+                                postButton.textContent = originalButtonText;
+                                postButton.disabled = false;
+                                return;
+                            }
+                            
+                            // Enhanced trim information with more details
+                            formData.append('media', videoFile);
+                            formData.append('isTrimmed', 'true');
+                            formData.append('trimStart', startTime.toString());
+                            formData.append('trimEnd', endTime.toString());
+                            formData.append('videoDuration', videoPreview.duration.toString());
+                            formData.append('videoFormat', videoFile.type.split('/')[1] || 'mp4');
+                            formData.append('trimDuration', (endTime - startTime).toString());
+                            formData.append('videoCodec', 'h264');
+                            formData.append('requiresProcessing', 'true');
+        
+                            console.log('Trim details:', {
+                                start: startTime,
+                                end: endTime,
+                                duration: videoPreview.duration,
+                                trimDuration: endTime - startTime,
+                                format: videoFile.type.split('/')[1] || 'mp4'
+                            });
+                        }
+                    } else {
+                        // Video is already under 15 seconds
+                        if (trimVideoCheckbox && trimVideoCheckbox.checked) {
+                            // User wants to trim anyway
+                            const startTime = parseFloat(document.getElementById('startTimeInput').value) || 0;
+                            const endTime = parseFloat(document.getElementById('endTimeInput').value) || videoPreview.duration;
+                            
+                            formData.append('media', videoFile);
+                            formData.append('isTrimmed', 'true');
+                            formData.append('trimStart', startTime.toString());
+                            formData.append('trimEnd', endTime.toString());
+                            formData.append('videoDuration', videoPreview.duration.toString());
+                            formData.append('videoFormat', videoFile.type.split('/')[1] || 'mp4');
+                            formData.append('trimDuration', (endTime - startTime).toString());
+                            formData.append('videoCodec', 'h264');
+                            formData.append('requiresProcessing', 'true');
+                        } else {
+                            // No trimming needed, video is already short enough
+                            formData.append('media', videoFile);
+                            formData.append('isTrimmed', 'false');
+                            formData.append('videoDuration', videoPreview.duration.toString());
+                        }
+                    }
                 }
-            }
+        
+                // Add audio if selected
+                const audioInput = document.getElementById('audioInput');
+                if (audioInput && audioInput.files.length > 0) {
+                    formData.append('audio', audioInput.files[0]);
+                }
+                    
+                // For debugging
+                console.log('FormData contents:');
+                for (let pair of formData.entries()) {
+                    console.log(pair[0] + ': ' + pair[1]);
+                }
+                    
+                const response = await fetch('http://localhost:3000/api/stories', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                        // Don't set Content-Type header when using FormData
+                    },
+                    body: formData
+                });
             
-            // For debugging
-        console.log('FormData contents:');
-        for (let pair of formData.entries()) {
-            console.log(pair[0] + ': ' + pair[1]);
-        }
-            
-        const response = await fetch('http://localhost:3000/api/stories', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-                // Don't set Content-Type header when using FormData
-            },
-            body: formData
-        });
-    
-            // Reset button state
-        postButton.textContent = originalButtonText;
-        postButton.disabled = false;
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Server response:', errorText);
-            
-            try {
-                // Try to parse as JSON if possible
-                const errorData = JSON.parse(errorText);
-                console.error('Server error details:', errorData);
+                // Reset button state
+                postButton.textContent = originalButtonText;
+                postButton.disabled = false;
+        
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', errorText);
+                    
+                    try {
+                        // Try to parse as JSON if possible
+                        const errorData = JSON.parse(errorText);
+                        console.error('Server error details:', errorData);
+                        
+                        // More specific error message based on the error
+                        if (errorData.error === 'Video trimming failed') {
+                            alert('Video trimming failed. This could be due to an unsupported video format or codec. Try using a different video or upload without trimming.');
+                        } else {
+                            throw new Error(errorData.error || 'Failed to post story');
+                        }
+                    } catch (e) {
+                        // If not JSON, show the raw error
+                        console.error('Raw server error:', errorText);
+                        alert('Failed to post story. Please try again.');
+                    }
+                    return;
+                }
+        
+                const result = await response.json();
+                console.log('✅ Story posted successfully:', result);
                 
-                // More specific error message based on the error
-                if (errorData.error === 'Video trimming failed') {
-                    alert('Video trimming failed. This could be due to an unsupported video format or codec. Try using a different video or upload without trimming.');
-                } else {
-                    throw new Error(errorData.error || 'Failed to post story');
+                // Reset form values
+                mediaInput.value = '';
+                storyTitleInput.value = '';
+                storyDescriptionInput.value = '';
+                
+                // Reset audio input if it exists
+                if (audioInput) {
+                    audioInput.value = '';
+                    const audioPreview = document.getElementById('audioPreview');
+                    if (audioPreview) {
+                        audioPreview.src = '';
+                        audioPreview.style.display = 'none';
+                    }
                 }
-            } catch (e) {
-                // If not JSON, show the raw error
-                console.error('Raw server error:', errorText);
+                
+                // Reset media previews
+                imagePreview.src = '';
+                imagePreview.style.display = 'none';
+                videoPreview.src = '';
+                videoPreview.style.display = 'none';
+                previewContainer.style.display = 'none';
+        
+                // Reset editor section
+                editorSection.style.display = 'none';
+                editButton.textContent = 'Edit';
+                editButton.style.display = 'none'; // This line hides the edit button
+        
+                // Reset cropper if it exists
+                if (cropper) {
+                    cropper.destroy();
+                    cropper = null;
+                }
+        
+                // Reset rotation and scale
+                currentRotation = 0;
+        
+                // Reset character count
+                charCount.textContent = '100 characters remaining';
+        
+                // Reset video trim elements
+                const undoTrimButton = document.getElementById('undoTrimButton');
+                if (undoTrimButton) {
+                    undoTrimButton.style.display = 'none';
+                }
+                const trimVideoCheckbox = document.getElementById('trimVideoCheckbox');
+                if (trimVideoCheckbox) {
+                    trimVideoCheckbox.checked = false;
+                }
+        
+                // Reset trim indicator
+                const trimIndicator = document.getElementById('trimIndicator');
+                if (trimIndicator) {
+                    trimIndicator.remove();
+                }
+                
+                // Reset original video reference
+                originalVideo = null;
+                
+                // Close modal
+                closeModalButton();
+        
+                // Refresh stories list
+                await loadStories();
+        
+            } catch (error) {
+                console.error('🚨 Error posting story:', error);
                 alert('Failed to post story. Please try again.');
+                
+                // Reset button state in case of error
+                const postButton = document.getElementById('postStoryButton');
+                if (postButton) {
+                    postButton.textContent = 'Post Story';
+                    postButton.disabled = false;
+                }
             }
-            return;
         }
-
-
-        const result = await response.json();
-        console.log('✅ Story posted successfully:', result);
-        
-         // Reset form values
-         mediaInput.value = '';
-         storyTitleInput.value = '';
-         storyDescriptionInput.value = '';
-         
-         // Reset media previews
-         imagePreview.src = '';
-         imagePreview.style.display = 'none';
-         videoPreview.src = '';
-         videoPreview.style.display = 'none';
-         previewContainer.style.display = 'none';
- 
-         // Reset editor section
-         editorSection.style.display = 'none';
-         editButton.textContent = 'Edit';
-         editButton.style.display = 'none'; // This line hides the edit button
- 
-         // Reset cropper if it exists
-         if (cropper) {
-             cropper.destroy();
-             cropper = null;
-         }
-
-        // Reset rotation and scale
-        currentRotation = 0;
-
-        // Reset character count
-        charCount.textContent = '100 characters remaining';
-
-        // Reset video trim elements
-        const undoTrimButton = document.getElementById('undoTrimButton');
-        if (undoTrimButton) {
-            undoTrimButton.style.display = 'none';
-        }
-        const trimVideoCheckbox = document.getElementById('trimVideoCheckbox');
-        if (trimVideoCheckbox) {
-            trimVideoCheckbox.checked = false;
-        }
-
-        // Reset trim indicator
-        const trimIndicator = document.getElementById('trimIndicator');
-        if (trimIndicator) {
-            trimIndicator.remove();
-        }
-        
-        // Reset original video reference
-        originalVideo = null;
-        
-        // Close modal
-        closeModalButton();
-
-        // Refresh stories list
-        await loadStories();
-
-    } catch (error) {
-        console.error('🚨 Error posting story:', error);
-        alert('Failed to post story. Please try again.');
-    }
-
-    
-}
 
 // Add this after your existing imports
 async function fetchStories() {
@@ -790,7 +851,6 @@ function toggleMute() {
     document.getElementById('muteButton').textContent = videoPreview.muted ? 'Unmute' : 'Mute';
 }
 
-// Modify the trimAndRecordVideo function to add a visual indicator
 function trimAndRecordVideo() {
     const videoPreview = document.getElementById('videoPreview');
     const startTime = parseFloat(document.getElementById('startTimeInput').value) || 0;
@@ -815,6 +875,13 @@ function trimAndRecordVideo() {
     videoPreview.play();
 
     const trimDuration = (endTime - startTime) * 1000; // Convert to milliseconds
+    
+    // Update max time display for the trimmed video
+    const maxTime = document.getElementById('maxTime');
+    const trimmedDuration = endTime - startTime;
+    const minutes = Math.floor(trimmedDuration / 60);
+    const seconds = Math.floor(trimmedDuration % 60);
+    maxTime.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     
     // Show trim preview
     setTimeout(() => {
@@ -848,12 +915,51 @@ function undoTrimAndRecordVideo() {
         document.getElementById('undoTrimButton').style.display = 'none';
         document.getElementById('trimVideoCheckbox').checked = false;
         
+        // Reset max time display
+        const maxTime = document.getElementById('maxTime');
+        const maxDuration = Math.min(videoPreview.duration, 15);
+        const minutes = Math.floor(maxDuration / 60);
+        const seconds = Math.floor(maxDuration % 60);
+        maxTime.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
         // Remove trim indicator
         const trimIndicator = document.getElementById('trimIndicator');
         if (trimIndicator) {
             trimIndicator.remove();
         }
     }
+}
+
+// Add this function to handle the progress bar
+function setupVideoProgressBar(videoElement) {
+    const progressBar = document.getElementById('videoProgress');
+    const currentTimeDisplay = document.getElementById('currentTime');
+    
+    // Update progress bar as video plays
+    videoElement.addEventListener('timeupdate', function() {
+        // Calculate percentage based on 15 seconds max
+        const maxDuration = Math.min(videoElement.duration, 15);
+        const percentage = (videoElement.currentTime / maxDuration) * 100;
+        
+        // Update progress bar width
+        progressBar.style.width = `${Math.min(percentage, 100)}%`;
+        
+        // Update current time display
+        const minutes = Math.floor(videoElement.currentTime / 60);
+        const seconds = Math.floor(videoElement.currentTime % 60);
+        currentTimeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Stop video at 15 seconds if it's longer
+        if (videoElement.currentTime >= 15 && videoElement.duration > 15) {
+            videoElement.pause();
+        }
+    });
+    
+    // Reset progress when video ends
+    videoElement.addEventListener('ended', function() {
+        progressBar.style.width = '0%';
+        currentTimeDisplay.textContent = '0:00';
+    });
 }
 
 document.body.insertAdjacentHTML('beforeend', storyModalHTML);
