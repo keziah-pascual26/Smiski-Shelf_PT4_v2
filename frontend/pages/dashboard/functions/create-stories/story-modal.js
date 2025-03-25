@@ -394,40 +394,27 @@ async function addStories() {
 
         // Handle media upload with transformations
         if (uploadedFileType.startsWith('image/')) {
-            // Create a canvas to apply all transformations
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const img = new Image();
             
-            // Create a promise to handle image loading
             await new Promise((resolve, reject) => {
                 img.onload = resolve;
                 img.onerror = reject;
                 img.src = imagePreview.src;
             });
-
-            // Set canvas dimensions
-            if (currentRotation === 90 || currentRotation === 270) {
-                canvas.width = img.height;
-                canvas.height = img.width;
-            } else {
-                canvas.width = img.width;
-                canvas.height = img.height;
-            }
-
-            // Apply transformations
-            ctx.translate(canvas.width/2, canvas.height/2);
-            ctx.rotate(currentRotation * Math.PI/180);
-            ctx.scale(currentScale, currentScale);
-            ctx.drawImage(img, -img.width/2, -img.height/2);
-
-            // Convert to blob and append to formData
+        
+            // Use the current preview dimensions
+            canvas.width = img.width;
+            canvas.height = img.height;
+        
+            // Simply draw the image as it appears in preview
+            ctx.drawImage(img, 0, 0);
+        
             const finalImageBlob = await new Promise(resolve => {
                 canvas.toBlob(resolve, 'image/jpeg', 0.95);
             });
             formData.append('media', finalImageBlob, 'edited-image.jpg');
-        } else {
-            formData.append('media', files[0]);
         }
     
 
@@ -514,25 +501,22 @@ async function fetchStories() {
 // Add this variable at the top with other global variables
 let currentRotation = 0;
 
-// Add this function to handle image rotation
+// Update the rotateImage function
 function rotateImage() {
     const imagePreview = document.getElementById('imagePreview');
     currentRotation = (currentRotation + 90) % 360;
     
     if (cropper) {
-        // If cropper exists, rotate within the cropper
         cropper.rotate(90);
     } else {
-        // If no cropper, rotate the image directly
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Create temporary image to get dimensions
         const img = new Image();
         img.src = imagePreview.src;
         
         img.onload = function() {
-            // Swap dimensions for rotation
+            // Set canvas dimensions based on rotation
             if (currentRotation === 90 || currentRotation === 270) {
                 canvas.width = img.height;
                 canvas.height = img.width;
@@ -541,12 +525,12 @@ function rotateImage() {
                 canvas.height = img.height;
             }
             
-            // Translate and rotate context
+            ctx.save();
             ctx.translate(canvas.width/2, canvas.height/2);
-            ctx.rotate(currentRotation * Math.PI/180);
+            ctx.rotate((currentRotation * Math.PI) / 180);
             ctx.drawImage(img, -img.width/2, -img.height/2);
+            ctx.restore();
             
-            // Update preview with rotated image
             imagePreview.src = canvas.toDataURL();
         };
     }
