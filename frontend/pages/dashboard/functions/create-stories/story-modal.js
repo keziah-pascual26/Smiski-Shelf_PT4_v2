@@ -13,7 +13,10 @@ document.head.appendChild(storyModalCSS);
 let uploadedFileType = null;
 let cropper = null;
 
-
+const MIN_SCALE = 0.5;
+const MAX_SCALE = 2.0;
+const SCALE_STEP = 0.1;
+let currentScale = 1.0;
 // Update the modal HTML where the rotate button is defined
 const storyModalHTML = `
     <!-- Create Story Modal -->
@@ -58,9 +61,16 @@ const storyModalHTML = `
                     <div>
                         <button type="button" id="rotateButton">Rotate</button>
                         <button id="cropImage">Enable Cropping</button>
+                        <div class="image-resize-controls">
+                            <span>Resize:</span>
+                                <button id="minimizeButton" type="button">-</button>
+                                <button id="maximizeButton" type="button">+</button>
+                                <div id="resizeControls" style="display: none;">
+                                    <button type="button" id="doneResizing" class="crop-btn done">Done</button>
+                                    <button type="button" id="cancelResizing" class="crop-btn cancel">Cancel</button>
+                                </div>
+                        </div>
                     </div>
-                    <div id="cropper-container"></div>
-                </div>
                     <div id="cropper-container"></div>
                 </div>
                 <div id="videoEditor" style="display: none;">
@@ -263,6 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rotateButton.addEventListener('click', rotateImage);
     }
 
+<<<<<<< HEAD
     // Add edit button listener
     if (editButton) {
         editButton.addEventListener('click', () => {
@@ -287,6 +298,45 @@ document.addEventListener('DOMContentLoaded', () => {
             editButton.textContent = editorSection.style.display === 'block' ? 'Hide Edit Options' : 'Edit';
         });
     }
+=======
+    // Add resize button listeners
+    const minimizeBtn = document.getElementById('minimizeButton');
+    const maximizeBtn = document.getElementById('maximizeButton');
+    
+    if (minimizeBtn) {
+        minimizeBtn.addEventListener('click', () => {
+            minimizeImage();
+        });
+    }
+    
+    if (maximizeBtn) {
+        maximizeBtn.addEventListener('click', () => {
+            maximizeImage();
+        });
+    }
+
+    // Add resize control button listeners
+    const resizeControls = document.getElementById('resizeControls');
+    if (resizeControls) {
+        const doneResizingBtn = document.getElementById('doneResizing');
+        const cancelResizingBtn = document.getElementById('cancelResizing');
+        
+        if (doneResizingBtn) {
+            doneResizingBtn.addEventListener('click', () => {
+                resizeControls.style.display = 'none';
+            });
+        }
+        
+        if (cancelResizingBtn) {
+            cancelResizingBtn.addEventListener('click', () => {
+                currentScale = 1.0;
+                const imagePreview = document.getElementById('imagePreview');
+                applyScale(imagePreview);
+                resizeControls.style.display = 'none';
+            });
+        }
+    }
+>>>>>>> parent of c93471a (removed resize)
 });
 
 
@@ -556,7 +606,75 @@ function toggleCropping() {
     }
 }
 
+// Update maximize and minimize functions
+function maximizeImage() {
+    const imagePreview = document.getElementById('imagePreview');
+    if (currentScale < MAX_SCALE) {
+        currentScale += SCALE_STEP;
+        applyScale(imagePreview);
+    }
+}
 
+function minimizeImage() {
+    const imagePreview = document.getElementById('imagePreview');
+    if (currentScale > MIN_SCALE) {
+        currentScale -= SCALE_STEP;
+        applyScale(imagePreview);
+    }
+}
+
+function applyScale(imageElement) {
+    if (!imageElement) return;
+    
+    // Apply scale transform while preserving any existing rotation
+    const rotationTransform = `rotate(${currentRotation}deg)`;
+    const scaleTransform = `scale(${currentScale})`;
+    imageElement.style.transform = `${rotationTransform} ${scaleTransform}`;
+    
+    // Show resize controls
+    const resizeControls = document.getElementById('resizeControls');
+    if (resizeControls) {
+        resizeControls.style.display = 'flex';
+    }
+}
+
+<<<<<<< HEAD
+=======
+
+function showResizeControls() {
+    const resizeControls = document.getElementById('resizeControls');
+    if (resizeControls) {
+        resizeControls.style.display = 'flex';
+        resizeControls.innerHTML = `
+            <button type="button" id="doneResizing" class="crop-btn done">Done</button>
+            <button type="button" id="cancelResizing" class="crop-btn cancel">Cancel</button>
+        `;
+        
+        // Add event listeners
+        document.getElementById('doneResizing').onclick = () => {
+            hideResizeControls();
+            // Keep the current scale
+        };
+        
+        document.getElementById('cancelResizing').onclick = () => {
+            currentScale = 1.0;
+            const imagePreview = document.getElementById('imagePreview');
+            applyScale(imagePreview);
+            hideResizeControls();
+        };
+    }
+}
+
+function hideResizeControls() {
+    const resizeControls = document.getElementById('resizeControls');
+    if (resizeControls) {
+        resizeControls.style.display = 'none';
+    }
+}
+
+
+
+>>>>>>> parent of c93471a (removed resize)
 document.body.insertAdjacentHTML('beforeend', storyModalHTML);
 
 export { addStories, handleMediaUpload };
