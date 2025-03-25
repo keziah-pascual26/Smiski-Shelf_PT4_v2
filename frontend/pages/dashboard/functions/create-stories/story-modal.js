@@ -381,49 +381,17 @@ async function addStories() {
         formData.append('description', storyDescription);
 
         // Handle media upload (image or video)
-        // Handle media upload (image or video)
         if (uploadedFileType.startsWith('image/')) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            
-            img.src = imagePreview.src;
-            await new Promise(resolve => img.onload = resolve);
-        
-            // Get the original image dimensions
-            const originalWidth = img.naturalWidth;
-            const originalHeight = img.naturalHeight;
-        
-            // Calculate the scaled dimensions based on the preview state
-            const scaledWidth = originalWidth * currentScale;
-            const scaledHeight = originalHeight * currentScale;
-        
-            // Set canvas size to match the scaled dimensions
-            if (currentRotation === 90 || currentRotation === 270) {
-                canvas.width = scaledHeight;
-                canvas.height = scaledWidth;
+            // If image has been cropped or rotated, use the current preview
+            if (imagePreview.src.startsWith('data:image')) {
+                const response = await fetch(imagePreview.src);
+                const blob = await response.blob();
+                formData.append('media', blob, 'edited-image.jpg');
             } else {
-                canvas.width = scaledWidth;
-                canvas.height = scaledHeight;
+                formData.append('media', files[0]);
             }
-        
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-            // Apply transformations in the correct order
-            ctx.save();
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.rotate(currentRotation * Math.PI / 180);
-            ctx.scale(currentScale, currentScale);
-            ctx.drawImage(img, -originalWidth / 2, -originalHeight / 2, originalWidth, originalHeight);
-            ctx.restore();
-        
-            // Convert to high-quality blob
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 1.0));
-            formData.append('media', blob, 'edited-image.jpg');
-        } else {
-            formData.append('media', files[0]);
         }
+    
 
 
         const response = await fetch('http://localhost:3000/api/stories', {
