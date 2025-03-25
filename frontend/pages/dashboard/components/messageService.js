@@ -367,7 +367,7 @@ async function loadMessages(userId) {
     // Get username from chat header and trim any whitespace
     const recipientUsername = chatContainer.querySelector('.chat-header span').textContent.trim();
     const chatMessages = chatContainer.querySelector('.chat-messages');
-    chatMessages.innerHTML = '<div class="loading-messages">Loading messages...</div>';
+    console.log('Loading messages for chat with username:', recipientUsername);
     
     const token = localStorage.getItem('token');
     if (!token) {
@@ -376,8 +376,6 @@ async function loadMessages(userId) {
     }
     
     try {
-        console.log('Loading messages for chat with username:', recipientUsername);
-        
         // Use the username endpoint instead of userId
         const response = await fetch(`http://localhost:3000/api/messages/by-username/${encodeURIComponent(recipientUsername)}`, {
             method: 'GET',
@@ -402,38 +400,77 @@ async function loadMessages(userId) {
             if (unreadCount) {
                 unreadCount.remove();
             }
+            
+            // Always update the UI with the latest messages
+            // Clear loading message
+            chatMessages.innerHTML = '';
+            
+            if (messages.length === 0) {
+                chatMessages.innerHTML = '<div class="no-messages">No messages yet. Say hello!</div>';
+            } else {
+                // Render each message
+                messages.forEach(message => {
+                    const messageElement = document.createElement('div');
+                    messageElement.className = `message ${message.sender === 'self' ? 'sent' : 'message-received'}`;
+                    
+                    const time = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    messageElement.innerHTML = `
+                        <div class="message-content">
+                            <div class="message-text">${message.text}</div>
+                            <div class="message-time">${time}</div>
+                        </div>
+                    `;
+                    
+                    chatMessages.appendChild(messageElement);
+                });
+            }
+            
+            // Scroll to the bottom of the chat
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Store the message count for future reference
+            chatContainer.setAttribute('data-message-count', messages.length.toString());
         } else {
             console.error('Failed to load messages:', response.status);
             chatMessages.innerHTML = '<div class="error-message">Failed to load messages. Please try again later.</div>';
             return;
         }
         
-        // Clear loading message
-        chatMessages.innerHTML = '';
-        
-        if (messages.length === 0) {
-            chatMessages.innerHTML = '<div class="no-messages">No messages yet. Say hello!</div>';
-            return;
+        // Set up automatic refresh if not already set
+        if (!chatContainer.hasAttribute('data-refresh-set')) {
+            chatContainer.setAttribute('data-refresh-set', 'true');
+            
+            // Store the interval ID on the container so we can clear it later
+            const intervalId = setInterval(() => {
+                // Only refresh if the container is still in the DOM
+                if (document.body.contains(chatContainer)) {
+                    loadMessages(userId);
+                } else {
+                    // Clean up the interval if the container is removed
+                    clearInterval(intervalId);
+                }
+            }, 5000); // Refresh every 5 seconds
+            
+            // Store the interval ID for cleanup
+            chatContainer.setAttribute('data-refresh-interval', intervalId);
+            
+            // Add cleanup when chat is closed
+            const closeButton = chatContainer.querySelector('.chat-close-btn');
+            if (closeButton) {
+                const originalClickHandler = closeButton.onclick;
+                closeButton.onclick = function() {
+                    // Clear the refresh interval
+                    clearInterval(parseInt(chatContainer.getAttribute('data-refresh-interval')));
+                    
+                    // Call the original handler if it exists
+                    if (originalClickHandler) {
+                        originalClickHandler.call(this);
+                    } else {
+                        chatContainer.remove();
+                    }
+                };
+            }
         }
-        
-        // Render each message
-        messages.forEach(message => {
-            const messageElement = document.createElement('div');
-            messageElement.className = `message ${message.sender === 'self' ? 'sent' : 'message-received'}`;
-            
-            const time = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            messageElement.innerHTML = `
-                <div class="message-content">
-                    <div class="message-text">${message.text}</div>
-                    <div class="message-time">${time}</div>
-                </div>
-            `;
-            
-            chatMessages.appendChild(messageElement);
-        });
-        
-        // Scroll to the bottom of the chat
-        chatMessages.scrollTop = chatMessages.scrollHeight;
     } catch (error) {
         console.error('Error loading messages:', error);
         chatMessages.innerHTML = '<div class="error-message">Failed to load messages. Please try again later.</div>';
