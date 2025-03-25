@@ -93,6 +93,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/pages', express.static(path.join(__dirname, '../frontend/pages')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+
 // Add test routes for debugging
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is working' });
@@ -253,6 +254,8 @@ app.post("/api/reset-password", async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 });
+
+
 
 // Catch-all route for SPA navigation - MOVED TO THE END so it doesn't intercept API routes
 app.get('*', (req, res) => {

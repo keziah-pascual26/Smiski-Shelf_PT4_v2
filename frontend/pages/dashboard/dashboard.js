@@ -167,68 +167,80 @@ export async function loadStories() {
         };
 
          // Function to create story element
-        const createStoryElement = (story) => {
-        const storyElement = document.createElement('div');
-        storyElement.classList.add('story');
+        // Function to create story element
+            const createStoryElement = (story) => {
+                const storyElement = document.createElement('div');
+                storyElement.classList.add('story');
 
-        const isCurrentUser = story.username === localStorage.getItem('username');
-        if (isCurrentUser) {
-            storyElement.classList.add('user-story');
-        }
+                const isCurrentUser = story.username === localStorage.getItem('username');
+                if (isCurrentUser) {
+                    storyElement.classList.add('user-story');
+                }
 
-        if (story.media && story.media.length > 0) {
-            const mediaPreview = document.createElement('div');
-            mediaPreview.classList.add('story-preview');
-            
-            const fileExtension = story.media[0].split('.').pop().toLowerCase();
-            
-                if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
-                    // Image preview
-                    const img = document.createElement('img');
-                    img.src = `http://localhost:3000/uploads/${story.media[0]}`;
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = 'cover';
-                    mediaPreview.appendChild(img);
-                } else if (['mp4', 'webm'].includes(fileExtension)) {
-                    // Video preview
-                    const video = document.createElement('video');
-                    video.src = `http://localhost:3000/uploads/${story.media[0]}`;
-                    video.muted = true;
-                    video.playsInline = true;
-                    video.loop = true;
-                    video.style.width = '100%';
-                    video.style.height = '100%';
-                    video.style.objectFit = 'cover';
+                // Create media preview container
+                const mediaPreview = document.createElement('div');
+                mediaPreview.classList.add('story-preview');
+
+                if (story.media && story.media.length > 0) {
+                    const mediaUrl = story.media[0];
+                    const fullMediaUrl = `http://localhost:3000/uploads/stories/${mediaUrl}`;
                     
-                    // Add hover events for video preview
-                    mediaPreview.addEventListener('mouseenter', () => {
-                        video.play().catch(err => console.log('Preview autoplay prevented'));
-                    });
-                    
-                    mediaPreview.addEventListener('mouseleave', () => {
-                        video.pause();
-                        video.currentTime = 0;
-                    });
-                    
-                    mediaPreview.appendChild(video);
+                    // Check if it's a video
+                    if (mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) {
+                        // Create a video element for the thumbnail
+                        const video = document.createElement('video');
+                        video.className = 'story-thumbnail';
+                        video.src = fullMediaUrl;
+                        video.muted = true;
+                        video.preload = 'metadata';
+                        
+                        // Add poster attribute as fallback
+                        video.poster = '/pages/dashboard/assets/video-placeholder.png';
+                        
+                        // Load just enough to get a thumbnail
+                        video.addEventListener('loadeddata', function() {
+                            // Pause immediately after loading first frame
+                            video.currentTime = 0.1;
+                            video.pause();
+                        });
+                        
+                        mediaPreview.appendChild(video);
+                        
+                        // Add video indicator
+                        const videoIndicator = document.createElement('div');
+                        videoIndicator.className = 'video-indicator';
+                        videoIndicator.innerHTML = '<i class="fas fa-video"></i>';
+                        mediaPreview.appendChild(videoIndicator);
+                    } else {
+                        // It's an image
+                        const img = document.createElement('img');
+                        img.className = 'story-thumbnail';
+                        img.src = fullMediaUrl;
+                        img.alt = story.title;
+                        mediaPreview.appendChild(img);
+                    }
+                } else {
+                    // No media, use placeholder
+                    const placeholderImg = document.createElement('div');
+                    placeholderImg.className = 'story-thumbnail placeholder';
+                    placeholderImg.textContent = story.title.charAt(0).toUpperCase();
+                    mediaPreview.appendChild(placeholderImg);
                 }
                 
                 storyElement.appendChild(mediaPreview);
-            }
 
-            const storyInfo = document.createElement('div');
-            storyInfo.classList.add('story-info');
-            storyInfo.innerHTML = `
-                <span class="story-title">${isCurrentUser ? 'Your Story' : story.title}</span>
-                <span class="story-username">${isCurrentUser ? '' : `by ${story.username}`}</span>
-                <span class="story-time">${getTimeRemaining(story.expiresAt)}</span>
-            `;
-            storyElement.appendChild(storyInfo);
+                const storyInfo = document.createElement('div');
+                storyInfo.classList.add('story-info');
+                storyInfo.innerHTML = `
+                    <span class="story-title">${isCurrentUser ? 'Your Story' : story.title}</span>
+                    <span class="story-username">${isCurrentUser ? '' : `by ${story.username}`}</span>
+                    <span class="story-time">${getTimeRemaining(story.expiresAt)}</span>
+                `;
+                storyElement.appendChild(storyInfo);
 
-            storyElement.addEventListener('click', () => {
-               const isUserStory = userStories.some(s => s._id === story._id);
-    
+                storyElement.addEventListener('click', () => {
+                    const isUserStory = userStories.some(s => s._id === story._id);
+
                     let orderedStories;
                     if (isUserStory) {
                         // For user stories, maintain original order
@@ -240,13 +252,12 @@ export async function loadStories() {
                         orderedStories = otherStories.filter(s => s.username === clickedUsername);
                         currentStoryIndex = orderedStories.findIndex(s => s._id === story._id);
                     }
-                    
-                    // Start viewing from the clicked story without reordering
+
                     viewStory(story, orderedStories);
                 });
 
-            return storyElement;
-        };
+                return storyElement;
+            };
 
         // Display user stories first (newest next to create button)
         userStories.forEach(story => {
