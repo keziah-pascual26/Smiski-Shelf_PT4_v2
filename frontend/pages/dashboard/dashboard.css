@@ -180,14 +180,29 @@ html {
 .stories-container {
     display: flex;
     gap: 15px;
-    padding: 20px;
     overflow-x: auto;
-    background: white;
-    border-radius: 10px;
-    margin: 20px 0;
-    justify-content: center;
+    padding: 20px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    align-items: flex-start;
+    width: 100%;
 }
 
+/* Hide scrollbar but keep functionality */
+.stories-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.stories-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.stories-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
 
 /* Header */
 .header {
@@ -374,8 +389,9 @@ button img {
 
 /* Updated .story */
 .story {
-    width: 120px;
-    height: 213px;
+    flex: 0 0 auto; /* Prevent stories from shrinking */
+    width: 120px; /* Fixed width */
+    height: 213px; /* Height for 9:16 ratio (120 * 16/9 ≈ 213) */
     position: relative;
     border-radius: 8px;
     overflow: hidden;
@@ -383,16 +399,26 @@ button img {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     cursor: pointer;
     transition: transform 0.3s ease;
-    margin: 0 5px;
 }
 
-.story-preview {
+.story-preview-container {
+    position: relative;
+    width: 270px;
+    height: 480px;
+    margin: 20px auto;
+    background-color: #000;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.story-preview img,
+.story-preview video {
     width: 100%;
     height: 100%;
-    position: relative;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 .story-info {
@@ -450,6 +476,7 @@ button img {
     font-size: 2rem;
     color: #666;
     background: #f0f0f0;
+    min-width: 120px; /* Ensure consistent width */
 }
 
 /* Style for the image and video */
@@ -461,6 +488,24 @@ button img {
 
 .story:hover {
     transform: scale(1.05);
+}
+
+.story.user-story {
+    border: 5px solid #729c2f;
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0 0 10px rgba(114, 156, 47, 0.3);
+    transition: transform 0.3s ease;
+}
+
+/* Adjust story preview for user stories */
+.story.user-story .story-preview {
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(114, 156, 47, 0.3);
+}
+
+.story.user-story .story-info {
+    background: linear-gradient(to top, rgba(89, 121, 38, 0.1), transparent);
 }
 
 .overlay {
@@ -552,15 +597,64 @@ button img {
 }
 
 /* Preview Box */
-.create-story-modal .preview-section {
-    width: 45%;
-    min-height: 200px;
-    background: #f6f0f0;
+.preview-section {
     display: flex;
+    flex-direction: column;
     align-items: center;
+}
+
+
+#imagePreview {
+    transition: transform 0.3s ease;
+    max-width: 100%;
+    max-height: 400px;
+}
+
+.cropper-container {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.crop-control-buttons {
+    display: flex;
+    gap: 10px;
     justify-content: center;
-    text-align: center;
-    border-radius: 10px;
+    margin-top: 15px;
+    width: 100%;
+}
+
+.crop-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    width: auto !important; /* Override any default width */
+    margin: 5px !important; /* Override any default margin */
+}
+
+.crop-btn.done {
+    background-color: #4CAF50 !important;
+    color: white;
+}
+
+.crop-btn.cancel {
+    background-color: #f44336 !important;
+    color: white;
+}
+
+.crop-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+#cropControls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+    width: 100%;
 }
 
 /* Edit Button */
@@ -611,8 +705,12 @@ button img {
 }
 
 .create-story-modal .preview-section {
-    flex: 1;
-    margin-left: 20px;
+    width: 45%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
 }
 
 .create-story-modal .button-section {
@@ -624,25 +722,27 @@ button img {
 
 .close-button {
     position: absolute;
-    top: 10px;
-    right: 50px; /* Adjusted for proper alignment */
-    background: none;
+    top: 20px;
+    right: 20px;
+    background-color: red;
+    color: white;
     border: none;
-    font-size: 24px; /* Increased for better visibility */
+    padding: 10px 20px;
     cursor: pointer;
-    color: #333; /* Adjust color as needed */
-    width: 32px; /* Ensures proper size */
-    height: 32px;
+    font-size: 18px;
+    border-radius: 5px;
+    width: 40px;
+    height: 40px;
     display: flex;
-    align-items: center;
     justify-content: center;
-    border-radius: 50%; /* Optional: Makes it circular */
-    max-width: 32px; /* Ensures proper size */
+    align-items: center;
+    z-index: 1003; /* Ensure it's above other elements */
 }
 
 .close-button:hover {
-    background: rgba(0, 0, 0, 0.1); /* Optional hover effect */
-    color: red;
+    background-color: darkred;
+    transform: scale(1.1);
+    transition: all 0.2s ease;
 }
 
 .story-input-container {
@@ -754,6 +854,34 @@ textarea#storyDescription {
 }
 
 .image-crop-controls button:hover {
+    background-color: #0056b3;
+}
+
+.image-resize-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+#resizeControls {
+    display: none;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.resize-btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.resize-btn:hover {
     background-color: #0056b3;
 }
 
@@ -895,12 +1023,6 @@ textarea#storyDescription {
     display: none; /* Initially hidden */
 }
 
-/* Video and Image Previews */
-#imagePreview, #videoPreview {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
 
 /* Story Viewer Styling */
 .story-viewer {
@@ -921,10 +1043,37 @@ textarea#storyDescription {
 }
 
 .story-viewer-title {
+    position: absolute;
+    top: 40px; /* Reduced from 60px to bring it closer to story */
+    left: 0;
+    right: 0;
     color: #fff;
-    margin-bottom: 20px;
-    font-size: 1.5rem;
     text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding: 10px;
+    z-index: 1001;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Story description styling */
+.story-description-container {
+    position: absolute;
+    bottom: 80px; /* Position above the reaction buttons */
+    left: 20px;
+    max-width: 80%;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    z-index: 1001;
+}
+
+/* Make description container more visible */
+.story-description-container p {
+    margin: 0;
+    line-height: 1.4;
 }
 
 .story-viewer-content {
@@ -1040,13 +1189,13 @@ textarea#storyDescription {
 .story-container {
     position: relative;
     width: auto;
-    height: 90vh;
+    height: calc(90vh - 100px); /* Reduced from 120px */
+    margin-top: 0px; /* Reduced from 120px to bring content up */
     aspect-ratio: 9/16;
     background-color: black;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: auto;
 }
 
 /* Media styling */
@@ -1056,6 +1205,77 @@ textarea#storyDescription {
     width: auto;
     max-width: 100%;
     object-fit: contain;
+}
+
+/* Story comments styling */
+.story-comments {
+    position: absolute;
+    right: 20px; /* Position on right side */
+    bottom: 120px; /* Above reaction panel */
+    width: 300px;
+    max-height: 400px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    z-index: 1002;
+}
+
+.comments-list {
+    flex: 1;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 15px;
+    margin-bottom: 0;
+    color: white;
+}
+
+.story-comment {
+    padding: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.comment-author {
+    font-weight: bold;
+    color: #feeb29;
+    margin-right: 8px;
+}
+
+.story-comment-input {
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    gap: 8px;
+}
+
+.story-comment-input input {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    color: black;
+}
+
+.story-comment-input button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 20px;
+    background: #729c2f;
+    color: white;
+    cursor: pointer;
+}
+
+.story-comment-input button:hover {
+    background: #5e8026;
+}
+
+.story-comments.has-comments {
+    display: block;
 }
 
 #editorSection {
@@ -1121,30 +1341,53 @@ button:hover {
     margin-top: 20px;
 }
 
+#cropPreview {
+    overflow: hidden;
+    width: 180px;
+    height: 320px;
+    margin: 10px auto;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+}
+
 /*story number indicators */
-#story-indicators {
+.story-indicators {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
     display: flex;
     justify-content: center;
     gap: 5px;
-    position: absolute;
-    top: 10px;
-    width: 100%;
-    height: 5px;
+    padding: 10px;
+    z-index: 1002;
+    background: none;
 }
 
+/* User and other indicators containers */
+.user-indicators,
+.other-indicators {
+    display: flex;
+    flex-direction: row; /* Ensure horizontal layout */
+    gap: 5px;
+}
+
+/* Individual story indicator */
 .story-indicator {
-    width: 60px;  /* You can adjust the width based on how long the progress bar should be */
-    height: 5px;
-    background-color: #ccc;
-    border-radius: 5px;
+    width: 40px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    margin: 0 2px; /* Add horizontal spacing between indicators */
 }
 
 .story-indicator.active {
-    background-color: #007bff; /* Color for the active bar */
+    background: #ffffff;
 }
 
 .story-indicator.inactive {
-    background-color: #ccc; /* Color for inactive bars */
+    background: rgba(255, 255, 255, 0.3);
 }
 
 
@@ -1152,10 +1395,13 @@ button:hover {
 
 /* Container for story viewer */
 .story-viewer-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
     display: flex;
+    flex-direction: column; /* Stack content vertically */
     justify-content: center;
     align-items: center;
-    position: relative;
 }
 
 /* Style for navigation buttons */
@@ -1197,36 +1443,27 @@ button:hover {
 }
 
 .reactions {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    display: none; /* Reactions are hidden by default */
-    align-items: center;
-    cursor: pointer;
     display: flex;
-    justify-content: center;
-    gap: 10px; /* Space between buttons */
+    gap: 12px;
 }
 
-.reaction-btn {
-    margin: 5px;
-    padding: 10px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    cursor: pointer;
-}
 
-.reaction-panel {
+.reaction-button {
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 4px;
+}
+
+.reaction-panel {
     position: absolute;
-    bottom: 40px;
-    left: 0;
-    padding: 5px;
-    border-radius: 20px;
-    display: flex;
-    gap: 8px;
+    bottom: 60px; /* Positioned below description */
+    left: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    border-radius: 12px;
+    padding: 10px;
+    z-index: 1002;
 }
 
 .reaction-panel span {
@@ -1251,7 +1488,11 @@ button:hover {
 }
 
 .reaction-counts {
-    display: none;  /* Hidden by default */
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 10px;
+    color: white;
 }
 
 .story-viewer.active .reactions {
@@ -1268,15 +1509,13 @@ button:hover {
 
 
 #previewContainer {
+    width: 270px;
+    height: 480px; /* 9:16 aspect ratio (270 * 16/9) */
+    background-color: #000;
+    border-radius: 8px;
+    overflow: hidden;
     position: relative;
-    width: 100%; /* Ensures responsiveness */
-    max-width: 300px; /* Optional: limit the size */
-    aspect-ratio: 9 / 16; /* Maintains 9:16 ratio */
-    background-color: black; /* Optional: adds contrast */
-    overflow: hidden; /* Prevents overflow */
-    display: flex;
-    justify-content: center; /* Horizontally centers the content */
-    align-items: center; /* Vertically centers the content */
+    margin: 0 auto;
 }
 
 #imagePreview,
@@ -1287,23 +1526,30 @@ button:hover {
 }
 
 .reaction img {
-    width: 24px; /* Adjust the width of the icons */
-    height: 24px; /* Adjust the height of the icons */
-    vertical-align: middle; /* Align images properly */
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
 }
 
 .reaction {
-    background: none; /* Remove default background */
-    border: none; /* Remove borders */
-    padding: 5px; /* Adjust padding for spacing */
+    background: none;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
 }
 
-/* Style for the character counter */
-.char-counter {
-    font-size: 0.8rem; /* Makes text smaller */
-    color: #555; /* Slightly dim color */
-    margin-top: 1px; /* Adds space between textarea and counter */
-    display: block; /* Ensures it appears on a new line */
+.reaction:hover {
+    transform: scale(1.2);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.count {
+    color: white;
+    font-size: 12px;
+    min-width: 20px;
+    text-align: center;
 }
 
 
@@ -1320,16 +1566,82 @@ button:hover {
     flex-wrap: nowrap; /* Prevents wrapping to the next line */
 }
 
+/* Own story reactions styling */
+.own-story-reactions {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.own-story-reactions h3 {
+    color: white;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.reaction-counts-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 15px;
+    justify-items: center;
+}
+
+.reaction-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.reaction-stat img {
+    width: 24px;
+    height: 24px;
+    opacity: 0.8;
+}
+
+.reaction-stat .count {
+    color: white;
+    font-size: 14px;
+}
+
+/* Other users' stories reactions styling */
+.other-story-reactions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px 20px;
+    border-radius: 12px;
+}
+
+.other-story-reactions .reaction {
+    transform-origin: center;
+    transition: transform 0.2s ease;
+}
+
+.other-story-reactions .reaction:hover {
+    transform: scale(1.2);
+}
+
+.other-story-reactions .reaction.reacted {
+    animation: pulse 0.5s ease;
+}
+
+
 .story-description-container {
     position: absolute;
-    bottom: 100px; /* Adjust distance from the bottom */
-    left: 10px;   /* Adjust distance from the left */
-    background-color: rgba(0, 0, 0, 0.5); /* Optional: adds a semi-transparent background */
-    color: white; /* Optional: makes the text white for better visibility */
-    padding: 5px;
-    border-radius: 5px;
-    max-width: 90%; /* Optional: prevent the description from overflowing */
+    bottom: 200px;
+    left: 20px;
+    max-width: 80%;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    z-index: 1001;
 }
+
 #storyDescriptionDisplay {
     color: white; /* Set text color to white */
     position: relative; /* Ensure you can adjust its position */
