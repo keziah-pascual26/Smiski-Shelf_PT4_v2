@@ -315,9 +315,43 @@ function viewStory(story, storyArray) {
     
     // Check if story has media
     if (story.media && story.media.length > 0) {
-        const fileExtension = story.media[0].split('.').pop().toLowerCase();
+        const mediaUrl = story.media[0];
         
-        if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
+        // Check if it's a video (by extension or MIME type if available)
+        if (mediaUrl.match(/\.(mp4|webm|ogg|mov)$/) || 
+            (story.mediaType && story.mediaType.startsWith('video/'))) {
+            
+            // Create video element
+            const videoElement = document.createElement('video');
+            videoElement.controls = true;
+            videoElement.autoplay = true;
+            videoElement.muted = false;
+            videoElement.className = 'story-media';
+            
+            // Important: Construct the full URL to the video file
+            const fullVideoUrl = `http://localhost:3000/uploads/stories/${mediaUrl}`;
+            videoElement.src = fullVideoUrl;
+            
+            // Add error handling
+            videoElement.onerror = (e) => {
+                console.error('Video loading error:', e);
+                console.log('Failed video URL:', fullVideoUrl);
+                // Fallback to a placeholder or message
+                container.innerHTML = `<div class="media-error">Video could not be loaded</div>`;
+            };
+            
+            // Add to container
+            container.appendChild(videoElement);
+            
+            // Set up video events for story progression
+            videoElement.onended = () => {
+                // Go to next story when video ends
+                nextStory();
+            };
+            
+            // Store reference to control playback
+            currentVideo = videoElement;
+        } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
             const img = document.createElement('img');
             img.src = `http://localhost:3000/uploads/${story.media[0]}`;
             container.appendChild(img);
@@ -335,30 +369,7 @@ function viewStory(story, storyArray) {
                 }
             });
             
-        } else if (['mp4', 'webm'].includes(fileExtension)) {
-            const video = document.createElement('video');
-            video.src = `http://localhost:3000/uploads/${story.media[0]}`;
-            video.controls = true;
-            video.autoplay = true;
-            container.appendChild(video);
-            currentVideo = video;
-            
-            video.onloadedmetadata = () => {
-                const duration = Math.min(video.duration * 1000, 15000);
-                startProgress(duration, () => {
-                    if (currentStoryIndex < storyArray.length - 1) {
-                        const nextStory = storyArray[currentStoryIndex + 1];
-                        if (nextStory && nextStory.username === story.username) {
-                            viewStory(nextStory, storyArray);
-                        } else {
-                            exitStoryViewer();
-                        }
-                    } else {
-                        exitStoryViewer();
-                    }
-                });
-            };
-        }
+        } 
     }
 
     // Add navigation buttons

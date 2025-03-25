@@ -353,6 +353,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (undoTrimButton) {
             undoTrimButton.addEventListener('click', undoTrimAndRecordVideo);
         }
+
+        // Add CSS for trim indicator
+        const style = document.createElement('style');
+    style.textContent = `
+        .trim-indicator {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 10;
+        }
+    `;
+    document.head.appendChild(style);
+
         });
 
 
@@ -448,25 +466,33 @@ async function addStories() {
                         return;
                     }
                     
-                    // Add trim information
-                    formData.append('media', videoFile);
-                    formData.append('isTrimmed', 'true');
-                    formData.append('trimStart', startTime.toString());
-                    formData.append('trimEnd', endTime.toString());
-                    formData.append('videoDuration', videoPreview.duration.toString());
-                    
+                    // Enhanced trim information with more details
+                formData.append('media', videoFile);
+                formData.append('isTrimmed', 'true');
+                formData.append('trimStart', startTime.toString());
+                formData.append('trimEnd', endTime.toString());
+                formData.append('videoDuration', videoPreview.duration.toString());
+                formData.append('videoFormat', videoFile.type.split('/')[1] || 'mp4');
+                formData.append('trimDuration', (endTime - startTime).toString());
+                formData.append('videoCodec', 'h264'); // Most common codec, adjust if needed
+                
+                // Add a flag to indicate this is a trimmed video that needs server-side processing
+                formData.append('requiresProcessing', 'true');
+
                     console.log('Trim details:', {
                         start: startTime,
                         end: endTime,
-                        duration: videoPreview.duration
+                        duration: videoPreview.duration,
+                        trimDuration: endTime - startTime,
+                        format: videoFile.type.split('/')[1] || 'mp4'
                     });
                 } else {
                     // No trimming needed
                     formData.append('media', videoFile);
                     formData.append('isTrimmed', 'false');
                 }
-                    
             }
+
             async function clientSideTrimVideo(videoFile, startTime, endTime) {
                 try {
                     // Create a video element to load the file
@@ -515,30 +541,42 @@ async function addStories() {
             console.log(pair[0] + ': ' + pair[1]);
         }
             
-            const response = await fetch('http://localhost:3000/api/stories', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData
-            });
+        const response = await fetch('http://localhost:3000/api/stories', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+                // Don't set Content-Type header when using FormData
+            },
+            body: formData
+        });
     
             // Reset button state
         postButton.textContent = originalButtonText;
         postButton.disabled = false;
 
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Server error details:', errorData);
+            const errorText = await response.text();
+            console.error('Server response:', errorText);
             
-            // More specific error message based on the error
-            if (errorData.error === 'Video trimming failed') {
-                alert('Video trimming failed. This could be due to an unsupported video format or codec. Try using a different video or upload without trimming.');
-            } else {
-                throw new Error(errorData.error || 'Failed to post story');
+            try {
+                // Try to parse as JSON if possible
+                const errorData = JSON.parse(errorText);
+                console.error('Server error details:', errorData);
+                
+                // More specific error message based on the error
+                if (errorData.error === 'Video trimming failed') {
+                    alert('Video trimming failed. This could be due to an unsupported video format or codec. Try using a different video or upload without trimming.');
+                } else {
+                    throw new Error(errorData.error || 'Failed to post story');
+                }
+            } catch (e) {
+                // If not JSON, show the raw error
+                console.error('Raw server error:', errorText);
+                alert('Failed to post story. Please try again.');
             }
             return;
         }
+
 
         const result = await response.json();
         console.log('✅ Story posted successfully:', result);
@@ -580,6 +618,12 @@ async function addStories() {
         const trimVideoCheckbox = document.getElementById('trimVideoCheckbox');
         if (trimVideoCheckbox) {
             trimVideoCheckbox.checked = false;
+        }
+
+        // Reset trim indicator
+        const trimIndicator = document.getElementById('trimIndicator');
+        if (trimIndicator) {
+            trimIndicator.remove();
         }
         
         // Reset original video reference
@@ -746,6 +790,7 @@ function toggleMute() {
     document.getElementById('muteButton').textContent = videoPreview.muted ? 'Unmute' : 'Mute';
 }
 
+// Modify the trimAndRecordVideo function to add a visual indicator
 function trimAndRecordVideo() {
     const videoPreview = document.getElementById('videoPreview');
     const startTime = parseFloat(document.getElementById('startTimeInput').value) || 0;
@@ -776,6 +821,21 @@ function trimAndRecordVideo() {
         videoPreview.pause();
         document.getElementById('undoTrimButton').style.display = 'block';
         document.getElementById('trimVideoCheckbox').checked = true;
+        
+        // Add a visual indicator that the video has been trimmed
+        const previewContainer = document.getElementById('previewContainer');
+        const trimIndicator = document.createElement('div');
+        trimIndicator.id = 'trimIndicator';
+        trimIndicator.className = 'trim-indicator';
+        trimIndicator.innerHTML = `<span>Trimmed: ${startTime.toFixed(1)}s - ${endTime.toFixed(1)}s</span>`;
+        
+        // Remove existing indicator if any
+        const existingIndicator = document.getElementById('trimIndicator');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+        
+        previewContainer.appendChild(trimIndicator);
     }, trimDuration);
 }
 
@@ -787,6 +847,12 @@ function undoTrimAndRecordVideo() {
         document.getElementById('endTimeInput').value = '';
         document.getElementById('undoTrimButton').style.display = 'none';
         document.getElementById('trimVideoCheckbox').checked = false;
+        
+        // Remove trim indicator
+        const trimIndicator = document.getElementById('trimIndicator');
+        if (trimIndicator) {
+            trimIndicator.remove();
+        }
     }
 }
 

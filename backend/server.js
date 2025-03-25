@@ -62,6 +62,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/user', userRoutes);
 
+
 // Middleware
 app.use(cors({
     origin: true, // Allow all origins for now

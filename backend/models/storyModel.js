@@ -26,4 +26,45 @@ storySchema.pre('save', function(next) {
     next();
 });
 
+const StorySchema = new mongoose.Schema({
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    title: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    description: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    mediaUrl: {
+      type: String,
+      required: true
+    },
+    mediaType: {
+      type: String,
+      enum: ['image', 'video'],
+      required: true
+    },
+    isTrimmed: {
+      type: Boolean,
+      default: false
+    },
+    // Optional: store trim details if needed
+    trimDetails: {
+      start: Number,
+      end: Number,
+      duration: Number
+    },
+    // Other fields...
+  }, { timestamps: true });
+  
+  // Stories expire after 24 hours
+  StorySchema.index({ createdAt: 1 }, { expireAfterSeconds: 86400 });
+
 module.exports = mongoose.model('Story', storySchema);
