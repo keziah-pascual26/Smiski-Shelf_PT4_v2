@@ -17,7 +17,6 @@ const MIN_SCALE = 0.5;
 const MAX_SCALE = 2.0;
 const SCALE_STEP = 0.1;
 let currentScale = 1.0;
-
 // Update the modal HTML where the rotate button is defined
 const storyModalHTML = `
     <!-- Create Story Modal -->
@@ -320,31 +319,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const maximizeBtn = document.getElementById('maximizeButton');
     
     if (minimizeBtn) {
-        minimizeBtn.addEventListener('click', minimizeImage);
+        minimizeBtn.addEventListener('click', () => {
+            minimizeImage();
+        });
     }
     
     if (maximizeBtn) {
-        maximizeBtn.addEventListener('click', maximizeImage);
+        maximizeBtn.addEventListener('click', () => {
+            maximizeImage();
+        });
     }
 
-    const doneResizingBtn = document.getElementById('doneResizing');
-    const cancelResizingBtn = document.getElementById('cancelResizing');
-    
-    if (doneResizingBtn) {
-        doneResizingBtn.addEventListener('click', () => {
-            // Keep the current scale
-            hideResizeControls();
-        });
-    }
-    
-    if (cancelResizingBtn) {
-        cancelResizingBtn.addEventListener('click', () => {
-            // Reset scale to original
-            currentScale = 1;
-            const imagePreview = document.getElementById('imagePreview');
-            applyScale(imagePreview);
-            hideResizeControls();
-        });
+    // Add resize control button listeners
+    const resizeControls = document.getElementById('resizeControls');
+    if (resizeControls) {
+        const doneResizingBtn = document.getElementById('doneResizing');
+        const cancelResizingBtn = document.getElementById('cancelResizing');
+        
+        if (doneResizingBtn) {
+            doneResizingBtn.addEventListener('click', () => {
+                resizeControls.style.display = 'none';
+            });
+        }
+        
+        if (cancelResizingBtn) {
+            cancelResizingBtn.addEventListener('click', () => {
+                currentScale = 1.0;
+                const imagePreview = document.getElementById('imagePreview');
+                applyScale(imagePreview);
+                resizeControls.style.display = 'none';
+            });
+        }
     }
 });
 
@@ -387,15 +392,42 @@ async function addStories() {
         formData.append('title', storyTitle);
         formData.append('description', storyDescription);
 
-        // Handle media upload
+        // Handle media upload with transformations
         if (uploadedFileType.startsWith('image/')) {
-            if (imagePreview.src.startsWith('data:image')) {
-                const response = await fetch(imagePreview.src);
-                const blob = await response.blob();
-                formData.append('media', blob, 'edited-image.jpg');
+            // Create a canvas to apply all transformations
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            // Create a promise to handle image loading
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = imagePreview.src;
+            });
+
+            // Set canvas dimensions
+            if (currentRotation === 90 || currentRotation === 270) {
+                canvas.width = img.height;
+                canvas.height = img.width;
             } else {
-                formData.append('media', files[0]);
+                canvas.width = img.width;
+                canvas.height = img.height;
             }
+
+            // Apply transformations
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.rotate(currentRotation * Math.PI/180);
+            ctx.scale(currentScale, currentScale);
+            ctx.drawImage(img, -img.width/2, -img.height/2);
+
+            // Convert to blob and append to formData
+            const finalImageBlob = await new Promise(resolve => {
+                canvas.toBlob(resolve, 'image/jpeg', 0.95);
+            });
+            formData.append('media', finalImageBlob, 'edited-image.jpg');
+        } else {
+            formData.append('media', files[0]);
         }
     
 
@@ -619,22 +651,18 @@ function minimizeImage() {
     }
 }
 
-// Update the applyScale function
 function applyScale(imageElement) {
     if (!imageElement) return;
     
-    imageElement.style.transform = `scale(${currentScale})`;
+    // Apply scale transform while preserving any existing rotation
+    const rotationTransform = `rotate(${currentRotation}deg)`;
+    const scaleTransform = `scale(${currentScale})`;
+    imageElement.style.transform = `${rotationTransform} ${scaleTransform}`;
     
-    // Show resize controls when scale changes
-    showResizeControls();
-    
-    // Update preview container size
-    const previewContainer = document.getElementById('previewContainer');
-    if (previewContainer) {
-        const newWidth = imageElement.naturalWidth * currentScale;
-        const newHeight = imageElement.naturalHeight * currentScale;
-        previewContainer.style.width = `${newWidth}px`;
-        previewContainer.style.height = `${newHeight}px`;
+    // Show resize controls
+    const resizeControls = document.getElementById('resizeControls');
+    if (resizeControls) {
+        resizeControls.style.display = 'flex';
     }
 }
 
