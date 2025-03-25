@@ -13,7 +13,8 @@ document.head.appendChild(storyModalCSS);
 let uploadedFileType = null;
 let cropper = null;
 
-
+let originalVideo = null;
+let trimmedVideo = null;
 
 
 // Update the modal HTML where the rotate button is defined
@@ -65,24 +66,24 @@ const storyModalHTML = `
                 </div>
                 <div id="videoEditor" style="display: none;">
                     <h3>Edit Video</h3>
-                    <div>
-                        <button id="muteButton" onclick="toggleMute()">Mute</button>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <input type="checkbox" id="trimVideoCheckbox" style="width: 16px; height: 16px; cursor: pointer;">
-                            <label for="trimVideoCheckbox" style="margin: 0; font-size: 14px;">Confirm Trim Video</label>
+                            <div>
+                                <button id="muteButton" onclick="toggleMute()">Mute</button>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="checkbox" id="trimVideoCheckbox" style="width: 16px; height: 16px; cursor: pointer;">
+                                    <label for="trimVideoCheckbox" style="margin: 0; font-size: 14px;">Confirm Trim Video</label>
+                                </div>
+                                <div class="video-editor-buttons">
+                                    <button id="previewTrimButton">Preview Trim Video</button>
+                                    <button id="undoTrimButton" style="display: none;">Undo Trim</button>
+                                </div>
+                            </div>
+                            <div class="video-time-controls">
+                                <label for="startTimeInput">Start Time (s):</label>
+                                <input type="number" id="startTimeInput" min="0" step="0.1" placeholder="Start">
+                                <label for="endTimeInput">End Time (s):</label>
+                                <input type="number" id="endTimeInput" min="0" step="0.1" placeholder="End">
+                            </div>
                         </div>
-                        <div class="video-editor-buttons">
-                            <button onclick="trimAndRecordVideo()">Preview Trim Video</button>
-                            <button id="undoTrimButton" onclick="undoTrimAndRecordVideo()">Undo Trim</button>
-                        </div>
-                    </div>
-                    <div class="video-time-controls">
-                        <label for="startTimeInput">Start Time (s):</label>
-                        <input type="number" id="startTimeInput" min="0" placeholder="Start">
-                        <label for="endTimeInput">End Time (s):</label>
-                        <input type="number" id="endTimeInput" min="0" placeholder="End">
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -90,7 +91,7 @@ const storyModalHTML = `
 
 // Update handleMediaUpload to reset rotation when new image is loaded
 function handleMediaUpload(event) {
-    const file = event.target.files[0];
+    const files = event.target.files;
     const imageEditor = document.getElementById('imageEditor');
     const videoEditor = document.getElementById('videoEditor');
     const imagePreview = document.getElementById('imagePreview');
@@ -101,6 +102,11 @@ function handleMediaUpload(event) {
     const editorSection = document.getElementById('editorSection');
     const editButton = document.querySelector('.edit-button');
 
+    // Store the file type for later use
+    if (files.length > 0) {
+        uploadedFileType = files[0].type;
+    }
+
     // Reset all editors and controls
     imageEditor.style.display = 'none';
     videoEditor.style.display = 'none';
@@ -109,6 +115,9 @@ function handleMediaUpload(event) {
     editorSection.style.display = 'none';
     cropButton.style.display = 'none';
     editButton.textContent = 'Edit';
+
+    // Always show the edit button when media is uploaded
+    editButton.style.display = 'block';
 
     currentRotation = 0;
 
@@ -124,48 +133,73 @@ function handleMediaUpload(event) {
         existingControls.remove();
     }
 
-    if (file) {
-        const fileType = file.type;
-        uploadedFileType = fileType;
+    if (files.length === 0) return;
 
-        if (fileType.startsWith('image/')) {
-            // Reset cropper and button state for new image upload
+    // Get the first file for preview (we'll still upload all files)
+    const file = files[0];
+    const fileType = file.type;
+
+    // Show appropriate editor based on file type
+    if (fileType.startsWith('image/')) {
+        // Image handling remains the same
+        const reader = new FileReader();
+        reader.onload = function() {
+            imagePreview.src = reader.result;
+            imagePreview.style.display = 'block';
+            
+            // Reset cropper and button state
             if (cropper) {
                 cropper.destroy();
                 cropper = null;
             }
+            cropButton.textContent = 'Enable Cropping';
+            // Only show crop button if editor section is visible
+            cropButton.style.display = editorSection.style.display === 'block' ? 'block' : 'none';
+            cropButton.onclick = toggleCropping;
+        };
+        reader.readAsDataURL(file);
+    } else if (fileType.startsWith('video/')) {
+        // Clean up previous video resources
+        if (videoPreview.src) {
+            URL.revokeObjectURL(videoPreview.src);
+        }
+        
+        // Reset video elements
+        videoPreview.pause();
+        videoPreview.removeAttribute('src');
+        videoSource.removeAttribute('src');
+        videoPreview.load();
+        
+        // Reset trim-related elements
+        const trimVideoCheckbox = document.getElementById('trimVideoCheckbox');
+        const undoTrimButton = document.getElementById('undoTrimButton');
+        const startTimeInput = document.getElementById('startTimeInput');
+        const endTimeInput = document.getElementById('endTimeInput');
+        
+        if (trimVideoCheckbox) trimVideoCheckbox.checked = false;
+        if (undoTrimButton) undoTrimButton.style.display = 'none';
+        if (startTimeInput) startTimeInput.value = '';
+        if (endTimeInput) endTimeInput.value = '';
+        
+        // Reset original video reference
+        originalVideo = null;
+        
+        // Create a blob URL for the video
+        const videoURL = URL.createObjectURL(file);
+        
+        // Set the source and load the video
+        videoSource.src = videoURL;
+        videoPreview.load(); // Important: load the video after changing source
+        videoPreview.style.display = 'block';
+        
+        // Set up video metadata loading
+        videoPreview.onloadedmetadata = function() {
+            // Set max value for end time input
+            const endTimeInput = document.getElementById('endTimeInput');
+            if (endTimeInput) {
+                endTimeInput.value = Math.min(videoPreview.duration, 15);
+            }
             
-            editButton.style.display = 'block';
-            editButton.onclick = () => {
-                editorSection.style.display = editorSection.style.display === 'none' ? 'block' : 'none';
-                imageEditor.style.display = 'block';
-                videoEditor.style.display = 'none';
-                // Show crop button when edit section is displayed
-                cropButton.style.display = editorSection.style.display === 'block' ? 'block' : 'none';
-                if (editorSection.style.display === 'block') {
-                    editButton.textContent = 'Hide Edit Options';
-                } else {
-                    editButton.textContent = 'Edit';
-                }
-            };
-
-            const reader = new FileReader();
-            reader.onload = function () {
-                imagePreview.src = reader.result;
-                imagePreview.style.display = 'block';
-                
-                // Reset cropper and button state
-                if (cropper) {
-                    cropper.destroy();
-                    cropper = null;
-                }
-                cropButton.textContent = 'Enable Cropping';
-                // Only show crop button if editor section is visible
-                cropButton.style.display = editorSection.style.display === 'block' ? 'block' : 'none';
-                cropButton.onclick = toggleCropping;
-            };
-            reader.readAsDataURL(file);
-        } else if (fileType.startsWith('video/')) {
             // Enable edit button for videos
             editButton.style.display = 'block';
             editButton.onclick = () => {
@@ -178,15 +212,7 @@ function handleMediaUpload(event) {
                     editButton.textContent = 'Edit';
                 }
             };
-
-            const reader = new FileReader();
-            reader.onload = function () {
-                videoSource.src = reader.result;
-                videoPreview.style.display = 'block';
-                videoPreview.load();
-            };
-            reader.readAsDataURL(file);
-        }
+        };
     }
 
     // Show the preview container once the media is selected
@@ -299,167 +325,246 @@ document.addEventListener('DOMContentLoaded', () => {
         rotateButton.addEventListener('click', rotateImage);
     }
 
-    // Add resize button listeners
-    const minimizeBtn = document.getElementById('minimizeButton');
-    const maximizeBtn = document.getElementById('maximizeButton');
-    
-    if (minimizeBtn) {
-        minimizeBtn.addEventListener('click', () => {
-            minimizeImage();
-        });
-    }
-    
-    if (maximizeBtn) {
-        maximizeBtn.addEventListener('click', () => {
-            maximizeImage();
-        });
-    }
+        // Add video trim preview button listener
+        const previewTrimButton = document.getElementById('previewTrimButton');
+        if (previewTrimButton) {
+            previewTrimButton.addEventListener('click', trimAndRecordVideo);
+        }
 
-    
-});
+        // Add video time input listeners
+        const startTimeInput = document.getElementById('startTimeInput');
+        const endTimeInput = document.getElementById('endTimeInput');
+        const videoPreview = document.getElementById('videoPreview');
+
+        if (videoPreview) {
+            videoPreview.addEventListener('loadedmetadata', () => {
+                if (endTimeInput) {
+                    endTimeInput.max = videoPreview.duration;
+                    endTimeInput.value = Math.min(videoPreview.duration, 15);
+                }
+                if (startTimeInput) {
+                    startTimeInput.max = videoPreview.duration - 1;
+                }
+            });
+        }
+
+        // Add undo trim button listener
+        const undoTrimButton = document.getElementById('undoTrimButton');
+        if (undoTrimButton) {
+            undoTrimButton.addEventListener('click', undoTrimAndRecordVideo);
+        }
+        });
 
 
 async function addStories() {
-    // Declare all variables at the start of the function
-    const mediaInput = document.getElementById('mediaInput');
-    const storyTitleInput = document.getElementById('storyTitle');
-    const storyDescriptionInput = document.getElementById('storyDescription');
-    const imagePreview = document.getElementById('imagePreview');
-    const videoPreview = document.getElementById('videoPreview');
-    const previewContainer = document.getElementById('previewContainer');
-    const editorSection = document.getElementById('editorSection');
-    const editButton = document.querySelector('.edit-button');
-    const charCount = document.getElementById('charCount');
+        // Declare all variables at the start of the function
+        const mediaInput = document.getElementById('mediaInput');
+        const storyTitleInput = document.getElementById('storyTitle');
+        const storyDescriptionInput = document.getElementById('storyDescription');
+        const imagePreview = document.getElementById('imagePreview');
+        const videoPreview = document.getElementById('videoPreview');
+        const previewContainer = document.getElementById('previewContainer');
+        const editorSection = document.getElementById('editorSection');
+        const editButton = document.querySelector('.edit-button');
+        const charCount = document.getElementById('charCount');
+        
+        const files = mediaInput.files;
+        const storyTitle = storyTitleInput.value.trim();
+        const storyDescription = storyDescriptionInput.value.trim();
     
-    const files = mediaInput.files;
-    const storyTitle = storyTitleInput.value.trim();
-    const storyDescription = storyDescriptionInput.value.trim();
-
-    // Validation checks
-    if (!storyTitle || !storyDescription) {
-        alert('Please enter both a title and description for your story.');
-        return;
-    }
-
-    if (files.length === 0) {
-        alert('Please select an image or video for your story.');
-        return;
-    }
-
-    try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            alert('Please log in to post a story.');
+        // Validation checks
+        if (!storyTitle || !storyDescription) {
+            alert('Please enter both a title and description for your story.');
             return;
         }
+    
+        if (files.length === 0) {
+            alert('Please select an image or video for your story.');
+            return;
+        }
+    
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please log in to post a story.');
+                return;
+            }
+
+            
+    
+            // Show loading state
+        const postButton = document.getElementById('postStoryButton');
+        const originalButtonText = postButton.textContent;
+        postButton.textContent = 'Uploading...';
+        postButton.disabled = true;
 
         const formData = new FormData();
         formData.append('title', storyTitle);
         formData.append('description', storyDescription);
-
-        // Handle media upload with transformations
-        // Update the rotateImage function
-function rotateImage() {
-    const imagePreview = document.getElementById('imagePreview');
-    currentRotation = (currentRotation + 90) % 360;
     
-    if (cropper) {
-        cropper.rotate(90);
-    } else {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        const img = new Image();
-        img.src = imagePreview.src;
-        
-        img.onload = function() {
-            // Set canvas dimensions based on rotation
-            if (currentRotation === 90 || currentRotation === 270) {
-                canvas.width = img.height;
-                canvas.height = img.width;
-            } else {
+            // Handle media upload with transformations
+            if (files[0].type.startsWith('image/')) {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                    img.src = imagePreview.src;
+                });
+    
+                // Use the current preview dimensions
                 canvas.width = img.width;
                 canvas.height = img.height;
+    
+                // Simply draw the image as it appears in preview
+                ctx.drawImage(img, 0, 0);
+    
+                const finalImageBlob = await new Promise(resolve => {
+                    canvas.toBlob(resolve, 'image/jpeg', 0.95);
+                });
+                formData.append('media', finalImageBlob, 'edited-image.jpg');
+            } else if (files[0].type.startsWith('video/')) {
+                    // For videos, check if trimming is needed
+                const trimVideoCheckbox = document.getElementById('trimVideoCheckbox');
+                const videoFile = files[0];
+                
+                // Log video details for debugging
+                console.log('Video details:', {
+                    name: videoFile.name,
+                    type: videoFile.type,
+                    size: `${(videoFile.size / (1024 * 1024)).toFixed(2)} MB`
+                });
+                
+                if (trimVideoCheckbox && trimVideoCheckbox.checked) {
+                    const startTime = parseFloat(document.getElementById('startTimeInput').value) || 0;
+                    const endTime = parseFloat(document.getElementById('endTimeInput').value) || videoPreview.duration;
+                    
+                    if (endTime - startTime > 15) {
+                        alert('Final video duration cannot exceed 15 seconds. Please adjust your trim points.');
+                        postButton.textContent = originalButtonText;
+                        postButton.disabled = false;
+                        return;
+                    }
+                    
+                    // Add trim information
+                    formData.append('media', videoFile);
+                    formData.append('isTrimmed', 'true');
+                    formData.append('trimStart', startTime.toString());
+                    formData.append('trimEnd', endTime.toString());
+                    formData.append('videoDuration', videoPreview.duration.toString());
+                    
+                    console.log('Trim details:', {
+                        start: startTime,
+                        end: endTime,
+                        duration: videoPreview.duration
+                    });
+                } else {
+                    // No trimming needed
+                    formData.append('media', videoFile);
+                    formData.append('isTrimmed', 'false');
+                }
+                    
+            }
+            async function clientSideTrimVideo(videoFile, startTime, endTime) {
+                try {
+                    // Create a video element to load the file
+                    const video = document.createElement('video');
+                    video.src = URL.createObjectURL(videoFile);
+                    
+                    // Wait for video metadata to load
+                    await new Promise((resolve, reject) => {
+                        video.onloadedmetadata = resolve;
+                        video.onerror = reject;
+                    });
+                    
+                    // Create a canvas to capture frames
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    // For simplicity, we'll just capture a frame at the start time
+                    // This is a fallback and not a real trim
+                    video.currentTime = startTime;
+                    
+                    // Wait for the seek to complete
+                    await new Promise((resolve) => {
+                        video.onseeked = resolve;
+                    });
+                    
+                    // Draw the frame to canvas
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // Convert canvas to blob
+                    const blob = await new Promise(resolve => {
+                        canvas.toBlob(resolve, 'image/jpeg', 0.95);
+                    });
+                    
+                    return blob;
+                } catch (error) {
+                    console.error('Client-side trim failed:', error);
+                    return null;
+                }
             }
             
-            ctx.save();
-            ctx.translate(canvas.width/2, canvas.height/2);
-            ctx.rotate((currentRotation * Math.PI) / 180);
-            ctx.drawImage(img, -img.width/2, -img.height/2);
-            ctx.restore();
-            
-            imagePreview.src = canvas.toDataURL();
-        };
-    }
-}
-
-        // Update the image processing part in addStories function
-        if (uploadedFileType.startsWith('image/')) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-                img.src = imagePreview.src;
-            });
-
-            // Use the current preview dimensions
-            canvas.width = img.width;
-            canvas.height = img.height;
-
-            // Simply draw the image as it appears in preview
-            ctx.drawImage(img, 0, 0);
-
-            const finalImageBlob = await new Promise(resolve => {
-                canvas.toBlob(resolve, 'image/jpeg', 0.95);
-            });
-            formData.append('media', finalImageBlob, 'edited-image.jpg');
-        } else {
-            formData.append('media', files[0]);
+            // For debugging
+        console.log('FormData contents:');
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
         }
+            
+            const response = await fetch('http://localhost:3000/api/stories', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
     
-
-
-        const response = await fetch('http://localhost:3000/api/stories', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            },
-            body: formData
-        });
+            // Reset button state
+        postButton.textContent = originalButtonText;
+        postButton.disabled = false;
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to post story');
+            console.error('Server error details:', errorData);
+            
+            // More specific error message based on the error
+            if (errorData.error === 'Video trimming failed') {
+                alert('Video trimming failed. This could be due to an unsupported video format or codec. Try using a different video or upload without trimming.');
+            } else {
+                throw new Error(errorData.error || 'Failed to post story');
+            }
+            return;
         }
 
         const result = await response.json();
         console.log('✅ Story posted successfully:', result);
         
-        // Reset form values
-        mediaInput.value = '';
-        storyTitleInput.value = '';
-        storyDescriptionInput.value = '';
-        
-        // Reset media previews
-        imagePreview.src = '';
-        imagePreview.style.display = 'none';
-        videoPreview.src = '';
-        videoPreview.style.display = 'none';
-        previewContainer.style.display = 'none';
-
-        // Reset editor section
-        editorSection.style.display = 'none';
-        editButton.textContent = 'Edit';
-        editButton.style.display = 'none';
-
-        // Reset cropper if it exists
-        if (cropper) {
-            cropper.destroy();
-            cropper = null;
-        }
+         // Reset form values
+         mediaInput.value = '';
+         storyTitleInput.value = '';
+         storyDescriptionInput.value = '';
+         
+         // Reset media previews
+         imagePreview.src = '';
+         imagePreview.style.display = 'none';
+         videoPreview.src = '';
+         videoPreview.style.display = 'none';
+         previewContainer.style.display = 'none';
+ 
+         // Reset editor section
+         editorSection.style.display = 'none';
+         editButton.textContent = 'Edit';
+         editButton.style.display = 'none'; // This line hides the edit button
+ 
+         // Reset cropper if it exists
+         if (cropper) {
+             cropper.destroy();
+             cropper = null;
+         }
 
         // Reset rotation and scale
         currentRotation = 0;
@@ -467,6 +572,19 @@ function rotateImage() {
         // Reset character count
         charCount.textContent = '100 characters remaining';
 
+        // Reset video trim elements
+        const undoTrimButton = document.getElementById('undoTrimButton');
+        if (undoTrimButton) {
+            undoTrimButton.style.display = 'none';
+        }
+        const trimVideoCheckbox = document.getElementById('trimVideoCheckbox');
+        if (trimVideoCheckbox) {
+            trimVideoCheckbox.checked = false;
+        }
+        
+        // Reset original video reference
+        originalVideo = null;
+        
         // Close modal
         closeModalButton();
 
@@ -477,6 +595,8 @@ function rotateImage() {
         console.error('🚨 Error posting story:', error);
         alert('Failed to post story. Please try again.');
     }
+
+    
 }
 
 // Add this after your existing imports
@@ -620,9 +740,55 @@ function toggleCropping() {
     }
 }
 
+function toggleMute() {
+    const videoPreview = document.getElementById('videoPreview');
+    videoPreview.muted = !videoPreview.muted;
+    document.getElementById('muteButton').textContent = videoPreview.muted ? 'Unmute' : 'Mute';
+}
 
+function trimAndRecordVideo() {
+    const videoPreview = document.getElementById('videoPreview');
+    const startTime = parseFloat(document.getElementById('startTimeInput').value) || 0;
+    const endTime = parseFloat(document.getElementById('endTimeInput').value);
+    
+    if (!endTime || endTime <= startTime) {
+        alert('Please set valid start and end times');
+        return;
+    }
 
+    if (endTime - startTime > 15) {
+        alert('Maximum video duration is 15 seconds. Please adjust your trim points.');
+        return;
+    }
 
+    if (!originalVideo) {
+        originalVideo = videoPreview.src;
+    }
+
+    // Set video to start time and play until end time
+    videoPreview.currentTime = startTime;
+    videoPreview.play();
+
+    const trimDuration = (endTime - startTime) * 1000; // Convert to milliseconds
+    
+    // Show trim preview
+    setTimeout(() => {
+        videoPreview.pause();
+        document.getElementById('undoTrimButton').style.display = 'block';
+        document.getElementById('trimVideoCheckbox').checked = true;
+    }, trimDuration);
+}
+
+function undoTrimAndRecordVideo() {
+    if (originalVideo) {
+        const videoPreview = document.getElementById('videoPreview');
+        videoPreview.src = originalVideo;
+        document.getElementById('startTimeInput').value = '';
+        document.getElementById('endTimeInput').value = '';
+        document.getElementById('undoTrimButton').style.display = 'none';
+        document.getElementById('trimVideoCheckbox').checked = false;
+    }
+}
 
 document.body.insertAdjacentHTML('beforeend', storyModalHTML);
 
