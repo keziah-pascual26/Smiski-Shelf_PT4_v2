@@ -1,4 +1,11 @@
 document.addEventListener("DOMContentLoaded", async () => {
+    // Load the profile picture from localStorage
+    const savedProfilePicture = localStorage.getItem('profilePicture');
+    if (savedProfilePicture) {
+        const profilePictureLarge = document.querySelector('.profile-picture-large');
+        profilePictureLarge.style.backgroundImage = `url(${savedProfilePicture})`;
+    }
+    
     try {
         const token = localStorage.getItem('token'); // Retrieve token from localStorage
         if (!token) {
@@ -163,8 +170,14 @@ document.getElementById('profilePictureInput').addEventListener('change', async 
 
             const data = await response.json();
             console.log('Upload successful:', data);
+
+            // Save the profile picture URL in localStorage
+            localStorage.setItem('profilePicture', data.profilePicture);
+
+            // Update the profile picture in the UI
             const profilePictureLarge = document.querySelector('.profile-picture-large');
             profilePictureLarge.style.backgroundImage = `url(${data.profilePicture})`;
+
             alert('Profile picture updated successfully!');
         } catch (error) {
             console.error('Error uploading profile picture:', error);

@@ -149,6 +149,9 @@ hr {
 .profile-picture-large-container {
     position: relative;
     display: inline-block;
+    top: -90px; /* Move the container upwards by 50px */
+    z-index: 1; /* Ensure it appears above other elements */
+    margin-bottom: -100px; /* Prevent layout shifting */
 }
 
 .profile-picture-large {
