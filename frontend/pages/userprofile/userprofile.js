@@ -1,11 +1,4 @@
 document.addEventListener("DOMContentLoaded", async () => {
-    // Load the profile picture from localStorage
-    const savedProfilePicture = localStorage.getItem('profilePicture');
-    if (savedProfilePicture) {
-        const profilePictureLarge = document.querySelector('.profile-picture-large');
-        profilePictureLarge.style.backgroundImage = `url(${savedProfilePicture})`;
-    }
-    
     try {
         const token = localStorage.getItem('token'); // Retrieve token from localStorage
         if (!token) {
@@ -35,6 +28,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById('detail-username').textContent = user.username || 'N/A';
         document.getElementById('detail-email').textContent = user.email || 'N/A';
         document.getElementById('detail-bio').textContent = user.bio || 'N/A';
+
+        // Display the profile picture
+        const profilePictureLarge = document.querySelector('.profile-picture-large');
+        const profilePictureSidebar = document.querySelector('.profile-picture'); // Sidebar profile picture
+
+        if (user.profilePicture) {
+            const profilePictureUrl = `url(http://localhost:3000${user.profilePicture})`;
+
+            if (profilePictureLarge) {
+                profilePictureLarge.style.backgroundImage = profilePictureUrl;
+            }
+
+            if (profilePictureSidebar) {
+                profilePictureSidebar.style.backgroundImage = profilePictureUrl;
+            }
+        }
     } catch (error) {
         console.error('Error fetching user profile:', error);
     }
@@ -153,12 +162,16 @@ document.getElementById('editProfilePictureIcon').addEventListener('click', () =
 document.getElementById('profilePictureInput').addEventListener('change', async (event) => {
     const file = event.target.files[0];
     if (file) {
+        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
         const formData = new FormData();
         formData.append('profilePicture', file);
 
         try {
             const response = await fetch('http://localhost:3000/api/user/profile/picture', {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+                },
                 body: formData
             });
 
@@ -171,12 +184,18 @@ document.getElementById('profilePictureInput').addEventListener('change', async 
             const data = await response.json();
             console.log('Upload successful:', data);
 
-            // Save the profile picture URL in localStorage
-            localStorage.setItem('profilePicture', data.profilePicture);
-
-            // Update the profile picture in the UI
+            // Update both the large and sidebar profile pictures
+            const newProfilePictureUrl = `url(http://localhost:3000${data.profilePicture})`;
             const profilePictureLarge = document.querySelector('.profile-picture-large');
-            profilePictureLarge.style.backgroundImage = `url(${data.profilePicture})`;
+            const profilePictureSidebar = document.querySelector('.profile-picture'); // Ensure this selector matches the sidebar element
+
+            if (profilePictureLarge) {
+                profilePictureLarge.style.backgroundImage = newProfilePictureUrl;
+            }
+
+            if (profilePictureSidebar) {
+                profilePictureSidebar.style.backgroundImage = newProfilePictureUrl;
+            }
 
             alert('Profile picture updated successfully!');
         } catch (error) {

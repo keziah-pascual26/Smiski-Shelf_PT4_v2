@@ -154,6 +154,17 @@ hr {
     margin-bottom: -100px; /* Prevent layout shifting */
 }
 
+/* Sidebar profile picture */
+.profile-picture {
+    width: 80px; /* Adjust size as needed */
+    height: 80px;
+    border-radius: 50%; /* Makes it circular */
+    background-size: cover; /* Ensures the image covers the entire area */
+    background-position: center; /* Centers the image */
+    background-repeat: no-repeat; /* Prevents tiling */
+    background-color: #f0f0f0; /* Fallback color */
+}
+
 .profile-picture-large {
     width: 100px;
     height: 100px;
