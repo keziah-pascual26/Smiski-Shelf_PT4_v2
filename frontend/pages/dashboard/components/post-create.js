@@ -1,17 +1,45 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
+    const API_URL = 'http://localhost:3000'; // Replace with your actual API URL
+
+    // Fetch the latest username from the server
+    const token = localStorage.getItem("token");
+    let storedUsername = "User"; // Default username
+
+    if (token) {
+        try {
+            const response = await fetch(`${API_URL}/api/user/profile`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            });
+
+            if (response.ok) {
+                const userData = await response.json();
+                storedUsername = userData.username || "User";
+
+                // Update localStorage with the latest username
+                localStorage.setItem("username", storedUsername);
+            } else {
+                console.error("Failed to fetch user profile:", response.statusText);
+            }
+        } catch (error) {
+            console.error("Error fetching user profile:", error);
+        }
+    } else {
+        console.error("No token found. User might not be logged in.");
+    }
+
     // Create the HTML structure dynamically
     const postInputContainer = document.createElement("div");
     postInputContainer.classList.add("post-input");
-    const API_URL = 'http://localhost:3000'; // Add this at the top
 
     // Add stylesheet dynamically
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = "/pages/dashboard/components/styles/post-create.css";
     document.head.appendChild(link);
-
-    // Retrieve the username from localStorage
-    const storedUsername = localStorage.getItem("username") || "User";
 
     postInputContainer.innerHTML = `
     <div>
@@ -93,210 +121,97 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Handle post submission
+    postButton.addEventListener("click", async function () {
+        const text = document.getElementById("postContent").value.trim();
+        const fileInput = document.getElementById("fileInput");
+        const files = fileInput.files;
 
-postButton.addEventListener("click", async function () {
-    const text = document.getElementById("postContent").value.trim();
-    const fileInput = document.getElementById("fileInput");
-    const files = fileInput.files;
-
-    if (!text && files.length === 0) {
-        alert("Post content or a file is required.");
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append("text", text);
-    for (let i = 0; i < files.length; i++) {
-        formData.append("media", files[i]);
-    }
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-        alert("You must be logged in to post.");
-        return;
-    }
-
-    try {
-        const response = await fetch("http://localhost:3000/create-post", {  // Make sure this URL matches your backend
-            method: "POST",
-            body: formData,
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (!text && files.length === 0) {
+            alert("Post content or a file is required.");
+            return;
         }
 
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            throw new Error("Server didn't return JSON");
+        const formData = new FormData();
+        formData.append("text", text);
+        for (let i = 0; i < files.length; i++) {
+            formData.append("media", files[i]);
         }
 
-        const data = await response.json();
-        alert("✅ Post created successfully!");
-        displayPost(data.post);
-        
-        // Clear input fields and close modal
-        document.getElementById("postContent").value = "";
-        fileInput.value = "";
-        document.getElementById("mediaPreviewContainer").innerHTML = "";
-        postModal.style.display = "none";
+        if (!token) {
+            alert("You must be logged in to post.");
+            return;
+        }
 
-    } catch (error) {
-        console.error("🚨 Error creating post:", error);
-        alert("Something went wrong. Please try again.");
-    }
-});
+        try {
+            const response = await fetch(`${API_URL}/create-post`, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
 
-    
-    
-    
-    document.querySelector("#postForm").addEventListener("submit", async (event) => {
-        event.preventDefault();
-    
-        const formData = new FormData(event.target);
-        const response = await fetch(`${API_URL}/create-post`, {
-            method: "POST",
-            body: formData,
-            headers: {
-                "Authorization": `Bearer ${token}`
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        });
-    
-        if (response.ok) {
-            const newPost = await response.json();
-            displayPost(newPost.post); // Display the new post dynamically
+
+            const data = await response.json();
+            alert("✅ Post created successfully!");
+            displayPost(data.post);
+            
+            // Clear input fields and close modal
+            document.getElementById("postContent").value = "";
+            fileInput.value = "";
+            document.getElementById("mediaPreviewContainer").innerHTML = "";
+            postModal.style.display = "none";
+
+        } catch (error) {
+            console.error("🚨 Error creating post:", error);
+            alert("Something went wrong. Please try again.");
         }
     });
-    
-function displayPost(post) {
-    const postFeed = document.querySelector("#postFeed");
-    if (!postFeed) return;
 
-    const postElement = document.createElement("div");
-    postElement.classList.add("post");
+    function displayPost(post) {
+        const postFeed = document.querySelector("#postFeed");
+        if (!postFeed) return;
 
-    let mediaContent = "";
-    if (post.media && post.media.length > 0) {
-        mediaContent = `
-            <div class="post-media">
-                ${post.media
-                    .map(file => {
-                        const fileExtension = file.split(".").pop().toLowerCase();
-                        if (["mp4", "webm", "ogg"].includes(fileExtension)) {
-                            return `<video controls><source src="/uploads/${file}" type="video/${fileExtension}"></video>`;
-                        } else {
-                            return `<img src="/uploads/${file}" alt="Post Image">`;
-                        }
-                    })
-                    .join("")}
+        const postElement = document.createElement("div");
+        postElement.classList.add("post");
+
+        let mediaContent = "";
+        if (post.media && post.media.length > 0) {
+            mediaContent = `
+                <div class="post-media">
+                    ${post.media
+                        .map(file => {
+                            const fileExtension = file.split(".").pop().toLowerCase();
+                            if (["mp4", "webm", "ogg"].includes(fileExtension)) {
+                                return `<video controls><source src="/uploads/${file}" type="video/${fileExtension}"></video>`;
+                            } else {
+                                return `<img src="/uploads/${file}" alt="Post Image">`;
+                            }
+                        })
+                        .join("")}
+                </div>
+            `;
+        }
+
+        postElement.innerHTML = `
+            <div class="post-header">
+                <img src="../../../no-profile.png" alt="User Profile">
+                <span class="username">${post.username}</span>
+            </div>
+            <p>${post.text}</p>
+            ${mediaContent}
+            <div class="post-footer">
+                <span class="like"><i class="fa fa-heart"></i> ${post.likes || 0}</span>
+                <span class="comment"><i class="fa fa-comment"></i> ${post.comments || 0}</span>
+                <span class="retweet"><i class="fa fa-retweet"></i> ${post.retweets || 0}</span>
             </div>
         `;
+
+        postFeed.prepend(postElement);
     }
 
-    postElement.innerHTML = `
-        <div class="post-header">
-            <img src="../../../no-profile.png" alt="User Profile">
-            <span class="username">${post.username}</span>
-            
-        </div>
-        <p>${post.text}</p>
-        ${mediaContent}
-        <div class="post-footer">
-            <span class="like"><i class="fa fa-heart"></i> ${post.likes || 0}</span>
-            <span class="comment"><i class="fa fa-comment"></i> ${post.comments || 0}</span>
-            <span class="retweet"><i class="fa fa-retweet"></i> ${post.retweets || 0}</span>
-        </div>
-    `;
-
-    postFeed.prepend(postElement);
-}
-
-    
-    
     console.log("✅ post-create.js loaded!");
 });
-
-document.addEventListener("DOMContentLoaded", () => {
-    const fileInput = document.querySelector("#fileInput");
-    const mediaPreviewContainer = document.querySelector("#mediaPreviewContainer");
-    const postButton = document.querySelector("#postButton");
-    const photoVideoOption = document.querySelector("#photoVideoOption");
-
-    // Open file input when clicking the "Photo/Video" option
-    photoVideoOption.addEventListener("click", () => fileInput.click());
-
-    // Handle file selection and preview
-    fileInput.addEventListener("change", () => {
-        mediaPreviewContainer.innerHTML = ""; // Clear previous previews
-
-        Array.from(fileInput.files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                let mediaElement;
-                
-                if (file.type.startsWith("image/")) {
-                    // Create an image preview
-                    mediaElement = document.createElement("img");
-                    mediaElement.src = e.target.result;
-                    mediaElement.classList.add("media-preview");
-                } else if (file.type.startsWith("video/")) {
-                    // Create a video preview
-                    mediaElement = document.createElement("video");
-                    mediaElement.src = e.target.result;
-                    mediaElement.classList.add("media-preview");
-                    mediaElement.controls = true; // Add controls for play/pause
-                }
-
-                mediaPreviewContainer.appendChild(mediaElement);
-            };
-            reader.readAsDataURL(file);
-        });
-    });
-
-    // **Clear media preview when clicking post**
-    postButton.addEventListener("click", () => {
-        mediaPreviewContainer.innerHTML = ""; // Remove uploaded media previews
-        fileInput.value = ""; // Reset file input to allow re-uploading
-    });
-});
-
-document.addEventListener("DOMContentLoaded", function () {
-    const smallPostInput = document.getElementById("smallPostInput");
-    const postModal = document.getElementById("postModal");
-    const closeModal = document.querySelector(".close-post-modal");
-    const postButton = document.getElementById("postButton");
-    const postContent = document.getElementById("postContent");
-    const fileInput = document.getElementById("fileInput");
-    const mediaPreviewContainer = document.getElementById("mediaPreviewContainer");
-
-    function clearModal() {
-        postContent.value = "";  // Clear text area
-        fileInput.value = "";  // Reset file input
-        mediaPreviewContainer.innerHTML = "";  // Clear media preview
-        postModal.style.display = "none";  // Hide modal
-    }
-
-    if (smallPostInput && postModal && closeModal) {
-        // Open modal on click
-        smallPostInput.addEventListener("click", function () {
-            postModal.style.display = "flex";
-        });
-
-        // Close modal on click
-        closeModal.addEventListener("click", function () {
-            clearModal();
-        });
-
-        // Close modal if clicked outside of content
-        window.addEventListener("click", function (event) {
-            if (event.target === postModal) {
-                clearModal();
-            }
-        });
-    }
-});
-
-
