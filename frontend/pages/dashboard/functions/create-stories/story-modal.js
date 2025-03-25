@@ -350,15 +350,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 async function addStories() {
+    // Declare all variables at the start of the function
     const mediaInput = document.getElementById('mediaInput');
     const storyTitleInput = document.getElementById('storyTitle');
     const storyDescriptionInput = document.getElementById('storyDescription');
     const imagePreview = document.getElementById('imagePreview');
+    const videoPreview = document.getElementById('videoPreview');
+    const previewContainer = document.getElementById('previewContainer');
+    const editorSection = document.getElementById('editorSection');
+    const editButton = document.querySelector('.edit-button');
+    const charCount = document.getElementById('charCount');
     
     const files = mediaInput.files;
     const storyTitle = storyTitleInput.value.trim();
     const storyDescription = storyDescriptionInput.value.trim();
 
+    // Validation checks
     if (!storyTitle || !storyDescription) {
         alert('Please enter both a title and description for your story.');
         return;
@@ -380,9 +387,8 @@ async function addStories() {
         formData.append('title', storyTitle);
         formData.append('description', storyDescription);
 
-        // Handle media upload (image or video)
+        // Handle media upload
         if (uploadedFileType.startsWith('image/')) {
-            // If image has been cropped or rotated, use the current preview
             if (imagePreview.src.startsWith('data:image')) {
                 const response = await fetch(imagePreview.src);
                 const blob = await response.blob();
@@ -410,14 +416,37 @@ async function addStories() {
         const result = await response.json();
         console.log('✅ Story posted successfully:', result);
         
-        // Clear form and close modal
+        // Reset form values
+        mediaInput.value = '';
         storyTitleInput.value = '';
         storyDescriptionInput.value = '';
-        mediaInput.value = '';
+        
+        // Reset media previews
+        imagePreview.src = '';
+        imagePreview.style.display = 'none';
+        videoPreview.src = '';
+        videoPreview.style.display = 'none';
+        previewContainer.style.display = 'none';
+
+        // Reset editor section
+        editorSection.style.display = 'none';
+        editButton.textContent = 'Edit';
+        editButton.style.display = 'none';
+
+        // Reset cropper if it exists
         if (cropper) {
             cropper.destroy();
             cropper = null;
         }
+
+        // Reset rotation and scale
+        currentRotation = 0;
+        currentScale = 1;
+
+        // Reset character count
+        charCount.textContent = '100 characters remaining';
+
+        // Close modal
         closeModalButton();
 
         // Refresh stories list
@@ -640,6 +669,8 @@ function hideResizeControls() {
         resizeControls.style.display = 'none';
     }
 }
+
+
 
 document.body.insertAdjacentHTML('beforeend', storyModalHTML);
 
