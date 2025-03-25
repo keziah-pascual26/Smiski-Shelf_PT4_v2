@@ -149,14 +149,10 @@ hr {
 .profile-picture-large {
     width: 100px;
     height: 100px;
-    background-color: #ccc; /* Gray background */
     border-radius: 50%;
-    position: absolute; /* Position it absolutely */
-    top: 100px; /* Adjust to overlap the cover photo */
-    left: 50%; /* Center horizontally */
-    transform: translateX(-50%); /* Center alignment */
-    border: 3px solid #ffffff; /* White border for emphasis */
-    z-index: 10; /* Ensure it appears above the cover photo */
+    background-size: cover;
+    background-position: center;
+    background-color: #f0f0f0; /* Fallback color */
 }
 
 /* Edit icon on the profile picture */

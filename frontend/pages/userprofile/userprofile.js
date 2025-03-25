@@ -137,3 +137,38 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+document.getElementById('editProfilePictureIcon').addEventListener('click', () => {
+    const fileInput = document.getElementById('profilePictureInput');
+    fileInput.click(); // Trigger the file input
+});
+
+document.getElementById('profilePictureInput').addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const formData = new FormData();
+        formData.append('profilePicture', file);
+
+        try {
+            const response = await fetch('http://localhost:3000/api/user/profile/picture', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                console.error('Upload failed:', error);
+                throw new Error('Failed to upload profile picture');
+            }
+
+            const data = await response.json();
+            console.log('Upload successful:', data);
+            const profilePictureLarge = document.querySelector('.profile-picture-large');
+            profilePictureLarge.style.backgroundImage = `url(${data.profilePicture})`;
+            alert('Profile picture updated successfully!');
+        } catch (error) {
+            console.error('Error uploading profile picture:', error);
+            alert('Failed to upload profile picture. Please try again.');
+        }
+    }
+});

@@ -52,6 +52,12 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/user', userRoutes);
 
+// filepath: c:\Users\Charisse\OneDrive\Documents\NetBeansProjects\Smiski-Shelf_PT4_v2\backend\server.js
+const userProfileRoutes = require('./routes/userProfileRoutes');
+
+// Add this line to register the route
+app.use('/api/user', userProfileRoutes);
+
 // Middleware
 app.use(cors({
     origin: true, // Allow all origins for now
