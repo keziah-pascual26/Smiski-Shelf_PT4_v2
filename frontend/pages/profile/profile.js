@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     const editProfilePictureBtn = document.getElementById('editProfilePictureBtn');
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
+    const privacyToggle = document.getElementById('privacyToggle');
+    const privacyStatus = document.getElementById('privacyStatus');
     
     // Load user profile data
     loadUserProfile();
@@ -103,6 +105,12 @@ async function loadUserProfile() {
             profilePicture.src = `/uploads/${userData.profilePicture}`;
         }
         
+        // Set privacy toggle state based on user data
+        if (privacyToggle && privacyStatus) {
+            privacyToggle.checked = !userData.isProfilePublic; // Toggle is ON when profile is private
+            updatePrivacyStatusText(userData.isProfilePublic);
+        }
+
         // Get the username from the profile data
         const username = userData.username;
         
@@ -119,6 +127,50 @@ async function loadUserProfile() {
         console.error('Error loading profile:', error);
         alert('Failed to load profile. Please try again.');
     }
+}
+
+// Add these new functions for privacy toggle
+function updatePrivacyStatusText(isPublic) {
+    privacyStatus.textContent = isPublic ? 'Public' : 'Private';
+    privacyStatus.style.color = isPublic ? '#729c2f' : '#e74c3c';
+}
+
+async function updatePrivacySetting(isPublic) {
+    try {
+        const response = await fetch('http://localhost:3000/api/user/privacy', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ isPublic })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to update privacy setting');
+        }
+        
+        const result = await response.json();
+        console.log('Privacy setting updated:', result);
+        
+        // Update the UI
+        updatePrivacyStatusText(isPublic);
+        
+    } catch (error) {
+        console.error('Error updating privacy setting:', error);
+        alert('Failed to update privacy setting. Please try again.');
+        
+        // Revert toggle state on error
+        privacyToggle.checked = !isPublic;
+    }
+}
+
+// Add this to your event listeners section
+if (privacyToggle) {
+    privacyToggle.addEventListener('change', function() {
+        const isPublic = !this.checked; // Toggle is ON when profile is private
+        updatePrivacySetting(isPublic);
+    });
 }
 
 // Add a new function to fetch and update friends count

@@ -12,10 +12,6 @@ document.addEventListener("DOMContentLoaded", function () {
         <nav class="navbar">
             <div class="logosearch">
                 <img src="/public/logo.png" class="dashboard-logo" alt="Logo">
-                <div class="search-bar-container">
-                    <input type="text" placeholder="Search" class="search-bar">
-                    <i class="fas fa-search icon search-icon"></i>
-                </div>
             </div>
             <div class="main-nav">
                 <i class="fas fa-home icon" id="dashboard"></i>

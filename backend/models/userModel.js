@@ -12,7 +12,9 @@ const userSchema = new mongoose.Schema({
     resetTokenExpiry: { type: Date, default: null },
     // Add 2FA fields
     twoFactorSecret: { type: String, default: null },
-    twoFactorEnabled: { type: Boolean, default: false }
+    twoFactorEnabled: { type: Boolean, default: false },
+    // Add profile privacy setting
+    isProfilePublic: { type: Boolean, default: true }
 });
 
 module.exports = mongoose.model("User", userSchema);

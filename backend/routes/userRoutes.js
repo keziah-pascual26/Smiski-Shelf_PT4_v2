@@ -19,7 +19,8 @@ router.get('/user/profile', authenticateToken, async (req, res) => {
             email: user.email,
             bio: user.bio || '',
             profilePicture: user.profilePicture || null,
-            twoFactorEnabled: user.twoFactorEnabled || false
+            twoFactorEnabled: user.twoFactorEnabled || false,
+            isProfilePublic: user.isProfilePublic
         });
     } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -115,6 +116,34 @@ router.put('/user/profile', authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error('Error updating user profile:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Update profile privacy setting
+router.post('/user/privacy', authenticateToken, async (req, res) => {
+    try {
+        const { isPublic } = req.body;
+        
+        if (typeof isPublic !== 'boolean') {
+            return res.status(400).json({ message: 'Invalid privacy setting' });
+        }
+        
+        const user = await User.findById(req.user.id);
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        user.isProfilePublic = isPublic;
+        await user.save();
+        
+        res.json({ 
+            message: 'Privacy setting updated successfully',
+            isProfilePublic: user.isProfilePublic
+        });
+    } catch (error) {
+        console.error('Error updating privacy setting:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });
