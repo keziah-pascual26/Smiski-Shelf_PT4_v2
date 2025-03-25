@@ -13,10 +13,9 @@ document.head.appendChild(storyModalCSS);
 let uploadedFileType = null;
 let cropper = null;
 
-const MIN_SCALE = 0.5;
-const MAX_SCALE = 2.0;
-const SCALE_STEP = 0.1;
-let currentScale = 1.0;
+
+
+
 // Update the modal HTML where the rotate button is defined
 const storyModalHTML = `
     <!-- Create Story Modal -->
@@ -112,11 +111,6 @@ function handleMediaUpload(event) {
     editButton.textContent = 'Edit';
 
     currentRotation = 0;
-    // Reset scale and transform
-    currentScale = 1;
-    if (imagePreview) {
-        imagePreview.style.transform = 'scale(1)';
-    }
 
     // Reset cropper if it exists
     if (cropper) {
@@ -469,7 +463,6 @@ function rotateImage() {
 
         // Reset rotation and scale
         currentRotation = 0;
-        currentScale = 1;
 
         // Reset character count
         charCount.textContent = '100 characters remaining';
@@ -600,8 +593,6 @@ function initializeCropper() {
         cropBoxResizable: true,
         toggleDragModeOnDblclick: false,
         initialRotation: currentRotation,
-        // Add this to maintain scale
-        scale: currentScale
     });
 
     cropButton.textContent = 'Disable Cropping';
