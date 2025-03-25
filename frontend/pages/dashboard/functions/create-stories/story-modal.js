@@ -141,23 +141,14 @@ function handleMediaUpload(event) {
             }
             
             editButton.style.display = 'block';
-            editButton.onclick = () => {
-                editorSection.style.display = editorSection.style.display === 'none' ? 'block' : 'none';
-                imageEditor.style.display = 'block';
-                videoEditor.style.display = 'none';
-                // Show crop button when edit section is displayed
-                cropButton.style.display = editorSection.style.display === 'block' ? 'block' : 'none';
-                if (editorSection.style.display === 'block') {
-                    editButton.textContent = 'Hide Edit Options';
-                } else {
-                    editButton.textContent = 'Edit';
-                }
-            };
-
+            imageEditor.style.display = 'none';
+            videoEditor.style.display = 'none';
+        
             const reader = new FileReader();
             reader.onload = function () {
                 imagePreview.src = reader.result;
                 imagePreview.style.display = 'block';
+                videoPreview.style.display = 'none';
                 
                 // Reset cropper and button state
                 if (cropper) {
@@ -165,33 +156,24 @@ function handleMediaUpload(event) {
                     cropper = null;
                 }
                 cropButton.textContent = 'Enable Cropping';
-                // Only show crop button if editor section is visible
-                cropButton.style.display = editorSection.style.display === 'block' ? 'block' : 'none';
                 cropButton.onclick = toggleCropping;
             };
             reader.readAsDataURL(file);
         } else if (fileType.startsWith('video/')) {
-            // Enable edit button for videos
             editButton.style.display = 'block';
-            editButton.onclick = () => {
-                editorSection.style.display = editorSection.style.display === 'none' ? 'block' : 'none';
-                videoEditor.style.display = 'block';
-                imageEditor.style.display = 'none';
-                if (editorSection.style.display === 'block') {
-                    editButton.textContent = 'Hide Edit Options';
-                } else {
-                    editButton.textContent = 'Edit';
-                }
-            };
-
+            imageEditor.style.display = 'none';
+            videoEditor.style.display = 'none';
+        
             const reader = new FileReader();
             reader.onload = function () {
                 videoSource.src = reader.result;
                 videoPreview.style.display = 'block';
+                imagePreview.style.display = 'none';
                 videoPreview.load();
             };
             reader.readAsDataURL(file);
         }
+
     }
 
     // Show the preview container once the media is selected
@@ -234,6 +216,7 @@ function updateCharCount() {
     }
 }
 
+// Remove duplicate DOMContentLoaded event listeners and combine them into one
 document.addEventListener('DOMContentLoaded', () => {
     // Insert modal and overlay HTML
     document.body.insertAdjacentHTML('beforeend', storyModalHTML);
@@ -252,6 +235,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeButton = document.getElementById('closeModalButton');
     const createButton = document.getElementById('createStoryButton');
     const overlay = document.getElementById('overlay');
+    const mediaInput = document.getElementById('mediaInput');
+    const rotateButton = document.getElementById('rotateButton');
+    const editButton = document.querySelector('.edit-button');
 
     if (postButton) {
         postButton.addEventListener('click', addStories);
@@ -269,42 +255,41 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.addEventListener('click', closeModalButton);
     }
 
-    
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    initializeMediaPreview('mediaInput', 'previewContainer', 'imagePreview', 'videoPreview', 'videoSource');
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Existing listeners
-    const textArea = document.getElementById("storyDescription");
-    if (textArea) {
-        textArea.addEventListener('input', updateCharCount);
-    }
-
-    // Initialize media preview
-    initializeMediaPreview('mediaInput', 'previewContainer', 'imagePreview', 'videoPreview', 'videoSource');
-
-    // Add story post button listener
-    const postButton = document.getElementById('postStoryButton');
-    if (postButton) {
-        postButton.addEventListener('click', addStories);
-    }
-
-    // Add this new event listener
-    const mediaInput = document.getElementById('mediaInput');
     if (mediaInput) {
         mediaInput.addEventListener('change', handleMediaUpload);
     }
 
-    // Add rotate button listener
-    const rotateButton = document.getElementById('rotateButton');
     if (rotateButton) {
         rotateButton.addEventListener('click', rotateImage);
     }
 
+    // Add edit button listener
+    if (editButton) {
+        editButton.addEventListener('click', () => {
+            const editorSection = document.getElementById('editorSection');
+            const imageEditor = document.getElementById('imageEditor');
+            const videoEditor = document.getElementById('videoEditor');
+            const cropButton = document.getElementById('cropImage');
+    
+            if (uploadedFileType && uploadedFileType.startsWith('image/')) {
+                // Toggle image editor
+                editorSection.style.display = editorSection.style.display === 'none' ? 'block' : 'none';
+                imageEditor.style.display = editorSection.style.display;
+                videoEditor.style.display = 'none';
+                cropButton.style.display = editorSection.style.display === 'block' ? 'block' : 'none';
+            } else if (uploadedFileType && uploadedFileType.startsWith('video/')) {
+                // Toggle video editor
+                editorSection.style.display = editorSection.style.display === 'none' ? 'block' : 'none';
+                videoEditor.style.display = editorSection.style.display;
+                imageEditor.style.display = 'none';
+            }
+    
+            editButton.textContent = editorSection.style.display === 'block' ? 'Hide Edit Options' : 'Edit';
+        });
+    }
 });
+
+
 
 
 async function addStories() {
@@ -570,35 +555,6 @@ function toggleCropping() {
         initializeCropper();
     }
 }
-
-
-
-function showResizeControls() {
-    const resizeControls = document.getElementById('resizeControls');
-    if (resizeControls) {
-        resizeControls.style.display = 'flex';
-        resizeControls.innerHTML = `
-            <button type="button" id="doneResizing" class="crop-btn done">Done</button>
-            <button type="button" id="cancelResizing" class="crop-btn cancel">Cancel</button>
-        `;
-        
-        // Add event listeners
-        document.getElementById('doneResizing').onclick = () => {
-            hideResizeControls();
-            // Keep the current scale
-        };
-        
-        document.getElementById('cancelResizing').onclick = () => {
-            currentScale = 1.0;
-            const imagePreview = document.getElementById('imagePreview');
-            applyScale(imagePreview);
-            hideResizeControls();
-        };
-    }
-}
-
-
-
 
 
 document.body.insertAdjacentHTML('beforeend', storyModalHTML);
