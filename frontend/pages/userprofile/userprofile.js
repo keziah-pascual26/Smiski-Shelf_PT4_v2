@@ -123,3 +123,17 @@ document.getElementById("saveDetailsBtn").addEventListener("click", () => {
             console.error("Error saving user details:", error);
         });
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Add logout functionality
+    const logoutLink = document.getElementById('logout-link');
+    if (logoutLink) {
+        logoutLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            alert('Logging out...'); // Added alert for logging out
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.href = '/pages/login/login.html';
+        });
+    }
+});
