@@ -61,15 +61,6 @@ const storyModalHTML = `
                     <div>
                         <button type="button" id="rotateButton">Rotate</button>
                         <button id="cropImage">Enable Cropping</button>
-                        <div class="image-resize-controls">
-                            <span>Resize:</span>
-                                <button id="minimizeButton" type="button">-</button>
-                                <button id="maximizeButton" type="button">+</button>
-                                <div id="resizeControls" style="display: none;">
-                                    <button type="button" id="doneResizing" class="crop-btn done">Done</button>
-                                    <button type="button" id="cancelResizing" class="crop-btn cancel">Cancel</button>
-                                </div>
-                        </div>
                     </div>
                     <div id="cropper-container"></div>
                 </div>
@@ -330,27 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Add resize control button listeners
-    const resizeControls = document.getElementById('resizeControls');
-    if (resizeControls) {
-        const doneResizingBtn = document.getElementById('doneResizing');
-        const cancelResizingBtn = document.getElementById('cancelResizing');
-        
-        if (doneResizingBtn) {
-            doneResizingBtn.addEventListener('click', () => {
-                resizeControls.style.display = 'none';
-            });
-        }
-        
-        if (cancelResizingBtn) {
-            cancelResizingBtn.addEventListener('click', () => {
-                currentScale = 1.0;
-                const imagePreview = document.getElementById('imagePreview');
-                applyScale(imagePreview);
-                resizeControls.style.display = 'none';
-            });
-        }
-    }
+    
 });
 
 
@@ -393,20 +364,22 @@ async function addStories() {
         formData.append('description', storyDescription);
 
         // Handle media upload with transformations
-        if (uploadedFileType.startsWith('image/')) {
-            // Create a canvas to apply all transformations
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            
-            // Create a promise to handle image loading
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-                img.src = imagePreview.src;
-            });
-
-            // Set canvas dimensions
+        // Update the rotateImage function
+function rotateImage() {
+    const imagePreview = document.getElementById('imagePreview');
+    currentRotation = (currentRotation + 90) % 360;
+    
+    if (cropper) {
+        cropper.rotate(90);
+    } else {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const img = new Image();
+        img.src = imagePreview.src;
+        
+        img.onload = function() {
+            // Set canvas dimensions based on rotation
             if (currentRotation === 90 || currentRotation === 270) {
                 canvas.width = img.height;
                 canvas.height = img.width;
@@ -414,14 +387,37 @@ async function addStories() {
                 canvas.width = img.width;
                 canvas.height = img.height;
             }
-
-            // Apply transformations
+            
+            ctx.save();
             ctx.translate(canvas.width/2, canvas.height/2);
-            ctx.rotate(currentRotation * Math.PI/180);
-            ctx.scale(currentScale, currentScale);
+            ctx.rotate((currentRotation * Math.PI) / 180);
             ctx.drawImage(img, -img.width/2, -img.height/2);
+            ctx.restore();
+            
+            imagePreview.src = canvas.toDataURL();
+        };
+    }
+}
 
-            // Convert to blob and append to formData
+        // Update the image processing part in addStories function
+        if (uploadedFileType.startsWith('image/')) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = imagePreview.src;
+            });
+
+            // Use the current preview dimensions
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            // Simply draw the image as it appears in preview
+            ctx.drawImage(img, 0, 0);
+
             const finalImageBlob = await new Promise(resolve => {
                 canvas.toBlob(resolve, 'image/jpeg', 0.95);
             });
@@ -515,24 +511,22 @@ async function fetchStories() {
 let currentRotation = 0;
 
 // Add this function to handle image rotation
+// Update the rotateImage function
 function rotateImage() {
     const imagePreview = document.getElementById('imagePreview');
     currentRotation = (currentRotation + 90) % 360;
     
     if (cropper) {
-        // If cropper exists, rotate within the cropper
         cropper.rotate(90);
     } else {
-        // If no cropper, rotate the image directly
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Create temporary image to get dimensions
         const img = new Image();
         img.src = imagePreview.src;
         
         img.onload = function() {
-            // Swap dimensions for rotation
+            // Set canvas dimensions based on rotation
             if (currentRotation === 90 || currentRotation === 270) {
                 canvas.width = img.height;
                 canvas.height = img.width;
@@ -541,16 +535,17 @@ function rotateImage() {
                 canvas.height = img.height;
             }
             
-            // Translate and rotate context
+            ctx.save();
             ctx.translate(canvas.width/2, canvas.height/2);
-            ctx.rotate(currentRotation * Math.PI/180);
+            ctx.rotate((currentRotation * Math.PI) / 180);
             ctx.drawImage(img, -img.width/2, -img.height/2);
+            ctx.restore();
             
-            // Update preview with rotated image
             imagePreview.src = canvas.toDataURL();
         };
     }
 }
+
 
 
 
@@ -634,69 +629,7 @@ function toggleCropping() {
     }
 }
 
-// Update maximize and minimize functions
-function maximizeImage() {
-    const imagePreview = document.getElementById('imagePreview');
-    if (currentScale < MAX_SCALE) {
-        currentScale += SCALE_STEP;
-        applyScale(imagePreview);
-    }
-}
 
-function minimizeImage() {
-    const imagePreview = document.getElementById('imagePreview');
-    if (currentScale > MIN_SCALE) {
-        currentScale -= SCALE_STEP;
-        applyScale(imagePreview);
-    }
-}
-
-function applyScale(imageElement) {
-    if (!imageElement) return;
-    
-    // Apply scale transform while preserving any existing rotation
-    const rotationTransform = `rotate(${currentRotation}deg)`;
-    const scaleTransform = `scale(${currentScale})`;
-    imageElement.style.transform = `${rotationTransform} ${scaleTransform}`;
-    
-    // Show resize controls
-    const resizeControls = document.getElementById('resizeControls');
-    if (resizeControls) {
-        resizeControls.style.display = 'flex';
-    }
-}
-
-
-function showResizeControls() {
-    const resizeControls = document.getElementById('resizeControls');
-    if (resizeControls) {
-        resizeControls.style.display = 'flex';
-        resizeControls.innerHTML = `
-            <button type="button" id="doneResizing" class="crop-btn done">Done</button>
-            <button type="button" id="cancelResizing" class="crop-btn cancel">Cancel</button>
-        `;
-        
-        // Add event listeners
-        document.getElementById('doneResizing').onclick = () => {
-            hideResizeControls();
-            // Keep the current scale
-        };
-        
-        document.getElementById('cancelResizing').onclick = () => {
-            currentScale = 1.0;
-            const imagePreview = document.getElementById('imagePreview');
-            applyScale(imagePreview);
-            hideResizeControls();
-        };
-    }
-}
-
-function hideResizeControls() {
-    const resizeControls = document.getElementById('resizeControls');
-    if (resizeControls) {
-        resizeControls.style.display = 'none';
-    }
-}
 
 
 
