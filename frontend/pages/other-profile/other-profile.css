@@ -216,6 +216,57 @@
     background-color: #5e8026;
 }
 
+/* Privacy indicator */
+.privacy-indicator {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.privacy-indicator i {
+    font-size: 16px;
+}
+
+/* Private content message */
+.private-content, .private-profile-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.private-content i, .private-profile-message i {
+    font-size: 48px;
+    color: #6c757d;
+    margin-bottom: 20px;
+}
+
+.private-content h3, .private-profile-message h2 {
+    margin-bottom: 10px;
+    color: #343a40;
+}
+
+.private-content p, .private-profile-message p {
+    color: #6c757d;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.private-profile-message {
+    padding: 60px 20px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .profile-header-content {

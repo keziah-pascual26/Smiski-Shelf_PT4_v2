@@ -148,4 +148,24 @@ router.post('/user/privacy', authenticateToken, async (req, res) => {
     }
 });
 
+// Get user privacy setting by username
+router.get('/privacy/:username', authenticateToken, async (req, res) => {
+    try {
+        const username = req.params.username;
+        const user = await User.findOne({ username: username });
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        // Return only the privacy setting
+        res.json({
+            isProfilePublic: user.isProfilePublic === true
+        });
+    } catch (error) {
+        console.error('Error fetching user privacy setting:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 module.exports = router;

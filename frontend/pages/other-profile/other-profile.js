@@ -135,10 +135,25 @@ if (tabButtons && tabButtons.length > 0) {
     });
 }
     
-// Update the loadUserLikedPosts function to match the pattern of loadUserPosts
+// Update the loadUserLikedPosts function to check privacy
 async function loadUserLikedPosts(username) {
     const userLikedFeed = document.getElementById('userLikedFeed');
     userLikedFeed.innerHTML = '<div class="loading">Loading liked posts...</div>';
+    
+    // Check if profile is private
+    const profileContainer = document.querySelector('.profile-container');
+    const isPublic = profileContainer ? profileContainer.dataset.isPublic === 'true' : true;
+    
+    if (!isPublic) {
+        userLikedFeed.innerHTML = `
+            <div class="private-content">
+                <i class="fas fa-lock"></i>
+                <h3>Private Content</h3>
+                <p>This user's liked posts are private.</p>
+            </div>
+        `;
+        return;
+    }
     
     try {
         // Make sure we're passing the visited user's username, not the logged-in user
@@ -185,33 +200,14 @@ async function loadUserLikedPosts(username) {
     }
 }
 
-            // Function to load target user's profile
-    async function loadTargetUserProfile(username) {
+async function loadTargetUserProfile(username) {
+    try {
+        console.log('Fetching profile data for:', username); // Debug log
+        
+        // Try to get user data directly from the user profile endpoint
         try {
-            console.log('Fetching profile data for:', username); // Debug log
-            
-            // Try to get user data directly first (if you have a user endpoint)
-            try {
-                const userResponse = await fetch(`http://localhost:3000/api/users/profile?username=${encodeURIComponent(username)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (userResponse.ok) {
-                    const userData = await userResponse.json();
-                    console.log('User data received directly:', userData);
-                    updateProfileUI(userData);
-                    return userData;
-                }
-            } catch (userError) {
-                console.log('Could not fetch user directly, trying posts endpoint');
-            }
-            
-            // Fallback to posts endpoint
-            let response = await fetch(`http://localhost:3000/posts?username=${encodeURIComponent(username)}`, {
+            // FIXED: Use the correct API endpoint path that matches your backend routes
+            const userResponse = await fetch(`http://localhost:3000/api/users/profile/${encodeURIComponent(username)}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -219,87 +215,195 @@ async function loadUserLikedPosts(username) {
                 }
             });
             
-            if (!response.ok) {
-                throw new Error(`Failed to fetch posts: ${response.status} ${response.statusText}`);
-            }
-            
-            const posts = await response.json();
-            console.log('Posts data received:', posts); // Debug log
-            
-            if (posts && posts.length > 0) {
-                // Extract user info from the first post
-                const userData = {
-                    username: posts[0].username,
-                    bio: 'No bio available', // Posts don't contain bio
-                    profilePicture: posts[0].userProfilePicture || null,
-                    _id: posts[0].userId // This might be undefined depending on your post model
-                };
+            if (userResponse.ok) {
+                const userData = await userResponse.json();
+                console.log('User data received directly:', userData);
                 
-                console.log('Extracted user data from posts:', userData);
+                // Store privacy setting in the profile container
+                const profileContainer = document.querySelector('.profile-page-container');
+                if (profileContainer) {
+                    // Explicitly check the boolean value to ensure correct privacy setting
+                    profileContainer.dataset.isPublic = userData.isProfilePublic === false ? 'false' : 'true';
+                    console.log('Profile privacy status from DB:', userData.isProfilePublic);
+                }
                 
-                // Update profile information
-                updateProfileUI(userData);
-                return userData;
-            } else {
-                // No posts found, create basic profile
-                const userData = {
-                    username: username,
-                    bio: 'No bio available',
-                    profilePicture: null,
-                    _id: null
-                };
-                
-                console.log('No posts found, created basic user data:', userData);
-                
-                // Update profile information with basic data
                 updateProfileUI(userData);
                 return userData;
             }
-        } catch (error) {
-            console.error('Error loading profile:', error);
+        } catch (userError) {
+            console.log('Could not fetch user directly, trying posts endpoint', userError);
+        }
+        
+        // Fallback to posts endpoint
+let response = await fetch(`http://localhost:3000/posts?username=${encodeURIComponent(username)}`, {
+    method: 'GET',
+    headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+    }
+});
+
+if (!response.ok) {
+    throw new Error(`Failed to fetch posts: ${response.status} ${response.statusText}`);
+}
+
+const posts = await response.json();
+console.log('Posts data received:', posts); // Debug log
+
+// Try to get privacy status directly from the database
+let isProfilePublic = true; // Default value
+try {
+    const privacyResponse = await fetch(`http://localhost:3000/api/users/privacy/${encodeURIComponent(username)}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    });
+    
+    if (privacyResponse.ok) {
+        const privacyData = await privacyResponse.json();
+        isProfilePublic = privacyData.isProfilePublic;
+        console.log('Privacy status from DB:', isProfilePublic);
+    }
+} catch (privacyError) {
+    console.log('Could not fetch privacy status, using default (public):', privacyError);
+}
+
+if (posts && posts.length > 0) {
+    // Extract user info from the first post
+    const userData = {
+        username: posts[0].username,
+        bio: 'No bio available', // Posts don't contain bio
+        profilePicture: posts[0].userProfilePicture || null,
+        _id: posts[0].userId, // This might be undefined depending on your post model
+        isProfilePublic: isProfilePublic // Use the value from the database
+    };
+    
+    console.log('Extracted user data from posts:', userData);
+    
+    // FIXED: Use the correct container selector
+    const profileContainer = document.querySelector('.profile-page-container');
+    if (profileContainer) {
+        profileContainer.dataset.isPublic = userData.isProfilePublic ? 'true' : 'false';
+    }
+    
+    // Update profile information
+    updateProfileUI(userData);
+    return userData;
+} else {
+    // No posts found, create basic profile
+    const userData = {
+        username: username,
+        bio: 'No bio available',
+        profilePicture: null,
+        _id: null,
+        isProfilePublic: isProfilePublic // Use the value from the database
+    };
+    
+    console.log('No posts found, created basic user data:', userData);
             
-            // Even if there's an error, still create a basic profile
-            const userData = {
-                username: username,
-                bio: 'No bio available',
-                profilePicture: null,
-                _id: null
-            };
+            // FIXED: Use the correct container selector
+            const profileContainer = document.querySelector('.profile-page-container');
+            if (profileContainer) {
+                profileContainer.dataset.isPublic = userData.isProfilePublic ? 'true' : 'false';
+            }
             
+            // Update profile information with basic data
             updateProfileUI(userData);
             return userData;
         }
-    }
+    } catch (error) {
+        console.error('Error loading profile:', error);
         
-        // Helper function to update profile UI
-        function updateProfileUI(userData) {
-            if (profileUsername) profileUsername.textContent = userData.username;
-            if (profileBio) profileBio.textContent = userData.bio || 'No bio available';
+        // Even if there's an error, still create a basic profile
+        const userData = {
+            username: username,
+            bio: 'No bio available',
+            profilePicture: null,
+            _id: null,
+            isProfilePublic: true // Default to public if we can't determine
+        };
+        
+        // FIXED: Use the correct container selector
+        const profileContainer = document.querySelector('.profile-page-container');
+        if (profileContainer) {
+            profileContainer.dataset.isPublic = userData.isProfilePublic ? 'true' : 'false';
+        }
+        
+        updateProfileUI(userData);
+        return userData;
+    }
+}
+        
+function updateProfileUI(userData) {
+    if (profileUsername) profileUsername.textContent = userData.username;
+    if (profileBio) profileBio.textContent = userData.bio || 'No bio available';
+    
+    if (profilePicture) {
+        if (userData.profilePicture) {
+            profilePicture.src = `/uploads/${userData.profilePicture}`;
+        } else {
+            profilePicture.src = '/public/default-avatar.png';
+        }
+    }
+    
+    // Check if profile is private - FIXED: Ensure proper boolean conversion
+    const isPublic = userData.isProfilePublic !== undefined ? Boolean(userData.isProfilePublic) : true;
+    console.log('Profile privacy status in updateProfileUI:', isPublic, 'Raw value:', userData.isProfilePublic);
+    
+    // Add privacy indicator if profile is private
+    const profileHeader = document.querySelector('.profile-header');
+    if (profileHeader) {
+        // Remove any existing privacy indicator
+        const existingIndicator = profileHeader.querySelector('.privacy-indicator');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+        
+        if (!isPublic) {
+            const privacyIndicator = document.createElement('div');
+            privacyIndicator.className = 'privacy-indicator';
+            privacyIndicator.innerHTML = '<i class="fas fa-lock"></i> This profile is private';
+            profileHeader.appendChild(privacyIndicator);
             
-            if (profilePicture) {
-                if (userData.profilePicture) {
-                    profilePicture.src = `/uploads/${userData.profilePicture}`;
-                } else {
-                    profilePicture.src = '/public/default-avatar.png';
-                }
+            // Hide tabs if profile is private
+            const tabsContainer = document.querySelector('.profile-tabs');
+            if (tabsContainer) {
+                tabsContainer.style.display = 'none';
             }
             
-            // Load user stats
-            if (postsCount || friendsCount || storiesCount) {
-                loadUserStats(userData.username);
+            // Show privacy message in content area
+            const contentContainer = document.querySelector('.profile-content');
+            if (contentContainer) {
+                contentContainer.innerHTML = `
+                    <div class="private-profile-message">
+                        <i class="fas fa-lock"></i>
+                        <h2>This profile is private</h2>
+                        <p>The user has chosen to keep their content private.</p>
+                    </div>
+                `;
             }
-            
-            // Check friendship status and update UI accordingly
-            if (userData._id && friendActionBtn) {
-                checkFriendshipStatus(userData._id);
-            }
-            
-            // Store user ID for later use
-            const profileContainer = document.querySelector('.profile-container');
-            if (profileContainer) {
-                profileContainer.dataset.userId = userData._id;
+        } else {
+            // Show tabs if profile is public
+            const tabsContainer = document.querySelector('.profile-tabs');
+            if (tabsContainer) {
+                tabsContainer.style.display = 'flex';
             }
         }
+    }
+    
+    // Check friendship status and update UI accordingly
+    if (userData._id && friendActionBtn) {
+        checkFriendshipStatus(userData._id);
+    }
+    
+    // Store user ID for later use
+    const profileContainer = document.querySelector('.profile-page-container');
+    if (profileContainer) {
+        profileContainer.dataset.userId = userData._id;
+    }
+}
     
             // Function to load user stats
     async function loadUserStats(username) {
@@ -522,103 +626,134 @@ async function loadUserLikedPosts(username) {
         }
     }
     
-        // Function to load user posts
-        async function loadUserPosts(username) {
-            const userPostsFeed = document.getElementById('userPostsFeed');
-            userPostsFeed.innerHTML = '<div class="loading">Loading posts...</div>';
-            
-            try {
-                // Using the correct endpoint format from your postRoutes.js
-                // The route is '/posts?username=X' not '/posts/user/X'
-                const response = await fetch(`http://localhost:3000/posts?username=${encodeURIComponent(username)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch posts: ${response.status} ${response.statusText}`);
-                }
-                
-                const posts = await response.json();
-                console.log(`Loaded ${posts.length} posts for user ${username}:`, posts);
-                
-                if (posts.length === 0) {
-                    userPostsFeed.innerHTML = `
-                        <div class="empty-state">
-                            <h3>No posts yet</h3>
-                            <p>${username} hasn't shared any posts yet.</p>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                // Render posts
-                userPostsFeed.innerHTML = '';
-                posts.forEach(post => {
-                    const postElement = createPostElement(post);
-                    userPostsFeed.appendChild(postElement);
-                });
-            } catch (error) {
-                console.error('Error loading posts:', error);
-                userPostsFeed.innerHTML = `
-                    <div class="empty-state">
-                        <h3>Error loading posts</h3>
-                        <p>We couldn't load the posts. Please try again later.</p>
-                        <p class="error-details">${error.message}</p>
-                    </div>
-                `;
-            }
-        }
+// Fix the privacy check in loadUserPosts
+async function loadUserPosts(username) {
+    const userPostsFeed = document.getElementById('userPostsFeed');
+    userPostsFeed.innerHTML = '<div class="loading">Loading posts...</div>';
     
-    // Function to load user stories
-    async function loadUserStories(username) {
-        const userStoriesFeed = document.getElementById('userStoriesFeed');
-        userStoriesFeed.innerHTML = '<div class="loading">Loading stories...</div>';
+    // Check if profile is private - FIXED: Use the correct container and string comparison
+    const profileContainer = document.querySelector('.profile-page-container');
+    const isPublic = profileContainer ? profileContainer.dataset.isPublic === 'true' : true;
+    console.log('Loading posts, isPublic:', isPublic);
+    
+    if (!isPublic) {
+        userPostsFeed.innerHTML = `
+            <div class="private-content">
+                <i class="fas fa-lock"></i>
+                <h3>Private Content</h3>
+                <p>This user's posts are private.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    try {
+        // Using the correct endpoint format from your postRoutes.js
+        // The route is '/posts?username=X' not '/posts/user/X'
+        const response = await fetch(`http://localhost:3000/posts?username=${encodeURIComponent(username)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
         
-        try {
-            const response = await fetch(`http://localhost:3000/api/stories/user/${encodeURIComponent(username)}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to fetch stories');
-            }
-            
-            const stories = await response.json();
-            
-            if (stories.length === 0) {
-                userStoriesFeed.innerHTML = `
-                    <div class="empty-state">
-                        <h3>No stories yet</h3>
-                        <p>${username} hasn't shared any stories yet.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Render stories
-            userStoriesFeed.innerHTML = '';
-            stories.forEach(story => {
-                const storyElement = createStoryElement(story);
-                userStoriesFeed.appendChild(storyElement);
-            });
-        } catch (error) {
-            console.error('Error loading stories:', error);
-            userStoriesFeed.innerHTML = `
+        if (!response.ok) {
+            throw new Error(`Failed to fetch posts: ${response.status} ${response.statusText}`);
+        }
+        
+        const posts = await response.json();
+        console.log(`Loaded ${posts.length} posts for user ${username}:`, posts);
+        
+        if (posts.length === 0) {
+            userPostsFeed.innerHTML = `
                 <div class="empty-state">
-                    <h3>Error loading stories</h3>
-                    <p>We couldn't load the stories. Please try again later.</p>
+                    <h3>No posts yet</h3>
+                    <p>${username} hasn't shared any posts yet.</p>
                 </div>
             `;
+            return;
         }
+        
+        // Render posts
+        userPostsFeed.innerHTML = '';
+        posts.forEach(post => {
+            const postElement = createPostElement(post);
+            userPostsFeed.appendChild(postElement);
+        });
+    } catch (error) {
+        console.error('Error loading posts:', error);
+        userPostsFeed.innerHTML = `
+            <div class="empty-state">
+                <h3>Error loading posts</h3>
+                <p>We couldn't load the posts. Please try again later.</p>
+                <p class="error-details">${error.message}</p>
+            </div>
+        `;
     }
+}
+    
+    // Function to load user stories
+async function loadUserStories(username) {
+    const userStoriesFeed = document.getElementById('userStoriesFeed');
+    userStoriesFeed.innerHTML = '<div class="loading">Loading stories...</div>';
+    
+    // Check if profile is private
+    const profileContainer = document.querySelector('.profile-container');
+    const isPublic = profileContainer ? profileContainer.dataset.isPublic === 'true' : true;
+    
+    if (!isPublic) {
+        userStoriesFeed.innerHTML = `
+            <div class="private-content">
+                <i class="fas fa-lock"></i>
+                <h3>Private Content</h3>
+                <p>This user's stories are private.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    try {
+        const response = await fetch(`http://localhost:3000/api/stories/user/${encodeURIComponent(username)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch stories');
+        }
+        
+        const stories = await response.json();
+        
+        if (stories.length === 0) {
+            userStoriesFeed.innerHTML = `
+                <div class="empty-state">
+                    <h3>No stories yet</h3>
+                    <p>${username} hasn't shared any stories yet.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Render stories
+        userStoriesFeed.innerHTML = '';
+        stories.forEach(story => {
+            const storyElement = createStoryElement(story);
+            userStoriesFeed.appendChild(storyElement);
+        });
+    } catch (error) {
+        console.error('Error loading stories:', error);
+        userStoriesFeed.innerHTML = `
+            <div class="empty-state">
+                <h3>Error loading stories</h3>
+                <p>We couldn't load the stories. Please try again later.</p>
+            </div>
+        `;
+    }
+}
     
     // Function to load user friends
     async function loadUserFriends(username) {
