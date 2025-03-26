@@ -17,7 +17,6 @@
             <nav class="admin-nav">
                 <ul>
                     <li class="active"><a href="#users-section"><i class="fas fa-users"></i> Users</a></li>
-                    <li><a href="#stories-section"><i class="fas fa-book-open"></i> Stories</a></li>
                     <li><a href="#posts-section"><i class="fas fa-clipboard"></i> Posts</a></li>
                     <li><a href="#settings-section"><i class="fas fa-cog"></i> Settings</a></li>
                 </ul>
@@ -133,6 +132,12 @@
                     <div class="search-box">
                         <input type="text" id="post-search" placeholder="Search posts...">
                         <i class="fas fa-search"></i>
+                    </div>
+                    <div class="filter-container">
+                        <select id="user-filter">
+                            <option value="">Filter by user</option>
+                            <!-- User options will be populated dynamically -->
+                        </select>
                     </div>
                     <button id="refresh-posts-btn" class="refresh-btn">
                         <i class="fas fa-sync-alt"></i> Refresh

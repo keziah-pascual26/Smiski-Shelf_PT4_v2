@@ -64,6 +64,9 @@ async function initializeDashboard() {
         // Fetch users data
         await fetchUsers();
         
+        // Populate user filter dropdown
+        await populateUserFilter();
+        
         // Fetch posts data
         await fetchPosts();
         
@@ -74,6 +77,9 @@ async function initializeDashboard() {
         // Set up search functionality
         document.getElementById("user-search").addEventListener("input", filterUsers);
         document.getElementById("post-search").addEventListener("input", filterPosts);
+        
+        // Set up user filter for posts
+        document.getElementById("user-filter").addEventListener("change", filterPosts);
     } catch (error) {
         console.error("Error initializing dashboard:", error);
     }
@@ -881,5 +887,69 @@ async function deletePost(postId) {
     } catch (error) {
         console.error("Error deleting post:", error);
         alert("Failed to delete post");
+    }
+}
+
+// Add the filterPosts function
+function filterPosts() {
+    const searchTerm = document.getElementById("post-search").value.toLowerCase();
+    const userFilter = document.getElementById("user-filter").value.toLowerCase();
+    
+    if (!searchTerm && !userFilter) {
+        renderPosts(allPosts);
+        return;
+    }
+    
+    const filteredPosts = allPosts.filter(post => {
+        const matchesSearch = !searchTerm || 
+            post._id.toLowerCase().includes(searchTerm) ||
+            (post.text && post.text.toLowerCase().includes(searchTerm));
+            
+        const matchesUser = !userFilter || 
+            (post.username && post.username.toLowerCase().includes(userFilter));
+            
+        return matchesSearch && matchesUser;
+    });
+    
+    renderPosts(filteredPosts);
+}
+
+// Add function to populate user filter dropdown
+async function populateUserFilter() {
+    try {
+        const token = localStorage.getItem("adminToken");
+        
+        // Fetch all unique usernames from posts
+        const response = await fetch("http://localhost:3000/api/admin/users?limit=100", {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error("Failed to fetch users for filter");
+        }
+        
+        const data = await response.json();
+        const users = data.users;
+        
+        // Get the user filter dropdown
+        const userFilter = document.getElementById("user-filter");
+        
+        // Clear existing options except the first one
+        while (userFilter.options.length > 1) {
+            userFilter.remove(1);
+        }
+        
+        // Add users to dropdown
+        users.forEach(user => {
+            const option = document.createElement("option");
+            option.value = user.username;
+            option.textContent = user.username;
+            userFilter.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error("Error populating user filter:", error);
     }
 }

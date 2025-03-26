@@ -653,3 +653,22 @@ tr:hover {
     color: var(--primary-color);
     font-size: 14px;
 }
+
+.filter-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+#user-filter {
+    min-width: 150px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+}
+
+#user-filter:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
