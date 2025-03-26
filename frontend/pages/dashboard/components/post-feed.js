@@ -233,20 +233,59 @@ document.addEventListener("DOMContentLoaded", async () => {
         `;
         document.head.appendChild(styleElement);
 
-    const postFeed = document.querySelector("#postFeed"); // Ensure this exists
-    if (!postFeed) {
-        console.error("❌ #postFeed container not found!");
-        return;
-    }
-
-    // Get logged-in user info from localStorage
-    const loggedInUsername = localStorage.getItem("username"); // Ensure it's stored during login
-    const loggedInUserId = localStorage.getItem("userId"); // Get userId from localStorage
+        const postFeed = document.querySelector("#postFeed"); // Ensure this exists
+        if (!postFeed) {
+            console.error("❌ #postFeed container not found!");
+            return;
+        }
     
-    if (!loggedInUsername || !loggedInUserId) {
-        console.error("❌ No logged-in user found or missing userId!");
-        return;
-    }
+        // Get logged-in user info from localStorage
+        const loggedInUsername = localStorage.getItem("username"); // Ensure it's stored during login
+        const loggedInUserId = localStorage.getItem("userId"); // Get userId from localStorage
+        
+        if (!loggedInUsername || !loggedInUserId) {
+            console.error("❌ No logged-in user found or missing userId!");
+            return;
+        }
+        
+        // Cache for profile pictures to avoid repeated API calls
+        const profilePictureCache = new Map();
+        
+        // Function to retrieve user profile picture
+        async function getUserProfilePicture(username) {
+            try {
+                // Check if we already have this profile picture in cache
+                if (profilePictureCache.has(username)) {
+                    return profilePictureCache.get(username);
+                }
+                
+                const token = localStorage.getItem('token');
+                const response = await fetch(`http://localhost:3000/api/users/byUsername/${encodeURIComponent(username)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch user data: ${response.status}`);
+                }
+                
+                const userData = await response.json();
+                const profilePicUrl = userData.profilePicture 
+                    ? `http://localhost:3000${userData.profilePicture}` 
+                    : '/public/no-profile.png';
+                    
+                // Store in cache
+                profilePictureCache.set(username, profilePicUrl);
+                
+                return profilePicUrl;
+            } catch (error) {
+                console.error(`Error fetching profile picture for ${username}:`, error);
+                return '/public/no-profile.png'; // Default image on error
+            }
+        }
 
     async function likePost(postId) {
         try {
@@ -494,13 +533,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Refresh posts every 30 seconds
     setInterval(retrievePosts, 30000);
 
-    function renderPosts(posts) {
+    async function renderPosts(posts) {
         const postFeed = document.querySelector("#postFeed");
         if (!postFeed) return;
 
         postFeed.innerHTML = ""; // Clear previous posts
 
-        posts.forEach(post => {
+        // Process posts in parallel for efficiency
+        const postPromises = posts.map(async (post) => {
             const postElement = document.createElement("div");
             postElement.classList.add("post");
             postElement.dataset.userId = post.userId; // Add userId as data attribute
@@ -510,6 +550,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             // Use the post's username directly from the post object
             const postUsername = post.username; // This is the username of the post creator
+            
+            // Get profile picture URL for this post's author
+            const profilePicUrl = await getUserProfilePicture(postUsername);
 
             let mediaContent = "";
             if (post.media && post.media.length > 0) {
@@ -553,7 +596,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             postElement.innerHTML = `
                 <div class="post-header">
-                    <img src="/public/no-profile.png" alt="User Profile">
+                    <img src="${profilePicUrl}" alt="User Profile">
                     <div class="post-header-info">
                         <span class="username">${postUsername}</span>
                         <span class="timestamp">${formattedTimestamp}</span>
@@ -588,7 +631,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 </div>
             `;
 
-            postFeed.appendChild(postElement);
+            return postElement;
+        });
+
+        // Wait for all post elements to be created with their profile pictures
+        const postElements = await Promise.all(postPromises);
+        
+        // Add all posts to the feed
+        postElements.forEach(element => {
+            postFeed.appendChild(element);
         });
 
         // Add event listeners
