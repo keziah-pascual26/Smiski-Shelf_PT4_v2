@@ -78,56 +78,103 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
     
-// ... existing code ...
-
-async function loadUserProfile() {
-    try {
-        const response = await fetch('http://localhost:3000/api/user/profile', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+    async function loadUserProfile() {
+        try {
+            const response = await fetch('http://localhost:3000/api/user/profile', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch profile');
             }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch profile');
+            
+            const userData = await response.json();
+            
+            // Update profile information
+            if (profileUsername) profileUsername.textContent = userData.username;
+            if (profileBio) profileBio.textContent = userData.bio || 'No bio yet...';
+            
+            // Update profile picture
+            if (profilePicture) {
+                if (userData.profilePicture) {
+                    // Use the full URL to the profile picture
+                    profilePicture.src = `http://localhost:3000${userData.profilePicture}`;
+                    console.log('Profile picture set to:', profilePicture.src);
+                } else {
+                    // Use default profile picture
+                    profilePicture.src = '/public/no-profile.png';
+                    console.log('Using default profile picture');
+                }
+            }
+            
+            // Set privacy toggle state based on user data
+            if (privacyToggle && privacyStatus) {
+                privacyToggle.checked = !userData.isProfilePublic; // Toggle is ON when profile is private
+                updatePrivacyStatusText(userData.isProfilePublic);
+            }
+    
+            // Get the username from the profile data
+            const username = userData.username;
+            
+            // Fetch and update posts count
+            await updatePostsCount(username);
+            
+            // Fetch and update friends count
+            await updateFriendsCount();
+            
+            // Update stories count (if you have this functionality)
+            // await updateStoriesCount(username);
+            
+            return userData;
+        } catch (error) {
+            console.error('Error loading profile:', error);
+            showError('Failed to load profile. Please try again later.');
         }
-        
-        const userData = await response.json();
-        
-        // Update profile information
-        profileUsername.textContent = userData.username;
-        profileBio.textContent = userData.bio || 'No bio yet';
-        
-        // Update profile picture if available
-        if (userData.profilePicture) {
-            profilePicture.src = `/uploads/${userData.profilePicture}`;
-        }
-        
-        // Set privacy toggle state based on user data
-        if (privacyToggle && privacyStatus) {
-            privacyToggle.checked = !userData.isProfilePublic; // Toggle is ON when profile is private
-            updatePrivacyStatusText(userData.isProfilePublic);
-        }
-
-        // Get the username from the profile data
-        const username = userData.username;
-        
-        // Fetch and update posts count
-        await updatePostsCount(username);
-        
-        // Fetch and update friends count
-        await updateFriendsCount();
-        
-        // Update stories count (if you have this functionality)
-        // await updateStoriesCount(username);
-        
-    } catch (error) {
-        console.error('Error loading profile:', error);
-        alert('Failed to load profile. Please try again.');
     }
-}
+    
+    // Function to retrieve profile picture for comments and posts
+    async function retrieveProfilePicture(username) {
+        try {
+            // Check if it's the current user
+            const currentUsername = localStorage.getItem('username');
+            if (username === currentUsername) {
+                // Use the profile picture already loaded for the current user
+                const currentUserPic = document.getElementById('profilePicture');
+                if (currentUserPic && currentUserPic.src && !currentUserPic.src.includes('no-profile.png')) {
+                    return currentUserPic.src;
+                }
+            }
+            
+            // Fetch the user's profile data to get their profile picture
+            const response = await fetch(`http://localhost:3000/api/users/byUsername/${encodeURIComponent(username)}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to fetch user data: ${response.status}`);
+            }
+            
+            const userData = await response.json();
+            
+            // Return the profile picture URL or default image
+            if (userData.profilePicture) {
+                return `http://localhost:3000${userData.profilePicture}`;
+            } else {
+                return '/public/no-profile.png';
+            }
+        } catch (error) {
+            console.error(`Error retrieving profile picture for ${username}:`, error);
+            return '/public/no-profile.png'; // Default image on error
+        }
+    }
 
 // Add these new functions for privacy toggle
 function updatePrivacyStatusText(isPublic) {
