@@ -654,6 +654,10 @@ function createPostElement(post, isLikedTab = false) {
             padding: 16px;
             transition: box-shadow 0.3s ease;
             border: 1px solid #e0e0e0;
+            width: 100%; /* Changed from 70% to 100% to reduce white space */
+            max-width: 700px; /* Added max-width for larger screens */
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .post:hover {
@@ -724,7 +728,7 @@ function createPostElement(post, isLikedTab = false) {
             font-size: 15px;
             line-height: 1.5;
             color: #1c1e21;
-            white-space: pre-wrap;
+            
             word-break: break-word;
         }
         
@@ -732,37 +736,44 @@ function createPostElement(post, isLikedTab = false) {
             margin: 0 0 12px 0;
         }
         
-        /* Post Media */
+                /* Post Media */
         .post-media {
             margin-bottom: 12px;
             border-radius: 8px;
-            overflow: hidden; /* Changed from visible to hidden */
-            background-color: transparent;
+            overflow: hidden;
+            background-color: #000; /* Black background */
             text-align: center;
-            padding: 0;
-            max-width: 100%; /* Ensure container doesn't exceed parent width */
+            padding: 10px;
+            max-width: 97%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .post-media img {
-            width: 100%; /* Changed from auto to 100% */
-            max-width: 100%;
+            max-width: 90%;
+            max-height: 500px; /* Added max-height to prevent overly tall images */
+            width: auto; /* Changed from fixed width to auto */
             height: auto;
-            object-fit: contain;
+            object-fit: contain; /* This ensures the entire image is visible */
             display: block;
             margin: 0 auto;
-            border-radius: 0; /* Remove border radius from image */
+            border-radius: 4px;
         }
 
         .post-media video {
-            width: 100%; /* Changed from auto to 100% */
-            max-width: 100%;
+            max-width: 90%;
+            max-height: 500px; /* Added max-height for consistency */
+            width: auto; /* Changed from fixed width to auto */
             height: auto;
             object-fit: contain;
             display: block;
             margin: 0 auto;
-            background-color: #000;
-            border-radius: 0; /* Remove border radius from video */
+            background-color: transparent;
+            border-radius: 4px;
         }
+
+        
         
         /* Post Stats */
         .post-stats {
@@ -1207,6 +1218,24 @@ function createPostElement(post, isLikedTab = false) {
     // Function to toggle like on a post
     async function toggleLike(postId, likeButton) {
         try {
+            // Find the post stats container to get the current likes count
+            const postElement = likeButton.closest('.post');
+            const likesCountElement = postElement.querySelector('.stat-item:first-child');
+            const likesText = likesCountElement.textContent.trim();
+            const currentLikes = parseInt(likesText.match(/\d+/) || [0])[0];
+            
+            // Update UI immediately
+            if (likeButton.classList.contains('liked')) {
+                likeButton.classList.remove('liked');
+                likeButton.querySelector('i').style.color = '#65676b';
+                likesCountElement.innerHTML = `<i class="fas fa-heart"></i> ${Math.max(0, currentLikes - 1)} likes`;
+            } else {
+                likeButton.classList.add('liked');
+                likeButton.querySelector('i').style.color = '#1877f2';
+                likesCountElement.innerHTML = `<i class="fas fa-heart"></i> ${currentLikes + 1} likes`;
+            }
+            
+            // Send request to server
             const response = await fetch(`http://localhost:3000/posts/${postId}/like`, {
                 method: 'POST',
                 headers: {
@@ -1219,21 +1248,19 @@ function createPostElement(post, isLikedTab = false) {
                 throw new Error('Failed to toggle like');
             }
             
-            // Update UI optimistically
-            const likesCountElement = likeButton.querySelector('i').nextSibling;
-            const currentLikes = parseInt(likesCountElement.textContent.trim());
+            // Get the actual likes count from the response
+            const result = await response.json();
+            const serverLikesCount = result.likes?.length || 0;
             
-            if (likeButton.classList.contains('liked')) {
-                likeButton.classList.remove('liked');
-                likesCountElement.textContent = ` ${currentLikes - 1}`;
-            } else {
-                likeButton.classList.add('liked');
-                likesCountElement.textContent = ` ${currentLikes + 1}`;
-            }
+            // Update the UI with the correct count from server
+            likesCountElement.innerHTML = `<i class="fas fa-heart"></i> ${serverLikesCount} likes`;
             
         } catch (error) {
             console.error('Error toggling like:', error);
             alert('Failed to like/unlike post. Please try again.');
+            
+            // Reload posts to ensure UI is in sync with server
+            loadUserPosts();
         }
     }
     
