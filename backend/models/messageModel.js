@@ -13,7 +13,20 @@ const messageSchema = new mongoose.Schema({
     },
     text: {
         type: String,
-        required: true
+        required: function() {
+            return !this.mediaUrl; // Text is required only if there's no media
+        }
+    },
+    mediaUrl: {
+        type: String,
+        required: function() {
+            return !this.text; // Media is required only if there's no text
+        }
+    },
+    mediaType: {
+        type: String,
+        enum: ['image', 'video', null],
+        default: null
     },
     read: {
         type: Boolean,

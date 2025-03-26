@@ -3,6 +3,9 @@ const router = express.Router();
 const User = require('../models/userModel');
 const Message = require('../models/messageModel');
 const authenticateToken = require('../middleware/authMiddleware');
+const upload = require('../config/multer');
+const path = require('path');
+
 
 // Get messages between current user and another user
 router.get('/messages/:userId', authenticateToken, async (req, res) => {
@@ -98,6 +101,47 @@ router.post('/messages/send', authenticateToken, async (req, res) => {
     }
 });
 
+// Send a message with media
+router.post('/messages/send-media', authenticateToken, upload.single('media'), async (req, res) => {
+    try {
+        const { recipientUsername, text } = req.body;
+        
+        if (!recipientUsername || !req.file) {
+            return res.status(400).json({ message: 'Recipient username and media file are required' });
+        }
+        
+        // Find recipient by username
+        const recipientUser = await User.findOne({ username: recipientUsername });
+        
+        if (!recipientUser) {
+            return res.status(404).json({ message: 'Recipient not found' });
+        }
+        
+        // Determine media type based on mimetype
+        const mediaType = req.file.mimetype.startsWith('image/') ? 'image' : 'video';
+        
+        // Create and save the message
+        const newMessage = new Message({
+            senderId: req.user.id,
+            recipientId: recipientUser._id,
+            text: text || '',
+            mediaUrl: req.file.filename,
+            mediaType: mediaType
+        });
+        
+        await newMessage.save();
+        
+        res.status(200).json({ 
+            message: 'Message with media sent successfully',
+            messageId: newMessage._id,
+            mediaFilename: req.file.filename
+        });
+    } catch (error) {
+        console.error('Error sending message with media:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Get messages between current user and another user by username
 router.get('/messages/by-username/:username', authenticateToken, async (req, res) => {
     try {
@@ -132,6 +176,8 @@ router.get('/messages/by-username/:username', authenticateToken, async (req, res
             id: message._id,
             sender: message.senderId.toString() === req.user.id.toString() ? 'self' : 'other',
             text: message.text,
+            mediaUrl: message.mediaUrl || null,
+            mediaType: message.mediaType || null,
             timestamp: message.createdAt
         }));
         
@@ -203,6 +249,8 @@ router.get('/messages/unread', authenticateToken, async (req, res) => {
             senderId: message.senderId.toString(),
             senderName: senderMap[message.senderId.toString()] || 'Unknown User',
             text: message.text,
+            mediaUrl: message.mediaUrl || null,
+            mediaType: message.mediaType || null,
             timestamp: message.createdAt
         }));
         

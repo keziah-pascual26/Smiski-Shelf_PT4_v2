@@ -73,6 +73,67 @@ document.addEventListener('DOMContentLoaded', function() {
             align-self: flex-end;
             margin-top: 2px;
         }
+        
+        /* Media sharing styles */
+        .media-upload-btn {
+            background: none;
+            border: none;
+            color: #555;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px 10px;
+        }
+        
+        .media-upload-btn:hover {
+            color: #007bff;
+        }
+        
+        .media-upload-placeholder {
+            padding: 10px;
+            background-color: rgba(0,0,0,0.05);
+            border-radius: 5px;
+        }
+        
+        .shared-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .shared-video {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 5px;
+        }
+        
+        .message-media {
+            margin-bottom: 5px;
+        }
+        
+        /* Chat input container with media button */
+        .chat-input-container {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #eee;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            margin-right: 5px;
+        }
+        
+        .chat-send-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 15px;
+            cursor: pointer;
+        }
     `;
     document.head.appendChild(style);
 });
@@ -177,7 +238,10 @@ async function fetchUnreadMessages() {
                 } else {
                     // If chat is not open, we'll show notification when user opens the app
                     const latestMessage = senderInfo.messages[senderInfo.messages.length - 1];
-                    notifyMessageReceived(senderId, senderInfo.senderName, latestMessage.text);
+                    const messageText = latestMessage.mediaUrl ? 
+                        `[${latestMessage.mediaType === 'image' ? 'Image' : 'Video'}]${latestMessage.text ? ' ' + latestMessage.text : ''}` : 
+                        latestMessage.text;
+                    notifyMessageReceived(senderId, senderInfo.senderName, messageText, latestMessage);
                 }
             });
         }
@@ -193,7 +257,7 @@ function showUnreadChats() {
     fetchUnreadMessages();
 }
 
-function notifyMessageReceived(senderId, senderName, messageText) {
+function notifyMessageReceived(senderId, senderName, messageText, messageData) {
     // Check if chat is already open
     const existingChat = document.querySelector(`.chat-container[data-user-id="${senderId}"]`);
     
@@ -205,12 +269,42 @@ function notifyMessageReceived(senderId, senderName, messageText) {
         
         // Format the message with proper styling
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        messageElement.innerHTML = `
-            <div class="message-content">
-                <div class="message-text">${messageText}</div>
-                <div class="message-time">${time}</div>
-            </div>
-        `;
+        
+        // Check if message has media
+        if (messageData && messageData.mediaUrl) {
+            if (messageData.mediaType === 'image') {
+                messageElement.innerHTML = `
+                    <div class="message-content">
+                        <div class="message-media">
+                            <img src="/uploads/${messageData.mediaUrl}" alt="Shared image" class="shared-image">
+                        </div>
+                        ${messageData.text ? `<div class="message-text">${messageData.text}</div>` : ''}
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+            } else if (messageData.mediaType === 'video') {
+                messageElement.innerHTML = `
+                    <div class="message-content">
+                        <div class="message-media">
+                            <video controls class="shared-video">
+                                <source src="/uploads/${messageData.mediaUrl}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        ${messageData.text ? `<div class="message-text">${messageData.text}</div>` : ''}
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+            }
+        } else {
+            // Regular text message
+            messageElement.innerHTML = `
+                <div class="message-content">
+                    <div class="message-text">${messageText}</div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+        }
         
         messagesContainer.appendChild(messageElement);
         
@@ -241,12 +335,42 @@ function notifyMessageReceived(senderId, senderName, messageText) {
                 
                 // Format the message with proper styling
                 const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                messageElement.innerHTML = `
-                    <div class="message-content">
-                        <div class="message-text">${messageText}</div>
-                        <div class="message-time">${time}</div>
-                    </div>
-                `;
+                
+                // Check if message has media
+                if (messageData && messageData.mediaUrl) {
+                    if (messageData.mediaType === 'image') {
+                        messageElement.innerHTML = `
+                            <div class="message-content">
+                                <div class="message-media">
+                                    <img src="/uploads/${messageData.mediaUrl}" alt="Shared image" class="shared-image">
+                                </div>
+                                ${messageData.text ? `<div class="message-text">${messageData.text}</div>` : ''}
+                                <div class="message-time">${time}</div>
+                            </div>
+                        `;
+                    } else if (messageData.mediaType === 'video') {
+                        messageElement.innerHTML = `
+                            <div class="message-content">
+                                <div class="message-media">
+                                    <video controls class="shared-video">
+                                        <source src="/uploads/${messageData.mediaUrl}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                                ${messageData.text ? `<div class="message-text">${messageData.text}</div>` : ''}
+                                <div class="message-time">${time}</div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    // Regular text message
+                    messageElement.innerHTML = `
+                        <div class="message-content">
+                            <div class="message-text">${messageText}</div>
+                            <div class="message-time">${time}</div>
+                        </div>
+                    `;
+                }
                 
                 messagesContainer.appendChild(messageElement);
                 
@@ -285,8 +409,6 @@ function openChat(userId, username) {
         return;
     }
     
-    // Rest of your existing code...
-    
     // Check if the friends section has an openChat function
     if (typeof window.openChat === 'function' && window.openChat !== openChat) {
         // Call the external openChat function only if it's not this same function
@@ -317,6 +439,10 @@ function openChat(userId, username) {
             </div>
             <div class="chat-input-container">
                 <input type="text" class="chat-input" placeholder="Type a message...">
+                <button class="media-upload-btn" title="Attach media">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <input type="file" class="media-file-input" accept="image/*,video/*" style="display:none">
                 <button class="chat-send-btn">Send</button>
             </div>
         `;
@@ -338,6 +464,20 @@ function openChat(userId, username) {
         chatContainer.querySelector('.chat-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 sendMessage(userId);
+            }
+        });
+        
+        // Add media upload functionality
+        const mediaUploadBtn = chatContainer.querySelector('.media-upload-btn');
+        const mediaFileInput = chatContainer.querySelector('.media-file-input');
+        
+        mediaUploadBtn.addEventListener('click', function() {
+            mediaFileInput.click();
+        });
+        
+        mediaFileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                handleMediaUpload(userId, this.files[0]);
             }
         });
         
@@ -414,12 +554,42 @@ async function loadMessages(userId) {
                     messageElement.className = `message ${message.sender === 'self' ? 'sent' : 'message-received'}`;
                     
                     const time = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    messageElement.innerHTML = `
-                        <div class="message-content">
-                            <div class="message-text">${message.text}</div>
-                            <div class="message-time">${time}</div>
-                        </div>
-                    `;
+                    
+                    // Check if message has media
+                    if (message.mediaUrl) {
+                        if (message.mediaType === 'image') {
+                            messageElement.innerHTML = `
+                                <div class="message-content">
+                                    <div class="message-media">
+                                        <img src="/uploads/${message.mediaUrl}" alt="Shared image" class="shared-image">
+                                    </div>
+                                    ${message.text ? `<div class="message-text">${message.text}</div>` : ''}
+                                    <div class="message-time">${time}</div>
+                                </div>
+                            `;
+                        } else if (message.mediaType === 'video') {
+                            messageElement.innerHTML = `
+                                <div class="message-content">
+                                    <div class="message-media">
+                                        <video controls class="shared-video">
+                                            <source src="/uploads/${message.mediaUrl}" type="video/mp4">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div>
+                                    ${message.text ? `<div class="message-text">${message.text}</div>` : ''}
+                                    <div class="message-time">${time}</div>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        // Regular text message
+                        messageElement.innerHTML = `
+                            <div class="message-content">
+                                <div class="message-text">${message.text}</div>
+                                <div class="message-time">${time}</div>
+                            </div>
+                        `;
+                    }
                     
                     chatMessages.appendChild(messageElement);
                 });
@@ -561,8 +731,6 @@ async function sendMessage(userId) {
             body: JSON.stringify(requestData)
         });
         
-        
-        
         const responseData = await response.json();
         console.log('Message send response:', responseData);
         
@@ -582,7 +750,129 @@ async function sendMessage(userId) {
     }
 }
 
-function createNotification(sender, message) {
+// New function to handle media uploads
+async function handleMediaUpload(userId, file) {
+    const chatContainer = document.querySelector(`.chat-container[data-user-id="${userId}"]`);
+    if (!chatContainer) {
+        console.error('Chat container not found');
+        return;
+    }
+    
+    const recipientUser = chatContainer.querySelector('.chat-header span').textContent.trim();
+    const messageInput = chatContainer.querySelector('.chat-input');
+    const chatMessages = chatContainer.querySelector('.chat-messages');
+    const messageText = messageInput.value.trim();
+    
+    if (!chatMessages) {
+        console.error('Cannot find chat messages container');
+        return;
+    }
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Authentication error. Please log in again.');
+        return;
+    }
+    
+    // Clear input field
+    messageInput.value = '';
+    
+    // Create a placeholder for the uploading media
+    const messageElement = document.createElement('div');
+    messageElement.className = 'message sent';
+    
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    messageElement.innerHTML = `
+        <div class="message-content">
+            <div class="message-media">
+                <div class="media-upload-placeholder">
+                    <i class="fas fa-spinner fa-spin"></i> Uploading ${file.name}...
+                </div>
+            </div>
+            ${messageText ? `<div class="message-text">${messageText}</div>` : ''}
+            <div class="message-time">${time}</div>
+        </div>
+    `;
+    
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    try {
+        // Create FormData to send the file
+        const formData = new FormData();
+        formData.append('media', file);
+        formData.append('recipientUsername', recipientUser);
+        formData.append('mediaType', file.type.startsWith('image/') ? 'image' : 'video');
+        if (messageText) {
+            formData.append('text', messageText);
+        }
+        
+        const response = await fetch('http://localhost:3000/api/messages/send-media', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
+        
+        const responseData = await response.json();
+        
+        if (response.ok) {
+            // Update the placeholder with the actual media
+            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+            const mediaUrl = `/uploads/${responseData.mediaFilename}`;
+            
+            if (mediaType === 'image') {
+                messageElement.innerHTML = `
+                    <div class="message-content">
+                        <div class="message-media">
+                            <img src="${mediaUrl}" alt="Shared image" class="shared-image">
+                        </div>
+                        ${messageText ? `<div class="message-text">${messageText}</div>` : ''}
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+            } else {
+                messageElement.innerHTML = `
+                    <div class="message-content">
+                        <div class="message-media">
+                            <video controls class="shared-video">
+                                <source src="${mediaUrl}" type="${file.type}">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        ${messageText ? `<div class="message-text">${messageText}</div>` : ''}
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+            }
+        } else {
+            console.error('Failed to upload media:', response.status, responseData);
+            messageElement.innerHTML = `
+                <div class="message-content">
+                    <div class="message-text message-error">
+                        Failed to upload: ${responseData.message || 'Unknown error'}
+                    </div>
+                    <div class="message-time">${time}</div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error uploading media:', error);
+        messageElement.innerHTML = `
+            <div class="message-content">
+                <div class="message-text message-error">
+                    Network error. Please check your connection.
+                </div>
+                <div class="message-time">${time}</div>
+            </div>
+        `;
+    }
+}
+
+
+// Function to create browser notifications
+function createNotification(senderName, messageText) {
     // Check if browser supports notifications
     if (!("Notification" in window)) {
         console.log("This browser does not support desktop notifications");
@@ -591,83 +881,196 @@ function createNotification(sender, message) {
     
     // Check if permission is already granted
     if (Notification.permission === "granted") {
-        showNotification(sender, message);
-    }
-    // Otherwise, request permission
-    else if (Notification.permission !== "denied") {
-        Notification.requestPermission().then(function(permission) {
+        // Create notification
+        const notification = new Notification(`New message from ${senderName}`, {
+            body: messageText.length > 50 ? messageText.substring(0, 50) + '...' : messageText,
+            icon: '/assets/images/logo.png'
+        });
+        
+        // Close notification after 5 seconds
+        setTimeout(() => {
+            notification.close();
+        }, 5000);
+        
+        // Handle notification click
+        notification.onclick = function() {
+            window.focus();
+            this.close();
+        };
+    } else if (Notification.permission !== "denied") {
+        // Request permission
+        Notification.requestPermission().then(function (permission) {
             if (permission === "granted") {
-                showNotification(sender, message);
+                createNotification(senderName, messageText);
             }
         });
     }
 }
 
-function showNotification(sender, message) {
-    const notification = new Notification(`Message from ${sender}`, {
-        body: message,
-        icon: '/public/notification-icon.png' // You should add this icon
+// Function to update unread indicator in the UI
+function updateUnreadIndicator(count) {
+    // Find or create the unread indicator
+    let unreadIndicator = document.getElementById('unread-messages-indicator');
+    
+    if (!unreadIndicator) {
+        // Create the indicator if it doesn't exist
+        unreadIndicator = document.createElement('div');
+        unreadIndicator.id = 'unread-messages-indicator';
+        unreadIndicator.className = 'unread-indicator';
+        unreadIndicator.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #ff4d4f;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+        `;
+        
+        // Add click handler to show unread chats
+        unreadIndicator.addEventListener('click', showUnreadChats);
+        
+        document.body.appendChild(unreadIndicator);
+    }
+    
+    // Update the count
+    unreadIndicator.textContent = count;
+    unreadIndicator.style.display = count > 0 ? 'flex' : 'none';
+}
+
+// Function to update friends list with unread message counts
+async function updateFriendsListWithUnreadCounts() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+        // Get unread messages
+        const response = await fetch('http://localhost:3000/api/messages/unread', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const unreadMessages = await response.json();
+            
+            // Group messages by sender
+            const messagesBySender = {};
+            unreadMessages.forEach(msg => {
+                if (!messagesBySender[msg.senderId]) {
+                    messagesBySender[msg.senderId] = {
+                        count: 0,
+                        senderName: msg.senderName
+                    };
+                }
+                messagesBySender[msg.senderId].count++;
+            });
+            
+            // Update friend list items
+            Object.keys(messagesBySender).forEach(senderId => {
+                const senderInfo = messagesBySender[senderId];
+                
+                // Find friend list item by user ID or username
+                const friendItem = document.querySelector(`.friend-item[data-user-id="${senderId}"], .friend-item[data-username="${senderInfo.senderName}"]`);
+                
+                if (friendItem) {
+                    // Add or update unread badge
+                    let unreadBadge = friendItem.querySelector('.unread-badge');
+                    
+                    if (!unreadBadge) {
+                        unreadBadge = document.createElement('span');
+                        unreadBadge.className = 'unread-badge';
+                        unreadBadge.style.cssText = `
+                            background-color: #ff4d4f;
+                            color: white;
+                            border-radius: 10px;
+                            padding: 2px 6px;
+                            font-size: 0.7rem;
+                            margin-left: 5px;
+                        `;
+                        friendItem.appendChild(unreadBadge);
+                    }
+                    
+                    unreadBadge.textContent = senderInfo.count;
+                    unreadBadge.style.display = 'inline-block';
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error updating friends list with unread counts:', error);
+    }
+}
+
+// Function to handle image preview when clicked
+function setupImagePreview() {
+    // Create modal for image preview if it doesn't exist
+    if (!document.getElementById('image-preview-modal')) {
+        const modal = document.createElement('div');
+        modal.id = 'image-preview-modal';
+        modal.style.cssText = `
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+            cursor: zoom-out;
+        `;
+        
+        const modalImg = document.createElement('img');
+        modalImg.id = 'image-preview-content';
+        modalImg.style.cssText = `
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        `;
+        
+        modal.appendChild(modalImg);
+        document.body.appendChild(modal);
+        
+        // Close modal when clicked
+        modal.addEventListener('click', function() {
+            this.style.display = 'none';
+        });
+    }
+    
+    // Add click event to all shared images
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('shared-image')) {
+            const modal = document.getElementById('image-preview-modal');
+            const modalImg = document.getElementById('image-preview-content');
+            
+            modal.style.display = 'flex';
+            modalImg.src = e.target.src;
+        }
     });
-    
-    notification.onclick = function() {
-        window.focus();
-        this.close();
-    };
-    
-    // Auto close after 5 seconds
-    setTimeout(() => {
-        notification.close();
-    }, 5000);
 }
 
-// Cleanup function to prevent memory leaks
-function cleanup() {
-    connected = false;
-}
-
+// Call setupImagePreview when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    initializeMessageService();
-    
-    // Add CSS for message errors and unread indicators
-    const style = document.createElement('style');
-    style.textContent = `
-        .message-error {
-            opacity: 0.7;
-            position: relative;
-        }
-        
-        .message-error::after {
-            content: '⚠️';
-            position: absolute;
-            right: -20px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-        
-        .loading-messages, .no-messages, .error-message {
-            text-align: center;
-            color: #666;
-            padding: 20px;
-        }
-        
-        .date-separator {
-            text-align: center;
-            margin: 10px 0;
-            font-size: 0.8rem;
-            color: #666;
-            position: relative;
-        }
-        
-    `;
-    document.head.appendChild(style);
+    setupImagePreview();
 });
 
-// Export functions
+// Export functions for external use
 window.messageService = {
-    initialize: initializeMessageService,
-    sendMessage: sendMessage,
-    cleanup: cleanup
+    openChat,
+    sendMessage,
+    loadMessages,
+    handleMediaUpload,
+    checkForNewMessages
 };
-
-// Ensure cleanup on page unload
-window.addEventListener('beforeunload', cleanup);

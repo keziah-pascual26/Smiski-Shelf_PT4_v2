@@ -111,7 +111,7 @@ async function initializeProfileSection() {
                         <a href="/pages/settings/settings.html#security" class="${isSecurity ? 'active' : ''}">
                             <i class="fas fa-shield-alt"></i>
                             <span>Security</span>
-                            ${userData.twoFactorEnabled ? '' : '<span class="count-badge">!</span>'}
+                            ${userData.twoFactorEnabled ? '' : '<span class="count-badge" style="display: flex; align-items: center; justify-content: center;">!</span>'}
                         </a>
                     </li>
                 </ul>
