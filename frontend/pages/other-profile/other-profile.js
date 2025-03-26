@@ -48,23 +48,69 @@ document.addEventListener('DOMContentLoaded', async function() {
     const tabContents = document.querySelectorAll('.tab-content');
     const friendActionBtn = document.getElementById('friendActionBtn');
     
-    // Clear any existing error messages
-    const errorElement = document.querySelector('.error-message');
-    if (errorElement) {
-        errorElement.remove();
+    // Add this function to retrieve and display profile picture
+    async function retrieveProfilePicture(username) {
+        try {
+            console.log('Retrieving profile picture for:', username);
+            
+            // Fetch user data to get profile picture
+            const response = await fetch(`http://localhost:3000/api/users/byUsername/${encodeURIComponent(username)}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to fetch user data: ${response.status}`);
+            }
+            
+            const userData = await response.json();
+            console.log('User data retrieved:', userData);
+            
+            // Update profile picture if element exists
+            if (profilePicture) {
+                if (userData.profilePicture) {
+                    // Use the full URL to the profile picture
+                    profilePicture.src = `http://localhost:3000${userData.profilePicture}`;
+                    console.log('Profile picture set to:', profilePicture.src);
+                } else {
+                    // Use default profile picture
+                    profilePicture.src = '/public/no-profile.png';
+                    console.log('Using default profile picture');
+                }
+            }
+            
+            return userData;
+        } catch (error) {
+            console.error('Error retrieving profile picture:', error);
+            // Set default profile picture on error
+            if (profilePicture) {
+                profilePicture.src = '/public/no-profile.png';
+            }
+            return null;
+        }
     }
     
-        // Load the target user's profile data
-        try {
-            const userData = await loadTargetUserProfile(targetUsername);
-            if (userData) {
-                // Load initial content (posts tab is active by default)
-                loadUserPosts(targetUsername);
-            }
-        } catch (error) {
-            console.error('Failed to load profile:', error);
-            showError('Failed to load user profile. Please try again later.');
-        }
+    // Call the function to retrieve profile picture when loading the profile
+    try {
+        // Load user profile data
+        const userData = await loadTargetUserProfile(targetUsername);
+        
+        // Retrieve and display profile picture
+        await retrieveProfilePicture(targetUsername);
+        
+        // Load user stats
+        await loadUserStats(targetUsername);
+        
+        // Load initial tab content (posts by default)
+        await loadUserPosts(targetUsername);
+        
+    } catch (error) {
+        console.error('Error loading profile:', error);
+        showError('Failed to load profile. Please try again later.');
+    }
         
         // Tab switching functionality
 if (tabButtons && tabButtons.length > 0) {
