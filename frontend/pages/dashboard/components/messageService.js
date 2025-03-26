@@ -477,13 +477,166 @@ function openChat(userId, username) {
         
         mediaFileInput.addEventListener('change', function() {
             if (this.files && this.files.length > 0) {
-                handleMediaUpload(userId, this.files[0]);
+                // Instead of automatically sending, just preview the media
+                previewMediaUpload(userId, this.files[0]);
             }
         });
         
         // Load messages from the database
         loadMessages(userId);
     }
+}
+
+// New function to preview media before sending
+function previewMediaUpload(userId, file) {
+    const chatContainer = document.querySelector(`.chat-container[data-user-id="${userId}"]`);
+    if (!chatContainer) {
+        console.error('Chat container not found');
+        return;
+    }
+    
+    const chatInputContainer = chatContainer.querySelector('.chat-input-container');
+    const messageInput = chatContainer.querySelector('.chat-input');
+    
+    // Remove any existing preview
+    const existingPreview = chatContainer.querySelector('.media-preview-container');
+    if (existingPreview) {
+        existingPreview.remove();
+    }
+    
+    // Create preview container
+    const previewContainer = document.createElement('div');
+    previewContainer.className = 'media-preview-container';
+    previewContainer.style.cssText = `
+        padding: 10px;
+        border-top: 1px solid #eee;
+        display: flex;
+        align-items: center;
+        background-color: #f9f9f9;
+    `;
+    
+    // Create preview content based on file type
+    if (file.type.startsWith('image/')) {
+        const imgPreview = document.createElement('img');
+        imgPreview.className = 'media-preview-image';
+        imgPreview.style.cssText = `
+            max-height: 100px;
+            max-width: 100px;
+            border-radius: 5px;
+            margin-right: 10px;
+        `;
+        
+        // Create object URL for preview
+        const objectUrl = URL.createObjectURL(file);
+        imgPreview.src = objectUrl;
+        
+        // Clean up object URL when done
+        imgPreview.onload = () => URL.revokeObjectURL(objectUrl);
+        
+        previewContainer.appendChild(imgPreview);
+    } else if (file.type.startsWith('video/')) {
+        const videoIcon = document.createElement('div');
+        videoIcon.className = 'video-preview-icon';
+        videoIcon.innerHTML = '<i class="fas fa-video"></i>';
+        videoIcon.style.cssText = `
+            width: 50px;
+            height: 50px;
+            background-color: #ddd;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 24px;
+            color: #555;
+        `;
+        
+        previewContainer.appendChild(videoIcon);
+    }
+    
+    // Add file name
+    const fileName = document.createElement('div');
+    fileName.className = 'media-preview-filename';
+    fileName.textContent = file.name;
+    fileName.style.cssText = `
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    `;
+    
+    // Add remove button
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'media-preview-remove';
+    removeBtn.innerHTML = '&times;';
+    removeBtn.style.cssText = `
+        background: none;
+        border: none;
+        color: #999;
+        font-size: 20px;
+        cursor: pointer;
+        margin-left: 10px;
+    `;
+    
+    removeBtn.addEventListener('click', function() {
+        previewContainer.remove();
+        // Clear the file input
+        chatContainer.querySelector('.media-file-input').value = '';
+    });
+    
+    previewContainer.appendChild(fileName);
+    previewContainer.appendChild(removeBtn);
+    
+    // Store the file for later use
+    previewContainer.dataset.fileId = Date.now().toString();
+    // Store the file in a global map for retrieval when sending
+    if (!window.pendingMediaUploads) {
+        window.pendingMediaUploads = new Map();
+    }
+    window.pendingMediaUploads.set(previewContainer.dataset.fileId, file);
+    
+    // Insert preview before input container
+    chatInputContainer.parentNode.insertBefore(previewContainer, chatInputContainer);
+    
+    // Modify send button click handler to include the media
+    const sendBtn = chatContainer.querySelector('.chat-send-btn');
+    const originalClickHandler = sendBtn.onclick;
+    
+    sendBtn.onclick = function() {
+        const fileId = previewContainer.dataset.fileId;
+        const mediaFile = window.pendingMediaUploads.get(fileId);
+        
+        if (mediaFile) {
+            handleMediaUpload(userId, mediaFile);
+            // Clean up
+            window.pendingMediaUploads.delete(fileId);
+            previewContainer.remove();
+        } else {
+            // Fall back to regular message sending
+            sendMessage(userId);
+        }
+    };
+    
+    // Also update Enter key handler
+    const inputField = chatContainer.querySelector('.chat-input');
+    const originalKeyHandler = inputField.onkeypress;
+    
+    inputField.onkeypress = function(e) {
+        if (e.key === 'Enter') {
+            const fileId = previewContainer?.dataset?.fileId;
+            const mediaFile = fileId ? window.pendingMediaUploads.get(fileId) : null;
+            
+            if (mediaFile) {
+                handleMediaUpload(userId, mediaFile);
+                // Clean up
+                window.pendingMediaUploads.delete(fileId);
+                previewContainer.remove();
+            } else {
+                // Fall back to regular message sending
+                sendMessage(userId);
+            }
+        }
+    };
 }
 
 async function loadMessages(userId) {
