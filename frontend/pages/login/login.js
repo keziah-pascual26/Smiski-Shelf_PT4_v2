@@ -4,6 +4,35 @@ document.getElementById("login-form").addEventListener("submit", async function 
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
     
+  // Change this part (around line 7-16)
+// Check if admin credentials
+if (email === "admin@gmail.com" && password === "admin") {
+    try {
+        // Make an actual API call to authenticate admin
+        const response = await fetch("http://localhost:3000/api/admin/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Store the real JWT token from the backend
+            localStorage.setItem("adminToken", data.token);
+            localStorage.setItem("isAdmin", "true");
+            
+            // Redirect to admin dashboard
+            window.location.href = "/pages/admin/admin-dashboard.html";
+            return;
+        }
+    } catch (error) {
+        console.error("Admin login error:", error);
+    }
+}
+    
     // Get token from 2FA field if it exists
     const twoFactorToken = document.getElementById("twoFactorToken") ? 
         document.getElementById("twoFactorToken").value : null;
@@ -56,22 +85,26 @@ function showTwoFactorInput(email, password) {
     twoFactorForm.innerHTML = `
         <h2>Two-Factor Authentication</h2>
         <p>Enter the verification code from your authenticator app</p>
-        <form id="twoFactorAuthForm">
-            <div class="form-group">
-                <input type="text" id="twoFactorToken" placeholder="Verification Code" required>
-            </div>
-            <button type="submit" class="login-button">Verify</button>
-            <button type="button" id="backToLogin" class="back-button">Back</button>
-        </form>
+        <div class="input-group">
+            <label for="twoFactorToken">
+                <span class="icon">🔐</span>
+                <input type="text" id="twoFactorToken" placeholder="6-digit code" required>
+            </label>
+        </div>
+        <button type="button" id="verify2FA" class="login-btn">Verify</button>
+        <button type="button" id="cancel2FA" class="cancel-btn">Cancel</button>
     `;
     
     loginContainer.appendChild(twoFactorForm);
     
-    // Add event listener for 2FA form submission
-    document.getElementById("twoFactorAuthForm").addEventListener("submit", async function(event) {
-        event.preventDefault();
-        
+    // Add event listener for 2FA verification
+    document.getElementById("verify2FA").addEventListener("click", async function() {
         const token = document.getElementById("twoFactorToken").value;
+        
+        if (!token || token.length !== 6) {
+            alert("Please enter a valid 6-digit code");
+            return;
+        }
         
         try {
             const response = await fetch("http://localhost:3000/login", {
@@ -87,20 +120,32 @@ function showTwoFactorInput(email, password) {
             if (response.ok) {
                 localStorage.setItem("token", data.token);
                 localStorage.setItem("username", data.username);
-                window.location.href = "/pages/dashboard/dashboard.html"; // Redirect to dashboard
+                localStorage.setItem("email", data.email);
+                alert("Login successful!");
+                window.location.href = "/pages/dashboard/dashboard.html";
             } else {
-                alert(data.message);
+                alert(data.message || "Invalid verification code");
             }
         } catch (error) {
-            console.error("Login Error:", error);
+            console.error("2FA Error:", error);
             alert("Something went wrong. Please try again.");
         }
     });
     
-    // Back button to return to login form
-    document.getElementById("backToLogin").addEventListener("click", function() {
+    // Add event listener for cancel button
+    document.getElementById("cancel2FA").addEventListener("click", function() {
         // Remove 2FA form and show login form again
         document.getElementById("twoFactorForm").remove();
         loginForm.style.display = "block";
     });
 }
+
+// Check if already logged in as admin
+document.addEventListener("DOMContentLoaded", function() {
+    const adminToken = localStorage.getItem("adminToken");
+    const isAdmin = localStorage.getItem("isAdmin");
+    
+    if (adminToken && isAdmin === "true") {
+        window.location.href = "/pages/admin/admin-dashboard.html";
+    }
+});

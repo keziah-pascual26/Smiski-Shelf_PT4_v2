@@ -184,6 +184,8 @@ export async function loadStories() {
                 if (story.media && story.media.length > 0) {
                     const mediaUrl = story.media[0];
                     const fullMediaUrl = `http://localhost:3000/uploads/stories/${mediaUrl}`;
+
+                    const fileExtension = mediaUrl.split('.').pop().toLowerCase();
                     
                     // Check if it's a video
                     if (mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) {

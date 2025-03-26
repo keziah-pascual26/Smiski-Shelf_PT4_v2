@@ -67,7 +67,7 @@ const storyModalHTML = `
                 <div id="videoEditor" style="display: none;">
                     <h3>Edit Video</h3>
                             <div>
-                                <button id="muteButton" onclick="toggleMute()">Mute</button>
+                                <button id="muteButton">Mute</button>
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <input type="checkbox" id="trimVideoCheckbox" style="width: 16px; height: 16px; cursor: pointer;">
                                     <label for="trimVideoCheckbox" style="margin: 0; font-size: 14px;">Confirm Trim Video</label>
@@ -369,6 +369,12 @@ document.addEventListener('DOMContentLoaded', () => {
          previewTrimButton.addEventListener('click', trimAndRecordVideo);
      }
 
+      // Add mute button listener - properly connect the button
+      const muteButton = document.getElementById('muteButton');
+      if (muteButton) {
+          muteButton.addEventListener('click', toggleMute);
+      }
+
         // Add video time input listeners
         const startTimeInput = document.getElementById('startTimeInput');
         const endTimeInput = document.getElementById('endTimeInput');
@@ -491,6 +497,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         size: `${(videoFile.size / (1024 * 1024)).toFixed(2)} MB`,
                         duration: videoPreview.duration
                     });
+
+                   // Add mute state to form data
+                    const isMuted = videoPreview.muted;
+                    formData.append('isMuted', isMuted.toString());
+                    console.log('Sending muted state:', isMuted);
                     
                     // Check if video exceeds 15 seconds
                     if (videoPreview.duration > 15) {
@@ -845,10 +856,24 @@ function toggleCropping() {
     }
 }
 
+// Update the toggleMute function to store the mute state
 function toggleMute() {
     const videoPreview = document.getElementById('videoPreview');
-    videoPreview.muted = !videoPreview.muted;
-    document.getElementById('muteButton').textContent = videoPreview.muted ? 'Unmute' : 'Mute';
+    const muteButton = document.getElementById('muteButton');
+    
+    if (videoPreview) {
+        videoPreview.muted = !videoPreview.muted;
+        
+        // Update button text
+        if (muteButton) {
+            muteButton.textContent = videoPreview.muted ? 'Unmute' : 'Mute';
+        }
+        
+        // Store mute preference in a variable that will be used during upload
+        window.videoMutePreference = videoPreview.muted;
+        
+        console.log('Video mute state changed:', videoPreview.muted);
+    }
 }
 
 function trimAndRecordVideo() {

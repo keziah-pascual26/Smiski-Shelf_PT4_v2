@@ -72,6 +72,8 @@ exports.createStory = async (req, res) => {
             media: [finalMediaPath]
         });
 
+        
+
         await story.save();
         res.status(201).json(story);
     } catch (error) {
