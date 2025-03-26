@@ -323,13 +323,40 @@ style.textContent = `
 
     // Retrieve the username from localStorage
     const storedUsername = localStorage.getItem("username") || "User";
-
+    
+    // Function to retrieve user profile picture
+    async function retrieveUserProfilePicture() {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return null;
+            
+            const response = await fetch(`${API_URL}/api/user/profile`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch user profile');
+            }
+            
+            const userData = await response.json();
+            return userData.profilePicture ? `${API_URL}${userData.profilePicture}` : '/public/no-profile.png';
+        } catch (error) {
+            console.error('Error fetching profile picture:', error);
+            return '/public/no-profile.png';
+        }
+    }
+    
+    // Initial HTML with placeholder for profile picture
     postInputContainer.innerHTML = `
     <div>
         <!-- Small Post Input Box -->
         <div id="smallPostInput" class="post-create-container">
             <div class="user-profile">
-                <img src="/public/no-profile.png" alt="User Profile">
+                <img src="/public/no-profile.png" id="userProfilePic" alt="User Profile">
                 <input type="text" class="post-input" placeholder="What's on your mind, ${storedUsername}?">
             </div>
 
@@ -347,10 +374,9 @@ style.textContent = `
                 <span class="close-post-modal">&times;</span>
                 <h2>Create post</h2>
                 <div class="user-profile">
-                    <img src="/public/no-profile.png" alt="User Profile">
+                    <img src="/public/no-profile.png" id="modalUserProfilePic" alt="User Profile">
                     <div>
                         <span class="username">${storedUsername}</span>
-                        
                     </div>
                 </div>
                 <textarea id="postContent" placeholder="What's on your mind, ${storedUsername}?" class="post-modal-textarea"></textarea>
@@ -381,6 +407,15 @@ style.textContent = `
     const container = document.querySelector("#postContainer"); 
     if (container) {
         container.appendChild(postInputContainer);
+        
+        // Fetch and update profile picture
+        retrieveUserProfilePicture().then(profilePicUrl => {
+            const userProfilePic = document.getElementById('userProfilePic');
+            const modalUserProfilePic = document.getElementById('modalUserProfilePic');
+            
+            if (userProfilePic) userProfilePic.src = profilePicUrl;
+            if (modalUserProfilePic) modalUserProfilePic.src = profilePicUrl;
+        });
     } else {
         console.error("Container #postContainer not found!");
     }
