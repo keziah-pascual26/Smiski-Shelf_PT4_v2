@@ -80,42 +80,6 @@ router.get('/users/all', authenticateToken, async (req, res) => {
     }
 });
 
-// Update user profile
-router.put("/profile", authenticateToken, async (req, res) => {
-    try {
-        // Ensure req.body is not undefined
-        if (!req.body || Object.keys(req.body).length === 0) {
-            return res.status(400).json({ message: "Request body is missing or empty" });
-        }
-
-        const { name, username, email, bio } = req.body;
-
-        console.log("Received data:", { name, username, email, bio }); // Debug log
-        console.log("User ID from authMiddleware:", req.user.id); // Debug log
-
-        // Validate required fields
-        if (!name || !username || !email || !bio) {
-            return res.status(400).json({ message: "All fields are required" });
-        }
-
-        // Update user details
-        const updatedUser = await User.findByIdAndUpdate(
-            req.user.id,
-            { name, username, email, bio },
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedUser) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        console.log("Updated user:", updatedUser); // Debug log
-        res.json({ message: "Profile updated successfully", user: updatedUser });
-    } catch (error) {
-        console.error("Error during user update:", error);
-        res.status(500).json({ message: "Internal server error" });
-    }
-});
 
 // Update profile privacy setting
 router.post('/user/privacy', authenticateToken, async (req, res) => {
@@ -161,6 +125,69 @@ router.get('/privacy/:username', authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching user privacy setting:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Update user profile
+router.put('/user/profile', authenticateToken, async (req, res) => {
+    try {
+        const { name, username, email, bio, oldUsername } = req.body;
+        const userId = req.user._id;
+
+        // Check if username is being changed
+        const isUsernameChanged = oldUsername && oldUsername !== username;
+
+        // Update user profile
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { name, username, email, bio },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // If username is changed, update all posts by this user
+        if (isUsernameChanged) {
+            // Import Post model at the top of the file
+            const Post = require('../models/postModel');
+            
+            // Update username in all posts by this user
+            await Post.updateMany(
+                { userId: userId },
+                { username: username }
+            );
+            
+            // Also update username in likes and comments
+            await Post.updateMany(
+                { 'likes.username': oldUsername },
+                { $set: { 'likes.$[elem].username': username } },
+                { arrayFilters: [{ 'elem.username': oldUsername }] }
+            );
+            
+            await Post.updateMany(
+                { 'comments.username': oldUsername },
+                { $set: { 'comments.$[elem].username': username } },
+                { arrayFilters: [{ 'elem.username': oldUsername }] }
+            );
+            
+            console.log(`Updated username from ${oldUsername} to ${username} in all posts, likes, and comments`);
+        }
+
+        res.json({
+            message: 'Profile updated successfully',
+            user: {
+                id: updatedUser._id,
+                name: updatedUser.name,
+                username: updatedUser.username,
+                email: updatedUser.email,
+                bio: updatedUser.bio
+            }
+        });
+    } catch (error) {
+        console.error('Error updating profile:', error);
         res.status(500).json({ message: 'Server error' });
     }
 });

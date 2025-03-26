@@ -5,10 +5,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    // Get logged-in username from localStorage
+    // Get logged-in user info from localStorage
     const loggedInUsername = localStorage.getItem("username"); // Ensure it's stored during login
-    if (!loggedInUsername) {
-        console.error("❌ No logged-in user found!");
+    const loggedInUserId = localStorage.getItem("userId"); // Get userId from localStorage
+    
+    if (!loggedInUsername || !loggedInUserId) {
+        console.error("❌ No logged-in user found or missing userId!");
         return;
     }
 
@@ -109,8 +111,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             const token = localStorage.getItem('token');
             
-            // Get all posts to check if user already reposted this post
-            const checkResponse = await fetch(`http://localhost:3000/posts?username=${encodeURIComponent(loggedInUsername)}`, {
+            // Get all posts to check if user already reposted this post - using userId instead of username
+            const checkResponse = await fetch(`http://localhost:3000/posts?userId=${encodeURIComponent(loggedInUserId)}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -126,8 +128,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             
             // Check if user already reposted this post OR any post that has this post as its original
             const alreadyReposted = posts.some(post => {
-                // Only check posts by the current user
-                if (post.username !== loggedInUsername) {
+                // Check using userId instead of username
+                if (post.userId !== loggedInUserId) {
                     return false;
                 }
                 
@@ -196,13 +198,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 console.error("Failed to fetch friends list:", friendsResponse.status);
             }
 
-            // Get friends usernames
-            const friends = await friendsResponse.json();
-            const friendUsernames = friends.map(friend => friend.username);
-            console.log("📋 Friends list:", friendUsernames);
-
-            // Then fetch all posts
-            const response = await fetch(`http://localhost:3000/feed`, {
+                        // Get friends userIds and usernames
+                        const friends = await friendsResponse.json();
+                        const friendUserIds = friends.map(friend => friend.userId || friend._id);
+                        const friendUsernames = friends.map(friend => friend.username); // Add this line to define friendUsernames
+                        console.log("📋 Friends list (userIds):", friendUserIds);
+            
+                        // Then fetch all posts
+                        const response = await fetch(`http://localhost:3000/feed`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -224,8 +227,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             // Filter posts to only show the user's own posts and their friends' posts
+            // Prioritize userId for filtering to handle username changes
             const filteredPosts = allPosts.filter(post => {
-                return post.username === loggedInUsername || friendUsernames.includes(post.username);
+                // Check if this is the current user's post
+                const isCurrentUserPost = 
+                    // Check by userId if available
+                    (post.userId && loggedInUserId && post.userId === loggedInUserId) || 
+                    // Fallback to username check
+                    (post.username === loggedInUsername);
+                
+                // Check if this is a friend's post
+                const isFriendPost = 
+                    // Check by userId if available
+                    (post.userId && friendUserIds.includes(post.userId)) ||
+                    // Fallback to username check
+                    (friendUsernames.includes(post.username));
+                
+                return isCurrentUserPost || isFriendPost;
             });
 
             console.log("🔍 Filtered posts for feed:", filteredPosts);
@@ -266,11 +284,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         posts.forEach(post => {
             const postElement = document.createElement("div");
             postElement.classList.add("post");
+            postElement.dataset.userId = post.userId; // Add userId as data attribute
+            postElement.dataset.postId = post._id;
 
             const formattedTimestamp = formatTimestamp(post.createdAt);
 
             // Use the post's username directly from the post object
             const postUsername = post.username; // This is the username of the post creator
+
+            
 
             let mediaContent = "";
             if (post.media && post.media.length > 0) {

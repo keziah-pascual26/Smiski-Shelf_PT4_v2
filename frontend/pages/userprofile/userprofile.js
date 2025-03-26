@@ -79,12 +79,17 @@ document.getElementById("saveDetailsBtn").addEventListener("click", () => {
         return tempDiv.innerHTML;
     };
 
+    // Get the old username before updating
+    const oldUsername = document.getElementById("profile-name").textContent;
+    const newUsername = sanitizeInput(usernameField.textContent.trim());
+    
     // Prepare the updated details
     const updatedDetails = {
         name: sanitizeInput(nameField.textContent.trim()),
-        username: sanitizeInput(usernameField.textContent.trim()),
+        username: newUsername,
         email: sanitizeInput(emailField.textContent.trim()),
         bio: sanitizeInput(bioField.textContent.trim()),
+        oldUsername: oldUsername // Add the old username to the request
     };
 
     console.log("Updated details being sent:", updatedDetails);
@@ -106,6 +111,9 @@ document.getElementById("saveDetailsBtn").addEventListener("click", () => {
         })
         .then((data) => {
             console.log("User details updated successfully:", data);
+
+            // Update localStorage with the new username
+            localStorage.setItem("username", newUsername);
 
             // Update the DOM with the new values
             document.getElementById("profile-name").textContent = updatedDetails.username;

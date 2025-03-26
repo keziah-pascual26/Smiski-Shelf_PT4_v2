@@ -14,6 +14,7 @@ module.exports = (app) => {
 
         const { text } = req.body;
         const username = req.user.username;
+        const userId = req.user._id; // Get userId from authenticated user
         const mediaFilenames = req.files ? req.files.map(file => file.filename) : [];
 
         if (!text && mediaFilenames.length === 0) {
@@ -21,7 +22,12 @@ module.exports = (app) => {
         }
 
         try {
-            const newPost = new Post({ username, text, media: mediaFilenames });
+            const newPost = new Post({ 
+                username, 
+                userId, // Add userId to the post
+                text, 
+                media: mediaFilenames 
+            });
             await newPost.save();
 
             console.log("✅ Post created successfully:", newPost);
@@ -51,15 +57,21 @@ module.exports = (app) => {
     // ✅ Get All Posts
     app.get('/posts', authenticateToken, async (req, res) => {
         try {
-            const { username } = req.query;
+            const { username, userId } = req.query;
 
-            if (!username) {
-                return res.status(400).json({ error: "Username is required" });
+            // Allow querying by either username or userId
+            let query = {};
+            if (username) {
+                query.username = username;
+            } else if (userId) {
+                query.userId = userId;
+            } else {
+                return res.status(400).json({ error: "Username or userId is required" });
             }
 
-            const posts = await Post.find({ username }).sort({ createdAt: -1 }).lean();
+            const posts = await Post.find(query).sort({ createdAt: -1 }).lean();
 
-            console.log(`✅ Found ${posts.length} posts for user: ${username}`);
+            console.log(`✅ Found ${posts.length} posts for query:`, query);
             res.status(200).json(posts);
         } catch (error) {
             console.error("🚨 Error fetching posts:", error);
@@ -249,6 +261,7 @@ module.exports = (app) => {
     
             const repost = new Post({
                 username: req.user.username,
+                userId: req.user._id, // Add userId to repost
                 text: `${originalPost.text}`,
                 media: originalPost.media,
                 originalPostId: originalPost._id, // Reference to the original post
@@ -283,8 +296,9 @@ module.exports = (app) => {
                 return res.status(404).json({ error: "Post not found" });
             }
 
-            // Ensure the logged-in user is the owner of the post
-            if (post.username !== req.user.username) {
+            // Ensure the logged-in user is the owner of the post (check both username and userId)
+            if (post.username !== req.user.username || 
+                (post.userId && post.userId.toString() !== req.user._id.toString())) {
                 console.log("❌ Unauthorized user");
                 return res.status(403).json({ error: "You are not authorized to delete this post" });
             }

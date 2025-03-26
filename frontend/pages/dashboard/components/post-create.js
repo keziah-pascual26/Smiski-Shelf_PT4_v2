@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     // Fetch the latest username from the server
     const token = localStorage.getItem("token");
     let storedUsername = "User"; // Default username
+    let userId = null; // Store userId for post creation
 
     if (token) {
         try {
@@ -18,9 +19,11 @@ document.addEventListener("DOMContentLoaded", async function () {
             if (response.ok) {
                 const userData = await response.json();
                 storedUsername = userData.username || "User";
+                userId = userData._id; // Store the user ID from profile data
 
                 // Update localStorage with the latest username
                 localStorage.setItem("username", storedUsername);
+                localStorage.setItem("userId", userId); // Store userId in localStorage
             } else {
                 console.error("Failed to fetch user profile:", response.statusText);
             }
@@ -133,6 +136,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         const formData = new FormData();
         formData.append("text", text);
+        formData.append("userId", userId || localStorage.getItem("userId")); // Add userId to form data
         for (let i = 0; i < files.length; i++) {
             formData.append("media", files[i]);
         }
@@ -177,6 +181,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         const postElement = document.createElement("div");
         postElement.classList.add("post");
+        postElement.dataset.userId = post.userId; // Add userId as a data attribute
 
         let mediaContent = "";
         if (post.media && post.media.length > 0) {
