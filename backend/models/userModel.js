@@ -16,7 +16,12 @@ const userSchema = new mongoose.Schema({
     twoFactorSecret: { type: String, default: null },
     twoFactorEnabled: { type: Boolean, default: false },
     // Add profile privacy setting
-    isProfilePublic: { type: Boolean, default: true }
+    isProfilePublic: { type: Boolean, default: true },
+    // Add friends array to store references to friends
+    friends: [{ 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User' 
+    }]
 });
 
 module.exports = mongoose.model("User", userSchema);

@@ -33,6 +33,32 @@ router.get('/friends', authenticateToken, async (req, res) => {
     }
 });
 
+// Check if current user is friends with another user
+router.get('/isfriend/:userId', authenticateToken, async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const targetUserId = req.params.userId;
+        
+        // Check if there's a friendship record where both users are involved
+        // and the status is 'accepted'
+        const friendship = await Friend.findOne({
+            $or: [
+                { requesterId: currentUserId, recipientId: targetUserId, status: 'accepted' },
+                { requesterId: targetUserId, recipientId: currentUserId, status: 'accepted' }
+            ]
+        });
+        
+        // Return true if friendship exists, false otherwise
+        res.json({ 
+            isFriend: !!friendship,
+            friendshipId: friendship ? friendship._id : null
+        });
+    } catch (error) {
+        console.error('Error checking friendship status:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
 // Get friend requests (pending requests sent to the user)
 router.get('/friends/requests', authenticateToken, async (req, res) => {
     try {
@@ -335,6 +361,258 @@ router.delete('/friends/unfriend-by-username/:username', authenticateToken, asyn
     } catch (error) {
         console.error('Error in unfriend by username:', error);
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Accept friend request
+router.put('/friends/accept/:requestId', authenticateToken, async (req, res) => {
+    try {
+        const { requestId } = req.params;
+        
+        // Find the friend request
+        const friendRequest = await Friend.findById(requestId);
+        
+        if (!friendRequest) {
+            return res.status(404).json({ message: 'Friend request not found' });
+        }
+        
+        // Check if the current user is the recipient of the request
+        if (friendRequest.recipientId.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Unauthorized to accept this request' });
+        }
+        
+        // Update the friend request status to 'accepted'
+        friendRequest.status = 'accepted';
+        await friendRequest.save();
+        
+        // Update both users' friends arrays
+        await User.findByIdAndUpdate(
+            friendRequest.requesterId,
+            { $addToSet: { friends: friendRequest.recipientId } }
+        );
+        
+        await User.findByIdAndUpdate(
+            friendRequest.recipientId,
+            { $addToSet: { friends: friendRequest.requesterId } }
+        );
+        
+        res.json({ message: 'Friend request accepted' });
+    } catch (error) {
+        console.error('Error accepting friend request:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Unfriend a user
+router.delete('/friends/unfriend-by-username/:username', authenticateToken, async (req, res) => {
+    try {
+        const { username } = req.params;
+        
+        // Find the user to unfriend
+        const userToUnfriend = await User.findOne({ username });
+        
+        if (!userToUnfriend) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        // Find the friendship record
+        const friendship = await Friend.findOne({
+            $or: [
+                { requesterId: req.user.id, recipientId: userToUnfriend._id, status: 'accepted' },
+                { requesterId: userToUnfriend._id, recipientId: req.user.id, status: 'accepted' }
+            ]
+        });
+        
+        if (!friendship) {
+            return res.status(404).json({ message: 'Friendship not found' });
+        }
+        
+        // Remove from both users' friends arrays
+        await User.findByIdAndUpdate(
+            req.user.id,
+            { $pull: { friends: userToUnfriend._id } }
+        );
+        
+        await User.findByIdAndUpdate(
+            userToUnfriend._id,
+            { $pull: { friends: req.user.id } }
+        );
+        
+        // Delete the friendship record
+        await Friend.findByIdAndDelete(friendship._id);
+        
+        res.json({ message: 'Friend removed successfully' });
+    } catch (error) {
+        console.error('Error unfriending user:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Get friendship status between current user and another user
+router.get('/friends/status/:userId', authenticateToken, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        // Find friendship record
+        const friendship = await Friend.findOne({
+            $or: [
+                { requesterId: req.user.id, recipientId: userId },
+                { requesterId: userId, recipientId: req.user.id }
+            ]
+        });
+        
+        if (!friendship) {
+            return res.json({ status: 'none' });
+        }
+        
+        // Check if users are in each other's friends arrays for double verification
+        const currentUser = await User.findById(req.user.id);
+        const otherUser = await User.findById(userId);
+        
+        const inFriendsArray = currentUser.friends.includes(userId) && 
+                              otherUser.friends.includes(req.user.id);
+        
+        // If they're in each other's friends arrays but friendship status isn't 'accepted',
+        // update the friendship status
+        if (inFriendsArray && friendship.status !== 'accepted') {
+            friendship.status = 'accepted';
+            await friendship.save();
+        }
+        
+        res.json({ 
+            status: friendship.status,
+            requesterId: friendship.requesterId,
+            recipientId: friendship.recipientId
+        });
+    } catch (error) {
+        console.error('Error checking friendship status:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Add this new endpoint to check if two users are friends directly by IDs
+router.get('/friends/check/:targetUserId', authenticateToken, async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const targetUserId = req.params.targetUserId;
+        
+        console.log(`Checking friendship between ${currentUserId} and ${targetUserId}`);
+        console.log('Current user ID type:', typeof currentUserId);
+        console.log('Target user ID type:', typeof targetUserId);
+        
+        // Find friendship record where both users are involved and status is accepted
+        const friendship = await Friend.findOne({
+            $or: [
+                { 
+                    requesterId: currentUserId.toString(), 
+                    recipientId: targetUserId.toString(), 
+                    status: 'accepted' 
+                },
+                { 
+                    requesterId: targetUserId.toString(), 
+                    recipientId: currentUserId.toString(), 
+                    status: 'accepted' 
+                }
+            ]
+        });
+        
+        // If not found with string comparison, try with ObjectId comparison
+        if (!friendship) {
+            console.log('Trying with direct ObjectId comparison');
+            const friendshipWithObjectId = await Friend.findOne({
+                $or: [
+                    { requesterId: currentUserId, recipientId: targetUserId, status: 'accepted' },
+                    { requesterId: targetUserId, recipientId: currentUserId, status: 'accepted' }
+                ]
+            });
+            
+            if (friendshipWithObjectId) {
+                console.log('Found friendship with ObjectId comparison:', friendshipWithObjectId._id);
+                return res.json({
+                    areFriends: true,
+                    friendship: friendshipWithObjectId
+                });
+            }
+        }
+        
+        // If still not found, try with a more flexible query
+        if (!friendship) {
+            console.log('Trying with more flexible query');
+            // Get all friendships for current user
+            const allFriendships = await Friend.find({
+                $or: [
+                    { requesterId: currentUserId, status: 'accepted' },
+                    { recipientId: currentUserId, status: 'accepted' }
+                ]
+            });
+            
+            console.log(`Found ${allFriendships.length} friendships for current user`);
+            
+            // Check if any of them involve the target user
+            const matchingFriendship = allFriendships.find(f => 
+                (f.requesterId.toString() === targetUserId.toString() || 
+                 f.recipientId.toString() === targetUserId.toString())
+            );
+            
+            if (matchingFriendship) {
+                console.log('Found friendship with flexible query:', matchingFriendship._id);
+                return res.json({
+                    areFriends: true,
+                    friendship: matchingFriendship
+                });
+            }
+        }
+        
+        // Return true if friendship exists, false otherwise
+        const areFriends = !!friendship;
+        console.log(`Friendship check result: ${areFriends}`, friendship ? friendship._id : 'No record found');
+        
+        res.json({ 
+            areFriends,
+            friendship: friendship || null
+        });
+    } catch (error) {
+        console.error('Error checking friendship:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Check friendship by username
+router.get('/friends/check-by-username/:username', authenticateToken, async (req, res) => {
+    try {
+        const currentUserId = req.user.id;
+        const { username } = req.params;
+        
+        // Find the target user by username
+        const targetUser = await User.findOne({ username });
+        
+        if (!targetUser) {
+            return res.status(404).json({ message: 'User not found', areFriends: false });
+        }
+        
+        const targetUserId = targetUser._id;
+        
+        console.log(`Checking friendship between ${currentUserId} and ${targetUserId} (${username})`);
+        
+        // Find friendship record where both users are involved and status is accepted
+        const friendship = await Friend.findOne({
+            $or: [
+                { requesterId: currentUserId, recipientId: targetUserId, status: 'accepted' },
+                { requesterId: targetUserId, recipientId: currentUserId, status: 'accepted' }
+            ]
+        });
+        
+        // Return true if friendship exists, false otherwise
+        const areFriends = !!friendship;
+        console.log(`Username-based friendship check result: ${areFriends}`, friendship ? friendship._id : 'No record found');
+        
+        res.json({ 
+            areFriends,
+            friendship: friendship || null
+        });
+    } catch (error) {
+        console.error('Error checking friendship by username:', error);
+        res.status(500).json({ message: 'Server error', areFriends: false });
     }
 });
 

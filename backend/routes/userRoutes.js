@@ -3,6 +3,23 @@ const router = express.Router();
 const User = require('../models/userModel');
 const authenticateToken = require('../middleware/authMiddleware');
 
+// Get current user ID from token
+router.get('/users/me', authenticateToken, async (req, res) => {
+    try {
+        // The authenticateToken middleware already verified the token
+        // and attached the user ID to req.user
+        
+        // Just return the user ID
+        res.json({ 
+            _id: req.user.id,
+            username: req.user.username
+        });
+    } catch (error) {
+        console.error('Error fetching current user ID:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 // Get user profile
 router.get('/user/profile', authenticateToken, async (req, res) => {
     try {

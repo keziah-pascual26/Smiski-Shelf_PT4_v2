@@ -412,7 +412,7 @@ if (posts && posts.length > 0) {
     }
 }
 
-// Add this new function to handle privacy restrictions on tabs
+// Update the applyPrivacyRestrictions function to consider friendship
 function applyPrivacyRestrictions(isPublic) {
     console.log('Applying privacy restrictions, isPublic:', isPublic);
     
@@ -420,125 +420,333 @@ function applyPrivacyRestrictions(isPublic) {
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     
-    if (!isPublic) {
-        // If profile is private, disable all tabs except the main profile tab
-        tabButtons.forEach(button => {
-            const tabName = button.getAttribute('data-tab');
-            
-            // Skip the main profile tab (usually 'about' or 'profile')
-            if (tabName !== 'profile') {
-                // Add a lock icon and disabled class
-                button.innerHTML = `<i class="fas fa-lock"></i> ${button.textContent}`;
-                button.classList.add('disabled');
-                button.disabled = true;
-                
-                // Add click handler to show privacy message
-                button.onclick = (e) => {
-                    e.preventDefault();
-                    alert('This content is private');
-                    return false;
-                };
+    // Get the user ID from the profile container
+    const profileContainer = document.querySelector('.profile-page-container');
+    const userId = profileContainer ? profileContainer.dataset.userId : null;
+    
+    // If the profile is private, check if the users are friends before restricting access
+    if (!isPublic && userId) {
+        checkIsFriend(userId).then(isFriend => {
+            if (isFriend) {
+                // If they're friends, don't restrict access
+                console.log('Users are friends, not restricting access to private profile');
+                enableAllTabs(tabButtons, tabContents);
+            } else {
+                // If they're not friends, restrict access
+                console.log('Users are not friends, restricting access to private profile');
+                restrictAccess(tabButtons, tabContents);
             }
         });
-        
-        // Add privacy message to all content tabs except profile
-        tabContents.forEach(content => {
-            const tabId = content.id;
-            
-            if (!tabId.includes('profile')) {
-                content.innerHTML = `
-                    <div class="private-content">
-                        <i class="fas fa-lock"></i>
-                        <h3>Private Content</h3>
-                        <p>This user has set their content to private.</p>
-                    </div>
-                `;
-            }
-        });
+    } else if (!isPublic) {
+        // If we don't have the user ID or the profile is private, restrict access
+        restrictAccess(tabButtons, tabContents);
     } else {
-        // If profile is public, ensure all tabs are enabled
-        tabButtons.forEach(button => {
-            // Remove any lock icons
-            button.innerHTML = button.innerHTML.replace('<i class="fas fa-lock"></i> ', '');
-            button.classList.remove('disabled');
-            button.disabled = false;
-            
-            // Restore original click behavior
-            button.onclick = null;
-        });
+        // If the profile is public, enable all tabs
+        enableAllTabs(tabButtons, tabContents);
     }
 }
 
-// Update the updateProfileUI function to call applyPrivacyRestrictions
+// Helper function to enable all tabs
+function enableAllTabs(tabButtons, tabContents) {
+    // If profile is public, ensure all tabs are enabled
+    tabButtons.forEach(button => {
+        // Remove any lock icons
+        button.innerHTML = button.innerHTML.replace('<i class="fas fa-lock"></i> ', '');
+        button.classList.remove('disabled');
+        button.disabled = false;
+        
+        // Restore original click behavior
+        button.onclick = null;
+    });
+    
+    // Show tabs container
+    const tabsContainer = document.querySelector('.profile-tabs');
+    if (tabsContainer) {
+        tabsContainer.style.display = 'flex';
+    }
+}
+
+// Helper function to restrict access to tabs
+function restrictAccess(tabButtons, tabContents) {
+    // If profile is private, disable all tabs except the main profile tab
+    tabButtons.forEach(button => {
+        const tabName = button.getAttribute('data-tab');
+        
+        // Skip the main profile tab (usually 'about' or 'profile')
+        if (tabName !== 'profile') {
+            // Add a lock icon and disabled class
+            button.innerHTML = `<i class="fas fa-lock"></i> ${button.textContent}`;
+            button.classList.add('disabled');
+            button.disabled = true;
+            
+            // Add click handler to show privacy message
+            button.onclick = (e) => {
+                e.preventDefault();
+                alert('This content is private');
+                return false;
+            };
+        }
+    });
+    
+    // Add privacy message to all content tabs except profile
+    tabContents.forEach(content => {
+        const tabId = content.id;
+        
+        if (!tabId.includes('profile')) {
+            content.innerHTML = `
+                <div class="private-content">
+                    <i class="fas fa-lock"></i>
+                    <h3>Private Content</h3>
+                    <p>This user has set their content to private.</p>
+                </div>
+            `;
+        }
+    });
+    
+    // Hide tabs if profile is private
+    const tabsContainer = document.querySelector('.profile-tabs');
+    if (tabsContainer) {
+        tabsContainer.style.display = 'none';
+    }
+    
+    // Show privacy message in content area
+    const contentContainer = document.querySelector('.profile-content');
+    if (contentContainer) {
+        contentContainer.innerHTML = `
+            <div class="private-profile-message">
+                <i class="fas fa-lock"></i>
+                <h2>This profile is private</h2>
+                <p>The user has chosen to keep their content private.</p>
+            </div>
+        `;
+    }
+}
+
+async function checkIsFriend(userId) {
+    try {
+        // Get current user ID from token
+        const currentUserId = await getCurrentUserId();
+        
+        console.log('FRIENDSHIP CHECK:');
+        console.log('Current user ID:', currentUserId);
+        console.log('Visited profile user ID:', userId);
+        
+        if (!currentUserId || !userId) {
+            console.error('Missing user IDs for friendship check');
+            return false;
+        }
+        
+        // Try the direct friendship check endpoint first
+        try {
+            const response = await fetch(`http://localhost:3000/api/friends/check/${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Failed to check friendship status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('Direct friendship check result:', data);
+            
+            return data.areFriends;
+        } catch (error) {
+            console.error('Error with direct friendship check:', error);
+            
+            // Fallback to the status endpoint
+            try {
+                const statusResponse = await fetch(`http://localhost:3000/api/friends/status/${userId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!statusResponse.ok) {
+                    throw new Error('Failed to check friendship status with fallback method');
+                }
+                
+                const statusData = await statusResponse.json();
+                console.log('Fallback friendship status check result:', statusData);
+                
+                // Check if status is 'accepted' or 'friends'
+                return statusData.status === 'accepted' || statusData.status === 'friends';
+            } catch (fallbackError) {
+                console.error('Error with fallback friendship check:', fallbackError);
+                
+                // Last resort - try a manual check by username
+                try {
+                    const username = document.getElementById('profileUsername')?.textContent;
+                    if (username) {
+                        const manualResponse = await fetch(`http://localhost:3000/api/friends/check-by-username/${encodeURIComponent(username)}`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (manualResponse.ok) {
+                            const manualData = await manualResponse.json();
+                            console.log('Manual username friendship check result:', manualData);
+                            return manualData.areFriends;
+                        }
+                    }
+                } catch (manualError) {
+                    console.error('Error with manual friendship check:', manualError);
+                }
+                
+                return false;
+            }
+        }
+    } catch (error) {
+        console.error('Error checking if users are friends:', error);
+        return false;
+    }
+}
+
+// Helper function to get current user ID from token
+async function getCurrentUserId() {
+    try {
+        // Try to decode the token locally first
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('No token found');
+        }
+        
+        // Try to extract user ID from token payload
+        try {
+            // Split the token and get the payload part
+            const tokenParts = token.split('.');
+            if (tokenParts.length !== 3) {
+                throw new Error('Invalid token format');
+            }
+            
+            // Decode the payload
+            const payload = JSON.parse(atob(tokenParts[1]));
+            console.log('Decoded token payload:', payload);
+            
+            // Check if payload has user ID
+            if (payload && payload.id) {
+                console.log('Found user ID in token:', payload.id);
+                return payload.id;
+            }
+        } catch (decodeError) {
+            console.log('Could not decode token locally:', decodeError);
+            // Continue to server-side verification if local decoding fails
+        }
+        
+        // If local decoding fails, try server endpoint
+        const response = await fetch('http://localhost:3000/api/users/me', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch current user data');
+        }
+        
+        const userData = await response.json();
+        console.log('User data from /api/users/me:', userData);
+        return userData._id;
+    } catch (error) {
+        console.error('Error getting current user ID:', error);
+        
+        // Last resort - try to get user ID from localStorage if it was stored there
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            console.log('Using user ID from localStorage:', userId);
+            return userId;
+        }
+        
+        return null;
+    }
+}
+
+// Update the updateProfileUI function to include friendship status check
 function updateProfileUI(userData) {
     if (profileUsername) profileUsername.textContent = userData.username;
     if (profileBio) profileBio.textContent = userData.bio || 'No bio available';
     
     if (profilePicture) {
         if (userData.profilePicture) {
-            profilePicture.src = `/uploads/${userData.profilePicture}`;
+            // Update to use the full URL to the profile picture
+            profilePicture.src = userData.profilePicture ? 
+                `http://localhost:3000${userData.profilePicture}` : 
+                '/public/default-avatar.png';
         } else {
             profilePicture.src = '/public/default-avatar.png';
         }
     }
     
-    // Check if profile is private - FIXED: Ensure proper boolean conversion
+    // Check if profile is private
     const isPublic = userData.isProfilePublic !== undefined ? Boolean(userData.isProfilePublic) : true;
     console.log('Profile privacy status in updateProfileUI:', isPublic, 'Raw value:', userData.isProfilePublic);
     
-    // Apply privacy restrictions based on profile status
-    applyPrivacyRestrictions(isPublic);
+    // Store user ID for later use
+    const profileContainer = document.querySelector('.profile-page-container');
+    if (profileContainer && userData._id) {
+        profileContainer.dataset.userId = userData._id;
+        console.log('Stored visited profile user ID in DOM:', userData._id);
+    } else {
+        console.warn('Could not store user ID - Container or ID missing:', {
+            container: !!profileContainer,
+            userId: userData._id
+        });
+    }
     
-    // Add privacy indicator if profile is private
-    const profileHeader = document.querySelector('.profile-header');
-    if (profileHeader) {
-        // Remove any existing privacy indicator
-        const existingIndicator = profileHeader.querySelector('.privacy-indicator');
-        if (existingIndicator) {
-            existingIndicator.remove();
-        }
-        
-        if (!isPublic) {
-            const privacyIndicator = document.createElement('div');
-            privacyIndicator.className = 'privacy-indicator';
-            privacyIndicator.innerHTML = '<i class="fas fa-lock"></i> This profile is private';
-            profileHeader.appendChild(privacyIndicator);
+    // If user has an ID, check if they're friends with the current user
+    if (userData._id) {
+        console.log('About to check friendship status with user ID:', userData._id);
+        checkIsFriend(userData._id).then(isFriend => {
+            console.log('Are users friends?', isFriend);
             
-            // Hide tabs if profile is private
-            const tabsContainer = document.querySelector('.profile-tabs');
-            if (tabsContainer) {
-                tabsContainer.style.display = 'none';
-            }
+            // Add a friendship badge to the profile if they are friends
+            const profileHeader = document.querySelector('.profile-header');
+            const friendshipBadge = document.querySelector('.friendship-badge') || document.createElement('div');
+            friendshipBadge.className = 'friendship-badge';
             
-            // Show privacy message in content area
-            const contentContainer = document.querySelector('.profile-content');
-            if (contentContainer) {
-                contentContainer.innerHTML = `
-                    <div class="private-profile-message">
-                        <i class="fas fa-lock"></i>
-                        <h2>This profile is private</h2>
-                        <p>The user has chosen to keep their content private.</p>
-                    </div>
-                `;
+            if (isFriend) {
+                friendshipBadge.innerHTML = '<i class="fas fa-user-friends"></i> Friends';
+                friendshipBadge.style.display = 'block';
+                
+                // If the badge doesn't exist yet, add it to the profile header
+                if (!document.querySelector('.friendship-badge') && profileHeader) {
+                    profileHeader.appendChild(friendshipBadge);
+                }
+                
+                // If the profile is private but they're friends, allow access to content
+                if (!isPublic) {
+                    console.log('Profile is private but users are friends, allowing access');
+                    applyPrivacyRestrictions(true); // Treat as public for friends
+                }
+            } else {
+                // If they're not friends, remove the badge if it exists
+                if (document.querySelector('.friendship-badge')) {
+                    friendshipBadge.remove();
+                }
+                
+                // Apply privacy restrictions based on profile status
+                applyPrivacyRestrictions(isPublic);
             }
-        } else {
-            // Show tabs if profile is public
-            const tabsContainer = document.querySelector('.profile-tabs');
-            if (tabsContainer) {
-                tabsContainer.style.display = 'flex';
-            }
-        }
+        });
+    } else {
+        // If no user ID, just apply privacy restrictions
+        console.warn('No user ID available, cannot check friendship status');
+        applyPrivacyRestrictions(isPublic);
     }
     
     // Check friendship status and update UI accordingly
     if (userData._id && friendActionBtn) {
         checkFriendshipStatus(userData._id);
-    }
-    
-    // Store user ID for later use
-    const profileContainer = document.querySelector('.profile-page-container');
-    if (profileContainer) {
-        profileContainer.dataset.userId = userData._id;
     }
 }
     
@@ -615,59 +823,61 @@ function updateProfileUI(userData) {
     }
     
     // Function to check friendship status
-    async function checkFriendshipStatus(targetUserId) {
-        try {
-            const response = await fetch(`http://localhost:3000/api/friends/status/${targetUserId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to fetch friendship status');
+async function checkFriendshipStatus(targetUserId) {
+    try {
+        const response = await fetch(`http://localhost:3000/api/friends/status/${targetUserId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch friendship status');
+        }
+        
+        const { status } = await response.json();
+        console.log('Friendship status from API:', status);
+        
+        // Update friend action button based on status
+        if (friendActionBtn) {
+            switch(status) {
+                case 'none':
+                    friendActionBtn.textContent = 'Add Friend';
+                    friendActionBtn.className = 'action-btn add-friend';
+                    friendActionBtn.onclick = () => sendFriendRequest(targetUserId);
+                    break;
+                case 'pending_sent':
+                    friendActionBtn.textContent = 'Cancel Request';
+                    friendActionBtn.className = 'action-btn cancel-request';
+                    friendActionBtn.onclick = () => cancelFriendRequest(targetUserId);
+                    break;
+                case 'pending_received':
+                    friendActionBtn.textContent = 'Accept Request';
+                    friendActionBtn.className = 'action-btn accept-request';
+                    friendActionBtn.onclick = () => acceptFriendRequest(targetUserId);
+                    break;
+                case 'friends':
+                case 'accepted': // Add this case to handle 'accepted' status
+                    friendActionBtn.textContent = 'Unfriend';
+                    friendActionBtn.className = 'action-btn unfriend';
+                    friendActionBtn.onclick = () => unfriend(targetUserId);
+                    break;
+                default:
+                    friendActionBtn.style.display = 'none';
             }
             
-            const { status } = await response.json();
-            
-            // Update friend action button based on status
-            if (friendActionBtn) {
-                switch(status) {
-                    case 'none':
-                        friendActionBtn.textContent = 'Add Friend';
-                        friendActionBtn.className = 'action-btn add-friend';
-                        friendActionBtn.onclick = () => sendFriendRequest(targetUserId);
-                        break;
-                    case 'pending_sent':
-                        friendActionBtn.textContent = 'Cancel Request';
-                        friendActionBtn.className = 'action-btn cancel-request';
-                        friendActionBtn.onclick = () => cancelFriendRequest(targetUserId);
-                        break;
-                    case 'pending_received':
-                        friendActionBtn.textContent = 'Accept Request';
-                        friendActionBtn.className = 'action-btn accept-request';
-                        friendActionBtn.onclick = () => acceptFriendRequest(targetUserId);
-                        break;
-                    case 'friends':
-                        friendActionBtn.textContent = 'Unfriend';
-                        friendActionBtn.className = 'action-btn unfriend';
-                        friendActionBtn.onclick = () => unfriend(targetUserId);
-                        break;
-                    default:
-                        friendActionBtn.style.display = 'none';
-                }
-                
-                // Show the button after status is determined
-                friendActionBtn.style.display = 'block';
-            }
-        } catch (error) {
-            console.error('Error checking friendship status:', error);
-            if (friendActionBtn) {
-                friendActionBtn.style.display = 'none';
-            }
+            // Show the button after status is determined
+            friendActionBtn.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error checking friendship status:', error);
+        if (friendActionBtn) {
+            friendActionBtn.style.display = 'none';
         }
     }
+}
     
     // Friend action functions
     async function sendFriendRequest(targetUserId) {
@@ -771,18 +981,6 @@ async function loadUserPosts(username) {
     // Check if profile is private - FIXED: Use the correct container and string comparison
     const profileContainer = document.querySelector('.profile-page-container');
     const isPublic = profileContainer ? profileContainer.dataset.isPublic === 'true' : true;
-    console.log('Loading posts, isPublic:', isPublic);
-    
-    if (!isPublic) {
-        userPostsFeed.innerHTML = `
-            <div class="private-content">
-                <i class="fas fa-lock"></i>
-                <h3>Private Content</h3>
-                <p>This user's posts are private.</p>
-            </div>
-        `;
-        return;
-    }
     
     try {
         // Using the correct endpoint format from your postRoutes.js
