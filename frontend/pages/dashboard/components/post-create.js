@@ -8,83 +8,81 @@ document.addEventListener("DOMContentLoaded", function () {
 const style = document.createElement("style");
 style.textContent = `
     /* Post Create Styles */
-    .post-input {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        color: #1c1e21;
-    }
-    
     .post-create-container {
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        padding: 12px 16px;
-        margin-bottom: 16px;
+        background-color: #7EC146 !important; /* Force the color change */
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        padding: 16px;
+        margin: 0 auto; /* Center the container itself */
         border: 1px solid #e4e6eb;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center; /* Center content horizontally */
+        justify-content: center; /* Center content vertically */
+        text-align: center; /* Center text */
+        max-width: 600px; /* Optional: Limit the width for better appearance */
+        width: 100%; /* Ensure it spans the full width of its parent */
     }
-    
+
     .user-profile {
         display: flex;
         align-items: center;
-        margin-bottom: 10px;
+        gap: 10px;
+        width: 100%; /* Ensure it spans the full width */
     }
-    
+
     .user-profile img {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        margin-right: 10px;
         object-fit: cover;
     }
-    
-    .username {
-        font-weight: 600;
-        color: #050505;
-    }
-    
+
     input.post-input {
-        width: 100%;
-        padding: 8px 12px;
-        border: none;
+        flex: 1; /* Allow the input to take up remaining space */
+        padding: 10px 15px;
+        border: 1px solid #e4e6eb;
         border-radius: 20px;
         background-color: #f0f2f5;
-        font-size: 15px;
+        font-size: 14px;
         margin-bottom: 10px;
         cursor: pointer;
     }
-    
+
     input.post-input:focus {
         outline: none;
+        border-color: #1877f2;
     }
-    
+
     .post-options {
         display: flex;
-        justify-content: space-around;
-        padding-top: 12px;
+        justify-content: space-evenly; /* Distribute buttons evenly */
+        width: 100%; /* Ensure it spans the full width */
+        padding-top: 10px;
         border-top: 1px solid #e4e6eb;
     }
-    
+
     .post-option {
         display: flex;
         align-items: center;
+        gap: 8px;
         padding: 8px 12px;
-        border-radius: 4px;
+        border-radius: 8px;
         cursor: pointer;
         color: #65676b;
         font-weight: 500;
-        font-size: 14px;
+        font-size: 13px;
         transition: background-color 0.2s;
-        flex: 1;
-        justify-content: center;
     }
-    
+
     .post-option:hover {
         background-color: #f0f2f5;
     }
-    
+
     .post-option img {
         width: 20px;
         height: 20px;
-        margin-right: 8px;
     }
         
         /* Post Modal Styles */
@@ -360,11 +358,20 @@ style.textContent = `
                 <input type="text" class="post-input" placeholder="What's on your mind, ${storedUsername}?">
             </div>
 
-            <!-- Post Options -->
+             <!-- Post Options -->
             <div class="post-options">
-                <div class="post-option"><img src="/public/live.png" alt="Live video"> Live video</div>
-                <div class="post-option"><img src="/public/photos.png" alt="Photo/video"> Photo/video</div>
-                <div class="post-option"><img src="/public/feeling.png" alt="Feeling/activity"> Feeling/activity</div>
+                <div class="post-option">
+                    <img src="/public/live.png" alt="Live video">
+                    <span>Live video</span>
+                </div>
+                <div class="post-option">
+                    <img src="/public/photos.png" alt="Photo/video">
+                    <span>Photo/video</span>
+                </div>
+                <div class="post-option">
+                    <img src="/public/feeling.png" alt="Feeling/activity">
+                    <span>Feeling/activity</span>
+                </div>
             </div>
         </div>
 

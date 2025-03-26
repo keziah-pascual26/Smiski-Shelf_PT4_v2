@@ -172,6 +172,82 @@
     gap: 20px;
 }
 
+.user-posts-feed .post {
+    background-color: #7EC146; /* Green background */
+    border-radius: 6px;
+    padding: 10px; /* Reduced padding */
+    margin-bottom: 12px; /* Reduced margin */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    color: #4A4A4A; /* Text color */
+    font-family: Arial, sans-serif;
+    font-size: 0.9rem; /* Reduced font size */
+    max-width: 600px; /* Set a smaller maximum width */
+    margin: 0 auto; /* Center the feed */
+}
+
+.user-posts-feed .post-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px; /* Reduced margin */
+}
+
+.user-posts-feed .post-header img {
+    width: 30px; /* Reduced size */
+    height: 30px; /* Reduced size */
+    border-radius: 50%;
+    margin-right: 8px; /* Reduced margin */
+}
+
+.user-posts-feed .post-header .username {
+    font-weight: bold;
+    font-size: 0.9rem; /* Reduced font size */
+    color: #333;
+}
+
+.user-posts-feed .post-header .timestamp {
+    font-size: 0.75rem; /* Reduced font size */
+    color: #666;
+    margin-left: 8px; /* Reduced margin */
+}
+
+.user-posts-feed .post-content {
+    margin: 8px 0; /* Reduced margin */
+    font-size: 0.9rem; /* Reduced font size */
+    color: #1c1e21;
+}
+
+.user-posts-feed .post-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #ddd;
+    padding-top: 8px; /* Reduced padding */
+    margin-top: 8px; /* Reduced margin */
+}
+
+.user-posts-feed .post-footer .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px; /* Reduced gap */
+    font-size: 0.75rem; /* Reduced font size */
+    color: #666;
+}
+
+.user-posts-feed .post-footer button {
+    background: none;
+    border: none;
+    color: #4A4A4A;
+    font-size: 0.8rem; /* Reduced font size */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px; /* Reduced gap */
+}
+
+.user-posts-feed .post-footer button:hover {
+    color: #333;
+}
+
 /* Loading Indicator */
 .loading {
     text-align: center;
