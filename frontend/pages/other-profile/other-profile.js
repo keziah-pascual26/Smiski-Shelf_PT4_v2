@@ -142,18 +142,6 @@ async function loadUserLikedPosts(username) {
     
     // Check if profile is private
     const profileContainer = document.querySelector('.profile-container');
-    const isPublic = profileContainer ? profileContainer.dataset.isPublic === 'true' : true;
-    
-    if (!isPublic) {
-        userLikedFeed.innerHTML = `
-            <div class="private-content">
-                <i class="fas fa-lock"></i>
-                <h3>Private Content</h3>
-                <p>This user's liked posts are private.</p>
-            </div>
-        `;
-        return;
-    }
     
     try {
         // Make sure we're passing the visited user's username, not the logged-in user
@@ -803,18 +791,6 @@ async function loadUserStories(username) {
     
     // Check if profile is private
     const profileContainer = document.querySelector('.profile-container');
-    const isPublic = profileContainer ? profileContainer.dataset.isPublic === 'true' : true;
-    
-    if (!isPublic) {
-        userStoriesFeed.innerHTML = `
-            <div class="private-content">
-                <i class="fas fa-lock"></i>
-                <h3>Private Content</h3>
-                <p>This user's stories are private.</p>
-            </div>
-        `;
-        return;
-    }
     
     try {
         const response = await fetch(`http://localhost:3000/api/stories/user/${encodeURIComponent(username)}`, {
