@@ -192,4 +192,29 @@ router.put('/user/profile', authenticateToken, async (req, res) => {
     }
 });
 
+// Get user profile by username
+router.get('/users/byUsername/:username', authenticateToken, async (req, res) => {
+    try {
+        const username = req.params.username;
+        const user = await User.findOne({ username: username });
+        
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        // Return user data without sensitive information
+        res.json({
+            _id: user._id,
+            name: user.name || '',
+            username: user.username,
+            bio: user.bio || '',
+            profilePicture: user.profilePicture || null,
+            isProfilePublic: user.isProfilePublic
+        });
+    } catch (error) {
+        console.error('Error fetching user profile by username:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 module.exports = router;

@@ -486,9 +486,21 @@ function createPostElement(post, isLikedTab = false) {
     postElement.innerHTML = `
         <div class="post-header">
             <img src="/public/no-profile.png" alt="User Profile">
-            <span class="username">${post.username}</span>
-            <span class="timestamp">• ${timestamp}</span>
-            ${post.originalPostId ? `• Reposted from original post` : ''}
+            <div class="post-header-info">
+                <span class="username">${post.username}</span>
+                <span class="timestamp">• ${timestamp}</span>
+                ${post.originalPostId ? `• Reposted from original post` : ''}
+            </div>
+            ${showEditDelete ? `
+                <div class="post-actions">
+                    <button class="post-action-btn edit-post-btn" data-post-id="${post._id}">
+                        
+                    </button>
+                    <button class="post-action-btn delete-post-btn" data-post-id="${post._id}">
+                        
+                    </button>
+                </div>
+            ` : ''}
         </div>
         <div class="post-content" id="post-content-${post._id}">
             <p>${post.text}</p>
@@ -531,92 +543,434 @@ function createPostElement(post, isLikedTab = false) {
                 <button class="cancel-edit-button" data-id="${post._id}">Cancel</button>
             </div>
         </div>
-        <div class="post-footer">
-            <button class="like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
-                <i class="fa fa-heart"></i> ${post.likes?.length || 0}
+        <div class="post-stats">
+            <div class="stat-item">
+                <i class="fas fa-heart"></i> ${post.likes?.length || 0} likes
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-comment"></i> ${post.comments?.length || 0} comments
+            </div>
+        </div>
+        <div class="post-actions-bar">
+            <button class="post-action-button like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
+                <i class="fas fa-heart"></i> Like
             </button>
-            <button class="comment-button" data-id="${post._id}">
-                <i class="fa fa-comment"></i> ${post.comments?.length || 0}
+            <button class="post-action-button comment-button" data-id="${post._id}">
+                <i class="fas fa-comment"></i> Comment
             </button>
             ${showEditDelete ? `
-                <button class="edit-button" data-id="${post._id}">
-                    <i class="fa fa-edit"></i> Edit
+                <button class="post-action-button edit-button" data-id="${post._id}">
+                    <i class="fas fa-edit"></i> Edit
                 </button>
-                <button class="delete-button" data-id="${post._id}">
-                    <i class="fa fa-trash"></i> Delete
+                <button class="post-action-button delete-button" data-id="${post._id}">
+                    <i class="fas fa-trash"></i> Delete
                 </button>
             ` : ''}
         </div>
         <div class="comment-section" id="comment-section-${post._id}">
             ${(post.comments || []).map(comment => `
                 <div class="comment" data-comment-id="${comment._id}">
-                    <span class="comment-username">${comment.username}</span>: 
-                    <span class="comment-text">${comment.text}</span>
-                    ${comment.username === currentUsername ? `
-                        <button class="delete-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">
-                            <i class="fa fa-times"></i>
-                        </button>
-                    ` : ''}
+                    <img src="/public/no-profile.png" alt="${comment.username}" class="comment-avatar">
+                    <div class="comment-content">
+                        <div class="comment-header">
+                            <span class="comment-username">${comment.username}</span>
+                            <span class="comment-timestamp">${formatTimestamp(comment.createdAt)}</span>
+                        </div>
+                        <div class="comment-text">${comment.text}</div>
+                        ${comment.username === currentUsername ? `
+                            <button class="delete-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
-            `).join('') || '<div>No comments yet</div>'}
-            <input type="text" class="comment-input" placeholder="Add a comment..." data-id="${post._id}">
+            `).join('') || '<div class="no-comments">No comments yet</div>'}
+            <div class="comment-form">
+                <img src="/public/no-profile.png" alt="Your Avatar" class="comment-avatar">
+                <input type="text" class="comment-input" placeholder="Write a comment..." data-id="${post._id}">
+                <button class="comment-submit" data-id="${post._id}">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
         </div>
     `;
     
-    // Add some CSS for the edit form
+    // Add CSS for the post styling
     const style = document.createElement('style');
     style.textContent = `
+        /* Post Styling */
+        .post {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 16px;
+            padding: 16px;
+            transition: box-shadow 0.3s ease;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .post:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Post Header */
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        
+        .post-header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 12px;
+        }
+        
+        .post-header-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .username {
+            font-weight: 600;
+            color: #333;
+            margin-right: 6px;
+        }
+        
+        .timestamp {
+            font-size: 12px;
+            color: #65676b;
+        }
+        
+        .post-actions {
+            position: absolute;
+            right: 0;
+            top: 0;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .post-action-btn {
+            background: none;
+            border: none;
+            color: #65676b;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        
+        .post-action-btn:hover {
+            background-color: #f0f2f5;
+            color: #1877f2;
+        }
+        
+        /* Post Content */
+        .post-content {
+            margin-bottom: 12px;
+            font-size: 15px;
+            line-height: 1.5;
+            color: #1c1e21;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .post-content p {
+            margin: 0 0 12px 0;
+        }
+        
+        /* Post Media */
+        .post-media {
+            margin-bottom: 12px;
+            border-radius: 8px;
+            overflow: hidden; /* Changed from visible to hidden */
+            background-color: transparent;
+            text-align: center;
+            padding: 0;
+            max-width: 100%; /* Ensure container doesn't exceed parent width */
+        }
+
+        .post-media img {
+            width: 100%; /* Changed from auto to 100% */
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            border-radius: 0; /* Remove border radius from image */
+        }
+
+        .post-media video {
+            width: 100%; /* Changed from auto to 100% */
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            background-color: #000;
+            border-radius: 0; /* Remove border radius from video */
+        }
+        
+        /* Post Stats */
+        .post-stats {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-top: 1px solid #e4e6eb;
+            border-bottom: 1px solid #e4e6eb;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #65676b;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        /* Post Actions Bar */
+        .post-actions-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 12px;
+        }
+        
+        .post-action-button {
+            background: none;
+            border: none;
+            padding: 8px 0;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #65676b;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .post-action-button:hover {
+            background-color: #f0f2f5;
+        }
+        
+        .post-action-button.liked {
+            color: #1877f2;
+        }
+        
+        .post-action-button.liked i {
+            color: #1877f2;
+        }
+        
+        /* Comment Section */
+        .comment-section {
+            margin-top: 8px;
+            border-top: 1px solid #e4e6eb;
+            padding-top: 8px;
+        }
+        
+        .comment {
+            display: flex;
+            margin-bottom: 8px;
+            align-items: flex-start;
+        }
+        
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 8px;
+            object-fit: cover;
+        }
+        
+        .comment-content {
+            background-color: #f0f2f5;
+            border-radius: 18px;
+            padding: 8px 12px;
+            flex: 1;
+            position: relative;
+        }
+        
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        
+        .comment-username {
+            font-weight: 600;
+            font-size: 13px;
+            color: #050505;
+        }
+        
+        .comment-timestamp {
+            font-size: 11px;
+            color: #65676b;
+        }
+        
+        .comment-text {
+            font-size: 13px;
+            line-height: 1.3;
+            color: #050505;
+        }
+        
+        .delete-comment-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #65676b;
+            cursor: pointer;
+            padding: 2px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .comment:hover .delete-comment-button {
+            opacity: 1;
+        }
+        
+        .no-comments {
+            color: #65676b;
+            font-size: 13px;
+            text-align: center;
+            padding: 8px 0;
+        }
+        
+        .comment-form {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .comment-input {
+            flex: 1;
+            border: none;
+            background-color: #f0f2f5;
+            border-radius: 20px;
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+        
+        .comment-input:focus {
+            outline: none;
+        }
+        
+        .comment-submit {
+            background: none;
+            border: none;
+            color: #1877f2;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+        
+        .comment-submit:disabled {
+            color: #bcc0c4;
+            cursor: not-allowed;
+        }
+        
+        /* Post Edit Form */
         .post-edit-form {
-            padding: 10px;
+            padding: 12px;
             background-color: #f9f9f9;
-            border-radius: 5px;
-            margin-bottom: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #e4e6eb;
         }
         
         .edit-post-textarea {
             width: 100%;
-            min-height: 80px;
-            padding: 8px;
-            margin-bottom: 10px;
+            min-height: 100px;
+            padding: 10px;
+            margin-bottom: 12px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 8px;
             resize: vertical;
+            font-family: inherit;
+            font-size: 15px;
+        }
+        
+        .edit-post-textarea:focus {
+            outline: none;
+            border-color: #1877f2;
         }
         
         .media-upload-container {
-            margin: 10px 0;
+            margin: 12px 0;
+        }
+        
+        .media-upload-container label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #050505;
         }
         
         .edit-media-input {
-            margin-top: 5px;
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f0f2f5;
         }
         
         .edit-actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            margin-top: 10px;
+            margin-top: 12px;
         }
         
         .save-edit-button, .cancel-edit-button {
-            padding: 5px 10px;
-            border-radius: 4px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
             cursor: pointer;
+            transition: background-color 0.2s;
         }
         
         .save-edit-button {
-            background-color: #4CAF50;
+            background-color: #1877f2;
             color: white;
             border: none;
         }
         
+        .save-edit-button:hover {
+            background-color: #166fe5;
+        }
+        
         .cancel-edit-button {
-            background-color: #f1f1f1;
-            border: 1px solid #ddd;
+            background-color: #e4e6eb;
+            color: #050505;
+            border: none;
+        }
+        
+        .cancel-edit-button:hover {
+            background-color: #d8dadf;
         }
         
         .current-media-preview {
-            margin: 10px 0;
+            margin: 12px 0;
+            padding: 12px;
+            background-color: #f0f2f5;
+            border-radius: 8px;
+        }
+        
+        .current-media-preview p {
+            margin: 0 0 8px 0;
+            font-weight: 500;
         }
         
         .media-preview-container {
@@ -627,11 +981,12 @@ function createPostElement(post, isLikedTab = false) {
         }
         
         .media-preview-item {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             overflow: hidden;
-            border-radius: 4px;
+            border-radius: 8px;
             border: 1px solid #ddd;
+            background-color: white;
         }
         
         .media-preview-item img, .media-preview-item video {
@@ -642,74 +997,94 @@ function createPostElement(post, isLikedTab = false) {
         
         .media-note {
             font-size: 12px;
-            color: #666;
-            margin-top: 5px;
+            color: #65676b;
+            margin-top: 8px;
+            font-style: italic;
         }
     `;
     document.head.appendChild(style);
-        
-        // Add event listeners
-        const likeButton = postElement.querySelector('.like-button');
-        if (likeButton) {
-            likeButton.addEventListener('click', () => {
-                toggleLike(post._id, likeButton);
-            });
-        }
-        
-        const commentInput = postElement.querySelector('.comment-input');
-        if (commentInput) {
-            commentInput.addEventListener('keypress', e => {
-                if (e.key === 'Enter') {
-                    addComment(post._id, commentInput);
-                }
-            });
-        }
-        
-        // Edit button functionality
-        const editButton = postElement.querySelector('.edit-button');
-        if (editButton) {
-            editButton.addEventListener('click', () => {
-                toggleEditMode(post._id);
-            });
-        }
-        
-        // Save edit button functionality
-        const saveEditButton = postElement.querySelector('.save-edit-button');
-        if (saveEditButton) {
-            saveEditButton.addEventListener('click', () => {
-                savePostEdit(post._id);
-            });
-        }
-        
-        // Cancel edit button functionality
-        const cancelEditButton = postElement.querySelector('.cancel-edit-button');
-        if (cancelEditButton) {
-            cancelEditButton.addEventListener('click', () => {
-                toggleEditMode(post._id, false);
-            });
-        }
-        
-        const deleteButton = postElement.querySelector('.delete-button');
-        if (deleteButton) {
-            deleteButton.addEventListener('click', () => {
-                if (confirm('Are you sure you want to delete this post?')) {
-                    deletePost(post._id);
-                }
-            });
-        }
-        
-        const deleteCommentButtons = postElement.querySelectorAll('.delete-comment-button');
-        deleteCommentButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const commentId = button.getAttribute('data-comment-id');
-                if (confirm('Are you sure you want to delete this comment?')) {
-                    deleteComment(post._id, commentId);
-                }
-            });
+    
+    // Add event listeners
+    const likeButton = postElement.querySelector('.like-button');
+    if (likeButton) {
+        likeButton.addEventListener('click', () => {
+            toggleLike(post._id, likeButton);
         });
-        
-        return postElement;
     }
+    
+    const commentButton = postElement.querySelector('.comment-button');
+    if (commentButton) {
+        commentButton.addEventListener('click', () => {
+            const commentSection = postElement.querySelector(`#comment-section-${post._id}`);
+            commentSection.classList.toggle('expanded');
+            const commentInput = commentSection.querySelector('.comment-input');
+            if (commentInput) {
+                commentInput.focus();
+            }
+        });
+    }
+    
+    const commentInput = postElement.querySelector('.comment-input');
+    const commentSubmit = postElement.querySelector('.comment-submit');
+    if (commentInput) {
+        commentInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') {
+                addComment(post._id, commentInput);
+            }
+        });
+    }
+    
+    if (commentSubmit) {
+        commentSubmit.addEventListener('click', () => {
+            addComment(post._id, commentInput);
+        });
+    }
+    
+    // Edit button functionality
+    const editButton = postElement.querySelector('.edit-button');
+    if (editButton) {
+        editButton.addEventListener('click', () => {
+            toggleEditMode(post._id);
+        });
+    }
+    
+    // Save edit button functionality
+    const saveEditButton = postElement.querySelector('.save-edit-button');
+    if (saveEditButton) {
+        saveEditButton.addEventListener('click', () => {
+            savePostEdit(post._id);
+        });
+    }
+    
+    // Cancel edit button functionality
+    const cancelEditButton = postElement.querySelector('.cancel-edit-button');
+    if (cancelEditButton) {
+        cancelEditButton.addEventListener('click', () => {
+            toggleEditMode(post._id, false);
+        });
+    }
+    
+    const deleteButton = postElement.querySelector('.delete-button');
+    if (deleteButton) {
+        deleteButton.addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete this post?')) {
+                deletePost(post._id);
+            }
+        });
+    }
+    
+    const deleteCommentButtons = postElement.querySelectorAll('.delete-comment-button');
+    deleteCommentButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const commentId = button.getAttribute('data-comment-id');
+            if (confirm('Are you sure you want to delete this comment?')) {
+                deleteComment(post._id, commentId);
+            }
+        });
+    });
+    
+    return postElement;
+}
     
     // Helper function to create a story element
     function createStoryElement(story) {

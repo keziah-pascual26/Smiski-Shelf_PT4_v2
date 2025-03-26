@@ -206,8 +206,9 @@ async function loadTargetUserProfile(username) {
         
         // Try to get user data directly from the user profile endpoint
         try {
-            // FIXED: Use the correct API endpoint path that matches your backend routes
-            const userResponse = await fetch(`http://localhost:3000/api/users/profile/${encodeURIComponent(username)}`, {
+            // FIXED: Use the correct API endpoint that matches your backend routes
+            // The endpoint in userRoutes.js is '/user/profile' not '/api/users/profile/:username'
+            const userResponse = await fetch(`http://localhost:3000/api/user/profile/${encodeURIComponent(username)}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -215,23 +216,63 @@ async function loadTargetUserProfile(username) {
                 }
             });
             
-            if (userResponse.ok) {
-                const userData = await userResponse.json();
-                console.log('User data received directly:', userData);
-                
-                // Store privacy setting in the profile container
-                const profileContainer = document.querySelector('.profile-page-container');
-                if (profileContainer) {
-                    // Explicitly check the boolean value to ensure correct privacy setting
-                    profileContainer.dataset.isPublic = userData.isProfilePublic === false ? 'false' : 'true';
-                    console.log('Profile privacy status from DB:', userData.isProfilePublic);
-                }
-                
-                updateProfileUI(userData);
-                return userData;
+            // Check if response is OK before trying to parse JSON
+            if (!userResponse.ok) {
+                console.error(`API returned status: ${userResponse.status}`);
+                // Try to get the error message from the response
+                const errorText = await userResponse.text();
+                console.error('Error response:', errorText);
+                throw new Error(`Failed to fetch user profile: ${userResponse.status}`);
             }
+            
+            // Now try to parse the JSON
+            const userData = await userResponse.json();
+            console.log('User data received directly:', userData);
+            
+            // Store privacy setting in the profile container
+            const profileContainer = document.querySelector('.profile-page-container');
+            if (profileContainer) {
+                // Explicitly check the boolean value to ensure correct privacy setting
+                profileContainer.dataset.isPublic = userData.isProfilePublic === false ? 'false' : 'true';
+                console.log('Profile privacy status from DB:', userData.isProfilePublic);
+            }
+            
+            updateProfileUI(userData);
+            
+            // Apply privacy restrictions to tabs based on profile privacy
+            applyPrivacyRestrictions(userData.isProfilePublic);
+            
+            return userData;
         } catch (userError) {
-            console.log('Could not fetch user directly, trying posts endpoint', userError);
+            console.error('Could not fetch user directly:', userError);
+            
+            // Try another endpoint specifically for getting user by username
+            try {
+                const usernameResponse = await fetch(`http://localhost:3000/api/users/byUsername/${encodeURIComponent(username)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (usernameResponse.ok) {
+                    const userData = await usernameResponse.json();
+                    console.log('User data received by username:', userData);
+                    
+                    // Store privacy setting
+                    const profileContainer = document.querySelector('.profile-page-container');
+                    if (profileContainer) {
+                        profileContainer.dataset.isPublic = userData.isProfilePublic === false ? 'false' : 'true';
+                    }
+                    
+                    updateProfileUI(userData);
+                    applyPrivacyRestrictions(userData.isProfilePublic);
+                    return userData;
+                }
+            } catch (usernameError) {
+                console.error('Could not fetch user by username:', usernameError);
+            }
         }
         
         // Fallback to posts endpoint
@@ -287,7 +328,8 @@ if (posts && posts.length > 0) {
     if (profileContainer) {
         profileContainer.dataset.isPublic = userData.isProfilePublic ? 'true' : 'false';
     }
-    
+    // Add this line before returning userData in each case:
+    applyPrivacyRestrictions(isProfilePublic);
     // Update profile information
     updateProfileUI(userData);
     return userData;
@@ -335,7 +377,65 @@ if (posts && posts.length > 0) {
         return userData;
     }
 }
+
+// Add this new function to handle privacy restrictions on tabs
+function applyPrivacyRestrictions(isPublic) {
+    console.log('Applying privacy restrictions, isPublic:', isPublic);
+    
+    // Get all tab buttons and content sections
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    if (!isPublic) {
+        // If profile is private, disable all tabs except the main profile tab
+        tabButtons.forEach(button => {
+            const tabName = button.getAttribute('data-tab');
+            
+            // Skip the main profile tab (usually 'about' or 'profile')
+            if (tabName !== 'profile') {
+                // Add a lock icon and disabled class
+                button.innerHTML = `<i class="fas fa-lock"></i> ${button.textContent}`;
+                button.classList.add('disabled');
+                button.disabled = true;
+                
+                // Add click handler to show privacy message
+                button.onclick = (e) => {
+                    e.preventDefault();
+                    alert('This content is private');
+                    return false;
+                };
+            }
+        });
         
+        // Add privacy message to all content tabs except profile
+        tabContents.forEach(content => {
+            const tabId = content.id;
+            
+            if (!tabId.includes('profile')) {
+                content.innerHTML = `
+                    <div class="private-content">
+                        <i class="fas fa-lock"></i>
+                        <h3>Private Content</h3>
+                        <p>This user has set their content to private.</p>
+                    </div>
+                `;
+            }
+        });
+    } else {
+        // If profile is public, ensure all tabs are enabled
+        tabButtons.forEach(button => {
+            // Remove any lock icons
+            button.innerHTML = button.innerHTML.replace('<i class="fas fa-lock"></i> ', '');
+            button.classList.remove('disabled');
+            button.disabled = false;
+            
+            // Restore original click behavior
+            button.onclick = null;
+        });
+    }
+}
+
+// Update the updateProfileUI function to call applyPrivacyRestrictions
 function updateProfileUI(userData) {
     if (profileUsername) profileUsername.textContent = userData.username;
     if (profileBio) profileBio.textContent = userData.bio || 'No bio available';
@@ -351,6 +451,9 @@ function updateProfileUI(userData) {
     // Check if profile is private - FIXED: Ensure proper boolean conversion
     const isPublic = userData.isProfilePublic !== undefined ? Boolean(userData.isProfilePublic) : true;
     console.log('Profile privacy status in updateProfileUI:', isPublic, 'Raw value:', userData.isProfilePublic);
+    
+    // Apply privacy restrictions based on profile status
+    applyPrivacyRestrictions(isPublic);
     
     // Add privacy indicator if profile is private
     const profileHeader = document.querySelector('.profile-header');
