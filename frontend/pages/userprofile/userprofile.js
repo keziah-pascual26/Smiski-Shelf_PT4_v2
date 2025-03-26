@@ -28,6 +28,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById('detail-username').textContent = user.username || 'N/A';
         document.getElementById('detail-email').textContent = user.email || 'N/A';
         document.getElementById('detail-bio').textContent = user.bio || 'N/A';
+
+        // Display the profile picture
+        const profilePictureLarge = document.querySelector('.profile-picture-large');
+        const profilePictureSidebar = document.querySelector('.profile-picture'); // Sidebar profile picture
+
+        if (user.profilePicture) {
+            const profilePictureUrl = `url(http://localhost:3000${user.profilePicture})`;
+
+            if (profilePictureLarge) {
+                profilePictureLarge.style.backgroundImage = profilePictureUrl;
+            }
+
+            if (profilePictureSidebar) {
+                profilePictureSidebar.style.backgroundImage = profilePictureUrl;
+            }
+        }
     } catch (error) {
         console.error('Error fetching user profile:', error);
     }
@@ -37,8 +53,8 @@ document.getElementById('back-button').addEventListener('click', () => {
     window.history.back(); // Navigate to the previous page
 });
 
+// Enable editing for all detail fields
 document.getElementById("editDetailsBtn").addEventListener("click", () => {
-    // Enable editing for all detail fields
     const nameField = document.getElementById("detail-name");
     const usernameField = document.getElementById("detail-username");
     const emailField = document.getElementById("detail-email");
@@ -50,16 +66,15 @@ document.getElementById("editDetailsBtn").addEventListener("click", () => {
     bioField.contentEditable = "true";
 
     console.log("Edit mode enabled for fields.");
+    alert("You are now in edit mode.");
 
     // Show the save button and hide the edit button
     document.getElementById("editDetailsBtn").style.display = "none";
     document.getElementById("saveDetailsBtn").style.display = "inline-block";
 });
 
+// Save the updated details
 document.getElementById("saveDetailsBtn").addEventListener("click", () => {
-    console.log("Save Details button clicked."); // Debugging log
-
-    // Disable editing for all detail fields
     const nameField = document.getElementById("detail-name");
     const usernameField = document.getElementById("detail-username");
     const emailField = document.getElementById("detail-email");
@@ -126,9 +141,12 @@ document.getElementById("saveDetailsBtn").addEventListener("click", () => {
             // Hide the save button and show the edit button
             document.getElementById("saveDetailsBtn").style.display = "none";
             document.getElementById("editDetailsBtn").style.display = "inline-block";
+
+            alert("Details have been successfully saved.");
         })
         .catch((error) => {
             console.error("Error saving user details:", error);
+            alert("Failed to save details. Please try again.");
         });
 });
 
@@ -143,5 +161,56 @@ document.addEventListener('DOMContentLoaded', function () {
             localStorage.removeItem('username');
             window.location.href = '/pages/login/login.html';
         });
+    }
+});
+
+document.getElementById('editProfilePictureIcon').addEventListener('click', () => {
+    const fileInput = document.getElementById('profilePictureInput');
+    fileInput.click(); // Trigger the file input
+});
+
+document.getElementById('profilePictureInput').addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const token = localStorage.getItem('token'); // Retrieve the token from localStorage
+        const formData = new FormData();
+        formData.append('profilePicture', file);
+
+        try {
+            const response = await fetch('http://localhost:3000/api/user/profile/picture', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                console.error('Upload failed:', error);
+                throw new Error('Failed to upload profile picture');
+            }
+
+            const data = await response.json();
+            console.log('Upload successful:', data);
+
+            // Update both the large and sidebar profile pictures
+            const newProfilePictureUrl = `url(http://localhost:3000${data.profilePicture})`;
+            const profilePictureLarge = document.querySelector('.profile-picture-large');
+            const profilePictureSidebar = document.querySelector('.profile-picture'); // Ensure this selector matches the sidebar element
+
+            if (profilePictureLarge) {
+                profilePictureLarge.style.backgroundImage = newProfilePictureUrl;
+            }
+
+            if (profilePictureSidebar) {
+                profilePictureSidebar.style.backgroundImage = newProfilePictureUrl;
+            }
+
+            alert('Profile picture updated successfully!');
+        } catch (error) {
+            console.error('Error uploading profile picture:', error);
+            alert('Failed to upload profile picture. Please try again.');
+        }
     }
 });

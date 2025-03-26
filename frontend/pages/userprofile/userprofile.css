@@ -146,20 +146,34 @@ hr {
 }
 
 /* Overlap the profile picture with the cover photo */
+.profile-picture-large-container {
+    position: relative;
+    display: inline-block;
+    top: -90px; /* Move the container upwards by 50px */
+    z-index: 1; /* Ensure it appears above other elements */
+    margin-bottom: -100px; /* Prevent layout shifting */
+}
+
+/* Sidebar profile picture */
+.profile-picture {
+    width: 80px; /* Adjust size as needed */
+    height: 80px;
+    border-radius: 50%; /* Makes it circular */
+    background-size: cover; /* Ensures the image covers the entire area */
+    background-position: center; /* Centers the image */
+    background-repeat: no-repeat; /* Prevents tiling */
+    background-color: #f0f0f0; /* Fallback color */
+}
+
 .profile-picture-large {
     width: 100px;
     height: 100px;
-    background-color: #ccc; /* Gray background */
     border-radius: 50%;
-    position: absolute; /* Position it absolutely */
-    top: 100px; /* Adjust to overlap the cover photo */
-    left: 50%; /* Center horizontally */
-    transform: translateX(-50%); /* Center alignment */
-    border: 3px solid #ffffff; /* White border for emphasis */
-    z-index: 10; /* Ensure it appears above the cover photo */
+    background-size: cover;
+    background-position: center;
+    background-color: #f0f0f0; /* Fallback color */
 }
 
-/* Edit icon on the profile picture */
 .edit-icon {
     position: absolute;
     bottom: 5px;
