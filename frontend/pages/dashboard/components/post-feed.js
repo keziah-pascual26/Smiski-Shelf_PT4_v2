@@ -1,4 +1,238 @@
 document.addEventListener("DOMContentLoaded", async () => {
+        // Add CSS styles to the document
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+            /* Post Feed Styles */
+            #postFeed {
+                max-width: 600px;
+                margin: 0 auto;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+            
+            .post {
+                background-color: #fff;
+                border-radius: 8px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                margin-bottom: 16px;
+                padding: 16px;
+                transition: box-shadow 0.3s ease;
+                border: 1px solid #e0e0e0;
+            }
+            
+            .post:hover {
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            }
+            
+            .post-header {
+                display: flex;
+                align-items: flex-start;
+                margin-bottom: 12px;
+            }
+            
+            .post-header img {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                object-fit: cover;
+                margin-right: 12px;
+            }
+            
+            .post-header-info {
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .username {
+                font-weight: 600;
+                color: #333;
+                margin-right: 6px;
+            }
+            
+            .post-meta {
+                display: flex;
+                align-items: center;
+            }
+            
+            .timestamp, .repost-info {
+                color: #65676B;
+                font-size: 0.85rem;
+                margin-left: 4px;
+            }
+            
+            .post-content {
+                margin: 12px 0;
+                font-size: 0.95rem;
+                line-height: 1.4;
+                color: #1c1e21;
+                word-wrap: break-word;
+            }
+            
+            .post-media {
+                margin: 12px 0;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            
+            .post-media img, .post-media video {
+                max-width: 100%;
+                border-radius: 8px;
+                display: block;
+            }
+            
+            .post-stats {
+                display: flex;
+                justify-content: right;
+                gap: 20px;
+                margin: 10px 0;
+                color: #65676B;
+                font-size: 0.85rem;
+                text-align: center;
+            }
+            
+            .stat-item {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+            
+            .post-footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 0;
+                border-top: 1px solid #E4E6EB;
+                border-bottom: 1px solid #E4E6EB;
+                margin: 10px 0;
+            }
+            
+            .post-footer button {
+                background: none;
+                border: none;
+                padding: 8px 12px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 0.9rem;
+                color: #65676B;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex: 1;
+                transition: background-color 0.2s;
+            }
+            
+            .post-footer button:hover {
+                background-color: #F2F3F5;
+            }
+            
+            .post-footer button i {
+                margin-right: 6px;
+                font-size: 1.1rem;
+            }
+            
+            .like-button.liked {
+                color: #E41E3F;
+            }
+            
+            .like-button.liked i {
+                color: #E41E3F;
+            }
+            
+            .likes-list {
+                width: 100%;
+                margin: 5px 0;
+                font-size: 0.85rem;
+                color: #65676B;
+                display: none;
+            }
+            
+            .comment-section {
+                margin-top: 5px;
+            }
+            
+            .comment {
+                padding: 8px 0;
+                margin-bottom: 8px;
+                display: flex;
+                flex-wrap: wrap;
+                align-items: baseline;
+            }
+            
+            .comment-username {
+                font-weight: 600;
+                margin-right: 6px;
+                color: #333;
+            }
+            
+            .comment-text {
+                color: #1c1e21;
+                flex: 1;
+                word-break: break-word;
+            }
+            
+            .edit-comment-button, .delete-comment-button {
+                background: none;
+                border: none;
+                color: #65676B;
+                cursor: pointer;
+                font-size: 0.75rem;
+                margin-left: 8px;
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+            
+            .edit-comment-button:hover, .delete-comment-button:hover {
+                background-color: #F2F3F5;
+            }
+            
+            .no-comments {
+                color: #65676B;
+                font-size: 0.9rem;
+                margin: 10px 0;
+            }
+            
+            .comment-input-container {
+                margin-top: 10px;
+            }
+            
+            .comment-input {
+                width: 100%;
+                padding: 10px 12px;
+                border: 1px solid #E4E6EB;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                outline: none;
+                transition: border-color 0.2s;
+            }
+            
+            .comment-input:focus {
+                border-color: #1877F2;
+            }
+            
+            .no-posts, .error-message {
+                text-align: center;
+                padding: 40px 20px;
+                color: #65676B;
+                background-color: #fff;
+                border-radius: 8px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+            
+            .error-message {
+                color: #E41E3F;
+            }
+            
+            /* Animation for new content */
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            .post {
+                animation: fadeIn 0.3s ease-out;
+            }
+        `;
+        document.head.appendChild(styleElement);
+
     const postFeed = document.querySelector("#postFeed"); // Ensure this exists
     if (!postFeed) {
         console.error("❌ #postFeed container not found!");
@@ -181,14 +415,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 console.error("Failed to fetch friends list:", friendsResponse.status);
             }
 
-                        // Get friends userIds and usernames
-                        const friends = await friendsResponse.json();
-                        const friendUserIds = friends.map(friend => friend.userId || friend._id);
-                        const friendUsernames = friends.map(friend => friend.username); // Add this line to define friendUsernames
-                        console.log("📋 Friends list (userIds):", friendUserIds);
+            // Get friends userIds and usernames
+            const friends = await friendsResponse.json();
+            const friendUserIds = friends.map(friend => friend.userId || friend._id);
+            const friendUsernames = friends.map(friend => friend.username);
+            console.log("📋 Friends list (userIds):", friendUserIds);
             
-                        // Then fetch all posts
-                        const response = await fetch(`http://localhost:3000/feed`, {
+            // Then fetch all posts
+            const response = await fetch(`http://localhost:3000/feed`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -234,8 +468,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (filteredPosts.length === 0) {
                 postFeed.innerHTML = `
                     <div class="no-posts">
-                        No posts from you or your friends yet. 
-                        <br>Add more friends or create a post!
+                        <i class="fa fa-newspaper-o" style="font-size: 2rem; margin-bottom: 16px;"></i>
+                        <p>No posts from you or your friends yet.</p>
+                        <p>Add more friends or create a post!</p>
                     </div>`;
                 return;
             }
@@ -246,7 +481,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.error("🚨 Error fetching posts:", error);
             postFeed.innerHTML = `
                 <div class="error-message">
-                    Failed to load posts. Please try again later.<br>
+                    <i class="fa fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 16px;"></i>
+                    <p>Failed to load posts. Please try again later.</p>
                     <small>${error.message}</small>
                 </div>`;
         }
@@ -275,8 +511,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Use the post's username directly from the post object
             const postUsername = post.username; // This is the username of the post creator
 
-            
-
             let mediaContent = "";
             if (post.media && post.media.length > 0) {
                 mediaContent = `
@@ -298,57 +532,86 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             const userLiked = (post.likes || []).some(like => like.username === loggedInUsername);
+            const likesCount = post.likes?.length || 0;
+            const commentsCount = post.comments?.length || 0;
 
-            const likesList = (post.likes || []).map(like => `<span>${like.username}</span>`).join(", ");
-            const commentsList = (post.comments || []).map(comment => `
-                <div class="comment" data-comment-id="${comment._id}">
-                    <span class="comment-username">${comment.username}</span>: 
-                    <span class="comment-text">${comment.text}</span>
-                    ${comment.username === loggedInUsername ? `
-                        <button class="edit-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">Edit</button>
-                        <button class="delete-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">Delete</button>
-                    ` : ""}
-                </div>
-            `).join("");
-
-            const repostButton = `
-                <button class="repost-button" data-id="${post._id}">
-                    <i class="fa fa-retweet"></i> Repost
-                </button>
-            `;
+            // Format comments with better styling
+            const commentsList = (post.comments || []).length > 0
+                ? (post.comments || []).map(comment => `
+                    <div class="comment" data-comment-id="${comment._id}">
+                        <span class="comment-username">${comment.username}</span>
+                        <span class="comment-text">${comment.text}</span>
+                        ${comment.username === loggedInUsername ? `
+                            <div class="comment-actions">
+                                <button class="edit-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">Edit</button>
+                                <button class="delete-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">Delete</button>
+                            </div>
+                        ` : ""}
+                    </div>
+                `).join("")
+                : "<div class='no-comments'>No comments yet</div>";
 
             postElement.innerHTML = `
-            <div class="post-header">
-                <img src="/public/no-profile.png" alt="User Profile">
-                <span class="username">${postUsername}</span>
-                <span class="timestamp">• ${formattedTimestamp}</span>
-                <span class="repost-info">${post.originalPostId ? `• Reposted from original post` : ""}</span>
-            </div>
-            <p>${post.text}</p>
-            ${mediaContent}
-            <div class="post-footer">
-                <button class="like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
-                    <i class="fa fa-heart"></i> ${post.likes?.length || 0}
-                </button>
-                <button class="comment-button" data-id="${post._id}">
-                    <i class="fa fa-comment"></i> ${post.comments?.length || 0}
-                </button>
-                ${repostButton}
-                <div class="likes-list">Liked by: ${likesList || "No likes yet"}</div>
-            </div>
-            <div class="comment-section" id="comment-section-${post._id}">
-                ${commentsList || "<div>No comments yet</div>"}
-                <input type="text" class="comment-input" placeholder="Add a comment..." data-id="${post._id}">
-            </div>
-        `;
+                <div class="post-header">
+                    <img src="/public/no-profile.png" alt="User Profile">
+                    <div class="post-header-info">
+                        <span class="username">${postUsername}</span>
+                        <span class="timestamp">${formattedTimestamp}</span>
+                    </div>
+                </div>
+                <p class="post-content">${post.text}</p>
+                ${mediaContent}
+                <div class="post-stats">
+                    <div class="stat-item">
+                        <i class="fa fa-heart"></i> ${likesCount} ${likesCount === 1 ? 'like' : 'likes'}
+                    </div>
+                    <div class="stat-item">
+                        <i class="fa fa-comment"></i> ${commentsCount} ${commentsCount === 1 ? 'comment' : 'comments'}
+                    </div>
+                </div>
+                <div class="post-footer">
+                    <button class="like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
+                        <i class="fa fa-heart"></i> Like
+                    </button>
+                    <button class="comment-button" data-id="${post._id}">
+                        <i class="fa fa-comment"></i> Comment
+                    </button>
+                    <button class="repost-button" data-id="${post._id}">
+                        <i class="fa fa-retweet"></i> Repost
+                    </button>
+                </div>
+                <div class="comment-section" id="comment-section-${post._id}">
+                    ${commentsList}
+                    <div class="comment-input-container">
+                        <input type="text" class="comment-input" placeholder="Write a comment..." data-id="${post._id}">
+                    </div>
+                </div>
+            `;
 
             postFeed.appendChild(postElement);
         });
 
+        // Add event listeners
         document.querySelectorAll(".like-button").forEach(button => {
             button.addEventListener("click", () => {
                 const postId = button.getAttribute("data-id");
                 likePost(postId);
+            });
+        });
+
+        document.querySelectorAll(".comment-button").forEach(button => {
+            button.addEventListener("click", () => {
+                const postId = button.getAttribute("data-id");
+                const commentSection = document.querySelector(`#comment-section-${postId}`);
+                const commentInput = commentSection.querySelector(".comment-input");
+                
+                // Toggle comment section visibility
+                commentSection.style.display = commentSection.style.display === "none" ? "block" : "block";
+                
+                // Focus on comment input
+                if (commentSection.style.display === "block") {
+                    commentInput.focus();
+                }
             });
         });
 
@@ -428,6 +691,4 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         }
     }
-
-    retrievePosts();
 });
