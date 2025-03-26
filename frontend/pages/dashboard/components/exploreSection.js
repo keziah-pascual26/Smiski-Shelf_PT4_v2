@@ -297,7 +297,7 @@ async function handleFriendButtonClick() {
         
         if (response.ok) {
             // Update button appearance based on response status
-            if (responseData.status === 'pending') {
+            if (responseData.status === 'pending' || responseData.message === 'Friend request sent successfully') {
                 this.textContent = 'Request Sent';
                 this.classList.add('added');
             } else if (responseData.status === 'accepted') {
