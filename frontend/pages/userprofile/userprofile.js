@@ -53,8 +53,8 @@ document.getElementById('back-button').addEventListener('click', () => {
     window.history.back(); // Navigate to the previous page
 });
 
+// Enable editing for all detail fields
 document.getElementById("editDetailsBtn").addEventListener("click", () => {
-    // Enable editing for all detail fields
     const nameField = document.getElementById("detail-name");
     const usernameField = document.getElementById("detail-username");
     const emailField = document.getElementById("detail-email");
@@ -66,16 +66,15 @@ document.getElementById("editDetailsBtn").addEventListener("click", () => {
     bioField.contentEditable = "true";
 
     console.log("Edit mode enabled for fields.");
+    alert("You are now in edit mode.");
 
     // Show the save button and hide the edit button
     document.getElementById("editDetailsBtn").style.display = "none";
     document.getElementById("saveDetailsBtn").style.display = "inline-block";
 });
 
+// Save the updated details
 document.getElementById("saveDetailsBtn").addEventListener("click", () => {
-    console.log("Save Details button clicked."); // Debugging log
-
-    // Disable editing for all detail fields
     const nameField = document.getElementById("detail-name");
     const usernameField = document.getElementById("detail-username");
     const emailField = document.getElementById("detail-email");
@@ -134,9 +133,12 @@ document.getElementById("saveDetailsBtn").addEventListener("click", () => {
             // Hide the save button and show the edit button
             document.getElementById("saveDetailsBtn").style.display = "none";
             document.getElementById("editDetailsBtn").style.display = "inline-block";
+
+            alert("Details have been successfully saved.");
         })
         .catch((error) => {
             console.error("Error saving user details:", error);
+            alert("Failed to save details. Please try again.");
         });
 });
 
