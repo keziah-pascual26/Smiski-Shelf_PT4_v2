@@ -111,46 +111,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             const token = localStorage.getItem('token');
             
-            // Get all posts to check if user already reposted this post - using userId instead of username
-            const checkResponse = await fetch(`http://localhost:3000/posts?userId=${encodeURIComponent(loggedInUserId)}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/json'
-                }
-            });
+            // Debug logs to check values
+            console.log("Attempting to repost post:", postId);
+            console.log("Current user ID:", loggedInUserId);
+            console.log("Current username:", loggedInUsername);
             
-            if (!checkResponse.ok) {
-                throw new Error(`Failed to check posts: ${checkResponse.status}`);
-            }
-            
-            const posts = await checkResponse.json();
-            
-            // Check if user already reposted this post OR any post that has this post as its original
-            const alreadyReposted = posts.some(post => {
-                // Check using userId instead of username
-                if (post.userId !== loggedInUserId) {
-                    return false;
-                }
-                
-                // Check if this is a repost of the target post
-                if (post.originalPostId && post.originalPostId.toString() === postId) {
-                    return true;
-                }
-                
-                // Also check if the target post is a repost and the current user has already reposted its original
-                const targetPost = posts.find(p => p._id.toString() === postId);
-                if (targetPost && targetPost.originalPostId) {
-                    return post.originalPostId && post.originalPostId.toString() === targetPost.originalPostId.toString();
-                }
-                
-                return false;
-            });
-            
-            if (alreadyReposted) {
-                alert("You have already reposted this content!");
+            // Check if we have the user ID
+            if (!loggedInUserId) {
+                console.error("Missing user ID for repost check");
+                alert("Unable to repost: User ID not available");
                 return;
             }
+            
+            // Instead of checking if the user already reposted this post by fetching all posts,
+            // we'll directly attempt to repost and let the server handle any duplicates
             
             // If not already reposted, proceed with repost
             const response = await fetch(`http://localhost:3000/posts/${postId}/repost`, {
@@ -162,6 +136,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
         
             if (!response.ok) {
+                const errorText = await response.text();
+                console.error("Error response from server:", errorText);
+                
+                // Check if the error is about already reposting
+                if (errorText.includes("already reposted")) {
+                    alert("You have already reposted this content!");
+                    return;
+                }
+                
                 throw new Error(`Failed to repost post: ${response.status}`);
             }
         
