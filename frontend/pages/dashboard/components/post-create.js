@@ -16,36 +16,53 @@ style.textContent = `
     .post-create-container {
         display: flex;
         flex-direction: column;
-        align-items: center; /* Centers items horizontally */
-        justify-content: center; /* Centers items vertically */
+        align-items: center;
+        justify-content: center;
         background-color: white;
         border-radius: 12px;
         padding: 15px;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
     }
 
+    /* User Profile Section */
     .user-profile {
         display: flex;
         align-items: center;
-        justify-content: center; /* Centers the profile section horizontally */
+        width: 100%;
         gap: 10px;
         margin-bottom: 15px;
     }
-    
+
     .user-profile img {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        margin-right: 10px;
         object-fit: cover;
     }
-    
+
     .username {
         font-weight: 600;
         color: #050505;
     }
     
+    .post-input {
+        width: 105%;
+        min-height: 10px;
+        padding: 10px;
+        border: none;
+        border-radius: 20px;
+        background-color: #7EC146;
+        font-size: 15px;
+        color: #1c1e21;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        resize: none;
+        outline: none;
+        box-sizing: border-box;
+    }
+
     input.post-input {
         width: 100%;
         padding: 8px 12px;
@@ -63,19 +80,24 @@ style.textContent = `
     input.post-input:focus {
         outline: none;
     }
+
+    .post-input::placeholder {
+        color: #65676b;
+    }
     
     .post-options {
         display: flex;
-        justify-content: center; /* Centers the post options horizontally */
-        gap: 20px; /* Adds spacing between options */
+        justify-content: space-between;
         width: 100%;
+        padding: 10px 0;
+        border-top: 1px solid #e4e6eb;
     }
-    
+
     .post-option {
         display: flex;
         align-items: center;
         padding: 8px 12px;
-        border-radius: 4px;
+        border-radius: 8px;
         cursor: pointer;
         color: #65676b;
         font-weight: 500;
@@ -83,16 +105,16 @@ style.textContent = `
         transition: background-color 0.2s;
         flex: 1;
         justify-content: center;
+        gap: 8px;
     }
-    
+
     .post-option:hover {
         background-color: #f0f2f5;
     }
-    
+
     .post-option img {
         width: 20px;
         height: 20px;
-        margin-right: 8px;
     }
         
         /* Post Modal Styles */

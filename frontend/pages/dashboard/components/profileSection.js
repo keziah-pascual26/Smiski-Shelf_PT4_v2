@@ -68,19 +68,18 @@ async function initializeProfileSection() {
         const isSecurity = currentPath.includes('/settings') && window.location.hash === '#security';
         
         const profileHtml = `
+        <div class="profile-container" style="border: 5px solid #7EC146; border-radius: 10px; padding: 20px;">
             <div class="profile-card">
                 <img src="${userData.profilePicture || '/public/no-profile.png'}" alt="Profile Picture" class="profile-picture">
                 <h3 class="profile-username">${username}</h3>
                 <p class="profile-bio">${userData.bio || 'Welcome to my Smiski Shelf profile!'}</p>
-                
-                
                 
                 <div class="profile-actions">
                     <button class="profile-edit-btn" id="editProfileBtn">Edit Profile</button>
                 </div>
             </div>
             
-            <div class="profile-links">
+            <div class="profile-links" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eaeaea;">
                 <ul>
                     <li>
                         <a href="/pages/dashboard/dashboard.html" class="${isDashboard ? 'active' : ''}">
@@ -103,7 +102,8 @@ async function initializeProfileSection() {
                     </li>
                 </ul>
             </div>
-        `;
+        </div>
+    `;
         
         profileSection.innerHTML = profileHtml;
         
