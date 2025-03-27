@@ -1,4 +1,348 @@
 document.addEventListener('DOMContentLoaded', async function() {
+    // Add post styles to the page
+    const postStyles = document.createElement('style');
+    postStyles.textContent = `
+        /* Post Card Styles */
+        .post-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            margin-left: auto;
+            margin-right: auto;
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+            width: 100%;
+            max-width: 700px;
+        }
+        
+        .post-card:hover {
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Post Header */
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .post-user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .post-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 12px;
+            border: 1px solid #eaeaea;
+        }
+        
+        .post-user-details {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .post-username {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .post-time {
+            font-size: 12px;
+            color: #777;
+        }
+        
+        /* Post Actions Dropdown */
+        .post-actions-dropdown {
+            position: relative;
+        }
+        
+        .post-menu-btn {
+            background: none;
+            border: none;
+            color: #777;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+        
+        .post-menu-btn:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .post-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            min-width: 120px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            z-index: 1;
+            overflow: hidden;
+        }
+        
+        .post-dropdown-content.show {
+            display: block;
+        }
+        
+        .dropdown-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 8px 12px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+            transition: background-color 0.2s;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .delete-post, .report-post {
+            color: #e74c3c;
+        }
+        
+        /* Post Content */
+        .post-content {
+            padding: 16px;
+        }
+        
+        .post-text {
+            margin: 0 0 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+            white-space: pre-wrap;
+        }
+        
+        .post-media {
+            margin-top: 12px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .post-image {
+            width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .post-media video {
+            width: 100%;
+            max-height: 500px;
+            border-radius: 8px;
+        }
+        
+        /* Post Stats */
+        .post-stats {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 16px 8px;
+            font-size: 13px;
+            color: #777;
+        }
+        
+        /* Post Actions */
+        .post-actions {
+            display: flex;
+            border-top: 1px solid #f0f0f0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .post-action-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #555;
+            font-size: 13px;
+            transition: background-color 0.2s;
+        }
+        
+        .post-action-btn:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .post-action-btn i {
+            margin-right: 6px;
+            font-size: 16px;
+        }
+        
+        .like-button.liked {
+            color: #e74c3c;
+        }
+        
+        .like-button.liked i {
+            color: #e74c3c;
+        }
+        
+        /* Comment Section */
+        .comment-section {
+            padding: 12px 16px;
+            background-color: #f9f9f9;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .no-comments {
+            text-align: center;
+            color: #777;
+            font-size: 13px;
+            padding: 10px 0;
+        }
+        
+        .comments-list {
+            margin-bottom: 12px;
+        }
+        
+        .comment {
+            display: flex;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+        
+        .comment-content {
+            flex: 1;
+            background-color: white;
+            border-radius: 18px;
+            padding: 8px 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+        
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        
+        .comment-username {
+            font-weight: 600;
+            font-size: 13px;
+            color: #333;
+        }
+        
+        .comment-time {
+            font-size: 11px;
+            color: #777;
+        }
+        
+        .comment-text {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #333;
+            word-break: break-word;
+        }
+        
+        .comment-actions {
+            position: absolute;
+            right: 8px;
+            bottom: 4px;
+            display: none;
+        }
+        
+        .comment:hover .comment-actions {
+            display: block;
+        }
+        
+        .delete-comment-button {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            padding: 2px;
+            font-size: 12px;
+            transition: color 0.2s;
+        }
+        
+        .delete-comment-button:hover {
+            color: #e74c3c;
+        }
+        
+        /* Comment Form */
+        .comment-form {
+            display: flex;
+            align-items: center;
+            margin-top: 12px;
+        }
+        
+        .comment-input {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 8px 12px;
+            font-size: 13px;
+            margin: 0 8px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .comment-input:focus {
+            border-color: #3897f0;
+        }
+        
+        .comment-submit {
+            background: none;
+            border: none;
+            color: #3897f0;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 16px;
+            transition: color 0.2s;
+        }
+        
+        .comment-submit:hover {
+            color: #1877f2;
+        }
+        
+        /* Loading and Empty States */
+        .loading, .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: #777;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .error-details {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #e74c3c;
+        }
+    `;
+    document.head.appendChild(postStyles);
+
     // Check if user is logged in
     const token = localStorage.getItem('token');
     if (!token) {
@@ -1134,105 +1478,205 @@ async function loadUserStories(username) {
         }
     }
     
-    // Helper function to create a post element
-    function createPostElement(post) {
-        const postElement = document.createElement('div');
-        postElement.className = 'post';
-        
-        // Format timestamp
-        const timestamp = formatTimestamp(post.createdAt);
-        
-        // Create media HTML if post has media
-        let mediaContent = '';
-        if (post.media && post.media.length > 0) {
-            mediaContent = `
-                <div class="post-media">
-                    ${post.media.map(file => {
-                        const fileExtension = file.split('.').pop().toLowerCase();
-                        if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
-                            return `
-                                <video controls>
-                                    <source src="/uploads/${file}" type="video/${fileExtension}">
-                                    Your browser does not support the video tag.
-                                </video>`;
-                        } else {
-                            return `<img src="/uploads/${file}" alt="Post Image">`;
-                        }
-                    }).join('')}
-                </div>
-            `;
-        }
-        
-        // Get current username from localStorage
-        const currentUsername = localStorage.getItem('username');
-        
-        // Check if current user has liked the post
-        const userLiked = (post.likes || []).some(like => like.username === currentUsername);
-        
-        postElement.innerHTML = `
-            <div class="post-header">
-                <img src="${post.userProfilePicture || '/public/no-profile.png'}" alt="User Profile">
-                <span class="username">${post.username}</span>
-                <span class="timestamp">• ${timestamp}</span>
-                ${post.originalPostId ? `• Reposted from original post` : ''}
-            </div>
-            <div class="post-content">
-                <p>${post.text}</p>
-                ${mediaContent}
-            </div>
-            <div class="post-footer">
-                <button class="like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
-                    <i class="fa fa-heart"></i> ${post.likes?.length || 0}
-                </button>
-                <button class="comment-button" data-id="${post._id}">
-                    <i class="fa fa-comment"></i> ${post.comments?.length || 0}
-                </button>
-            </div>
-            <div class="comment-section" id="comment-section-${post._id}">
-                ${(post.comments || []).map(comment => `
-                    <div class="comment" data-comment-id="${comment._id}">
-                        <span class="comment-username">${comment.username}</span>: 
-                        <span class="comment-text">${comment.text}</span>
-                        ${comment.username === currentUsername ? `
-                            <button class="delete-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">
-                                <i class="fa fa-times"></i>
-                            </button>
-                        ` : ''}
-                    </div>
-                `).join('') || '<div>No comments yet</div>'}
-                <input type="text" class="comment-input" placeholder="Add a comment..." data-id="${post._id}">
+// Helper function to create a post element
+function createPostElement(post) {
+    const postElement = document.createElement('div');
+    postElement.className = 'post-card';
+    
+    // Format timestamp
+    const timestamp = formatTimestamp(post.createdAt);
+    
+    // Create media HTML if post has media
+    let mediaContent = '';
+    if (post.media && post.media.length > 0) {
+        mediaContent = `
+            <div class="post-media">
+                ${post.media.map(file => {
+                    const fileExtension = file.split('.').pop().toLowerCase();
+                    if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                        return `
+                            <video controls>
+                                <source src="http://localhost:3000/uploads/${file}" type="video/${fileExtension}">
+                                Your browser does not support the video tag.
+                            </video>`;
+                    } else {
+                        return `<img src="http://localhost:3000/uploads/${file}" alt="Post Image" class="post-image">`;
+                    }
+                }).join('')}
             </div>
         `;
-        
-        // Add event listeners
-        const likeButton = postElement.querySelector('.like-button');
-        if (likeButton) {
-            likeButton.addEventListener('click', () => {
-                toggleLike(post._id, likeButton);
-            });
-        }
-        
-        const commentInput = postElement.querySelector('.comment-input');
-        if (commentInput) {
-            commentInput.addEventListener('keypress', e => {
-                if (e.key === 'Enter') {
-                    addComment(post._id, commentInput);
-                }
-            });
-        }
-        
-        const deleteCommentButtons = postElement.querySelectorAll('.delete-comment-button');
-        deleteCommentButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const commentId = button.getAttribute('data-comment-id');
-                if (confirm('Are you sure you want to delete this comment?')) {
-                    deleteComment(post._id, commentId);
-                }
-            });
-        });
-        
-        return postElement;
     }
+    
+    // Get current username from localStorage
+    const currentUsername = localStorage.getItem('username');
+    
+    // Check if current user has liked the post
+    const userLiked = (post.likes || []).some(like => like.username === currentUsername);
+    
+    postElement.innerHTML = `
+        <div class="post-header">
+            <div class="post-user-info">
+                <img src="${post.userProfilePicture ? `http://localhost:3000${post.userProfilePicture}` : '/public/no-profile.png'}" alt="${post.username}" class="post-avatar">
+                <div class="post-user-details">
+                    <span class="post-username">${post.username}</span>
+                    <span class="post-time">${timestamp}</span>
+                </div>
+            </div>
+            <div class="post-actions-dropdown">
+                <button class="post-menu-btn"><i class="fas fa-ellipsis-h"></i></button>
+                <div class="post-dropdown-content">
+                    ${post.username === currentUsername ? 
+                        `<button class="dropdown-item edit-post" data-id="${post._id}">Edit</button>
+                         <button class="dropdown-item delete-post" data-id="${post._id}">Delete</button>` : 
+                        `<button class="dropdown-item report-post" data-id="${post._id}">Report</button>`}
+                </div>
+            </div>
+        </div>
+        <div class="post-content">
+            <p class="post-text">${post.text}</p>
+            ${mediaContent}
+        </div>
+        <div class="post-stats">
+            <span class="like-count">${post.likes?.length || 0} likes</span>
+            <span class="comment-count">${post.comments?.length || 0} comments</span>
+        </div>
+        <div class="post-actions">
+            <button class="post-action-btn like-button ${userLiked ? 'liked' : ''}" data-id="${post._id}">
+                <i class="fa${userLiked ? 's' : 'r'} fa-heart"></i> Like
+            </button>
+            <button class="post-action-btn comment-button" data-id="${post._id}">
+                <i class="far fa-comment"></i> Comment
+            </button>
+            <button class="post-action-btn share-button" data-id="${post._id}">
+                <i class="far fa-share-square"></i> Share
+            </button>
+        </div>
+        <div class="comment-section" id="comment-section-${post._id}">
+            ${(post.comments || []).length > 0 ? `
+                <div class="comments-list">
+                    ${(post.comments || []).map(comment => `
+                        <div class="comment" data-comment-id="${comment._id}">
+                            <img src="${comment.userProfilePicture ? `http://localhost:3000${comment.userProfilePicture}` : '/public/no-profile.png'}" alt="${comment.username}" class="comment-avatar">
+                            <div class="comment-content">
+                                <div class="comment-header">
+                                    <span class="comment-username">${comment.username}</span>
+                                    <span class="comment-time">${formatTimestamp(comment.createdAt)}</span>
+                                </div>
+                                <p class="comment-text">${comment.text}</p>
+                                ${comment.username === currentUsername ? `
+                                    <div class="comment-actions">
+                                        <button class="delete-comment-button" data-id="${post._id}" data-comment-id="${comment._id}">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '<div class="no-comments">No comments yet</div>'}
+            <div class="comment-form">
+                <img src="${localStorage.getItem('profilePicture') ? `http://localhost:3000${localStorage.getItem('profilePicture')}` : '/public/no-profile.png'}" alt="Your profile" class="comment-avatar">
+                <input type="text" class="comment-input" placeholder="Write a comment..." data-id="${post._id}">
+                <button class="comment-submit" data-id="${post._id}"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    `;
+    
+    // Add event listeners
+    const likeButton = postElement.querySelector('.like-button');
+    if (likeButton) {
+        likeButton.addEventListener('click', () => {
+            toggleLike(post._id, likeButton);
+        });
+    }
+    
+    const commentInput = postElement.querySelector('.comment-input');
+    const commentSubmit = postElement.querySelector('.comment-submit');
+    
+    if (commentInput) {
+        commentInput.addEventListener('keypress', e => {
+            if (e.key === 'Enter') {
+                addComment(post._id, commentInput);
+            }
+        });
+    }
+    
+    if (commentSubmit) {
+        commentSubmit.addEventListener('click', () => {
+            addComment(post._id, commentInput);
+        });
+    }
+    
+    const commentButton = postElement.querySelector('.comment-button');
+    if (commentButton) {
+        commentButton.addEventListener('click', () => {
+            const commentSection = postElement.querySelector('.comment-section');
+            if (commentSection.style.display === 'none' || !commentSection.style.display) {
+                commentSection.style.display = 'block';
+                commentInput.focus();
+            } else {
+                commentSection.style.display = 'none';
+            }
+        });
+    }
+    
+    const deleteCommentButtons = postElement.querySelectorAll('.delete-comment-button');
+deleteCommentButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const commentId = button.getAttribute('data-comment-id');
+        // Add validation to ensure commentId exists
+        if (!commentId) {
+            console.error('Comment ID is missing from delete button');
+            alert('Cannot delete this comment. Missing identifier.');
+            return;
+        }
+        
+        if (confirm('Are you sure you want to delete this comment?')) {
+            deleteComment(post._id, commentId);
+        }
+    });
+});
+    
+    // Add dropdown menu functionality
+    const menuBtn = postElement.querySelector('.post-menu-btn');
+    if (menuBtn) {
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = postElement.querySelector('.post-dropdown-content');
+            dropdown.classList.toggle('show');
+        });
+    }
+    
+    // Add event listeners for edit/delete post if it's the user's post
+    const editPostBtn = postElement.querySelector('.edit-post');
+    if (editPostBtn) {
+        editPostBtn.addEventListener('click', () => {
+            // Implement edit post functionality
+            alert('Edit post functionality will be implemented soon');
+        });
+    }
+    
+    const deletePostBtn = postElement.querySelector('.delete-post');
+    if (deletePostBtn) {
+        deletePostBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete this post?')) {
+                // Implement delete post functionality
+                alert('Delete post functionality will be implemented soon');
+            }
+        });
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+        const dropdowns = document.querySelectorAll('.post-dropdown-content');
+        dropdowns.forEach(dropdown => {
+            dropdown.classList.remove('show');
+        });
+    });
+    
+    return postElement;
+}
     
     // Helper function to create a story element
     function createStoryElement(story) {
@@ -1347,92 +1791,180 @@ async function loadUserStories(username) {
     }
     
     // Function to toggle like on a post
-    async function toggleLike(postId, likeButton) {
-        try {
-            const response = await fetch(`http://localhost:3000/posts/${postId}/like`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to toggle like');
+async function toggleLike(postId, likeButton) {
+    try {
+        const response = await fetch(`http://localhost:3000/posts/${postId}/like`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
-            
-            // Update UI optimistically
-            const likesCountElement = likeButton.querySelector('i').nextSibling;
-            const currentLikes = parseInt(likesCountElement.textContent.trim());
-            
-            if (likeButton.classList.contains('liked')) {
-                likeButton.classList.remove('liked');
-                likesCountElement.textContent = ` ${currentLikes - 1}`;
-            } else {
-                likeButton.classList.add('liked');
-                likesCountElement.textContent = ` ${currentLikes + 1}`;
-            }
-            
-        } catch (error) {
-            console.error('Error toggling like:', error);
-            alert('Failed to like/unlike post. Please try again.');
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to toggle like');
         }
+        
+        // Update UI optimistically
+        const likeIcon = likeButton.querySelector('i');
+        const likesCountElement = likeButton.closest('.post-card').querySelector('.like-count');
+        const currentLikesText = likesCountElement.textContent;
+        const currentLikes = parseInt(currentLikesText.split(' ')[0]);
+        
+        if (likeButton.classList.contains('liked')) {
+            likeButton.classList.remove('liked');
+            likeIcon.classList.remove('fas');
+            likeIcon.classList.add('far');
+            likesCountElement.textContent = `${currentLikes - 1} likes`;
+        } else {
+            likeButton.classList.add('liked');
+            likeIcon.classList.remove('far');
+            likeIcon.classList.add('fas');
+            likesCountElement.textContent = `${currentLikes + 1} likes`;
+        }
+        
+    } catch (error) {
+        console.error('Error toggling like:', error);
+        alert('Failed to like/unlike post. Please try again.');
     }
+}
     
     // Function to add a comment to a post
-    async function addComment(postId, commentInput) {
-        const commentText = commentInput.value.trim();
-        if (!commentText) return;
-        
-        try {
-            const response = await fetch(`http://localhost:3000/posts/${postId}/comment`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ text: commentText })
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to add comment');
-            }
-            
-            // Reload posts to show new comment
-            loadUserPosts(targetUsername);
-            
-            // Clear input
-            commentInput.value = '';
-            
-        } catch (error) {
-            console.error('Error adding comment:', error);
-            alert('Failed to add comment. Please try again.');
-        }
-    }
+async function addComment(postId, commentInput) {
+    const commentText = commentInput.value.trim();
+    if (!commentText) return;
     
-    // Function to delete a comment
-    async function deleteComment(postId, commentId) {
-        try {
-            const response = await fetch(`http://localhost:3000/posts/${postId}/comment/${commentId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+    try {
+        const response = await fetch(`http://localhost:3000/posts/${postId}/comment`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: commentText })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to add comment');
+        }
+        
+        const result = await response.json();
+        
+        // Update UI without reloading the entire post list
+        const commentSection = commentInput.closest('.comment-section');
+        const commentsList = commentSection.querySelector('.comments-list') || document.createElement('div');
+        
+        if (!commentSection.querySelector('.comments-list')) {
+            commentsList.className = 'comments-list';
+            // Remove "no comments" message if it exists
+            const noComments = commentSection.querySelector('.no-comments');
+            if (noComments) {
+                noComments.remove();
+            }
+            commentSection.insertBefore(commentsList, commentSection.querySelector('.comment-form'));
+        }
+        
+        // Create new comment element
+        const newComment = document.createElement('div');
+        newComment.className = 'comment';
+        newComment.dataset.commentId = result.commentId;
+        
+        const currentUsername = localStorage.getItem('username');
+        const profilePicture = localStorage.getItem('profilePicture');
+        
+        newComment.innerHTML = `
+            <img src="${profilePicture ? `http://localhost:3000${profilePicture}` : '/public/no-profile.png'}" alt="${currentUsername}" class="comment-avatar">
+            <div class="comment-content">
+                <div class="comment-header">
+                    <span class="comment-username">${currentUsername}</span>
+                    <span class="comment-time">Just now</span>
+                </div>
+                <p class="comment-text">${commentText}</p>
+                <div class="comment-actions">
+                    <button class="delete-comment-button" data-id="${postId}" data-comment-id="${result.commentId}">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Add delete functionality to the new comment
+        const deleteBtn = newComment.querySelector('.delete-comment-button');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to delete this comment?')) {
+                    deleteComment(postId, result.commentId);
                 }
             });
-            
-            if (!response.ok) {
-                throw new Error('Failed to delete comment');
-            }
-            
-            // Reload posts to reflect the deleted comment
-            loadUserPosts(targetUsername);
-            
-        } catch (error) {
-            console.error('Error deleting comment:', error);
-            alert('Failed to delete comment. Please try again.');
         }
+        
+        // Add the new comment to the list
+        commentsList.appendChild(newComment);
+        
+        // Update comment count
+        const commentCountElement = commentInput.closest('.post-card').querySelector('.comment-count');
+        const currentCount = parseInt(commentCountElement.textContent.split(' ')[0]);
+        commentCountElement.textContent = `${currentCount + 1} comments`;
+        
+        // Clear input
+        commentInput.value = '';
+        
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        alert('Failed to add comment. Please try again.');
     }
+}
+
+// Function to delete a comment
+async function deleteComment(postId, commentId) {
+    // Add validation to prevent undefined commentId
+    if (!commentId) {
+        console.error('Cannot delete comment: Comment ID is undefined');
+        alert('Unable to delete this comment. Missing comment identifier.');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`http://localhost:3000/posts/${postId}/comment/${commentId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to delete comment');
+        }
+        
+        // Update UI without reloading the entire post list
+        const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+        if (commentElement) {
+            const commentSection = commentElement.closest('.comment-section');
+            commentElement.remove();
+            
+            // Update comment count
+            const postCard = commentSection.closest('.post-card');
+            const commentCountElement = postCard.querySelector('.comment-count');
+            const currentCount = parseInt(commentCountElement.textContent.split(' ')[0]);
+            commentCountElement.textContent = `${currentCount - 1} comments`;
+            
+            // If no more comments, show "no comments" message
+            const commentsList = commentSection.querySelector('.comments-list');
+            if (commentsList && commentsList.children.length === 0) {
+                commentsList.remove();
+                const noComments = document.createElement('div');
+                noComments.className = 'no-comments';
+                noComments.textContent = 'No comments yet';
+                commentSection.insertBefore(noComments, commentSection.querySelector('.comment-form'));
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error deleting comment:', error);
+        alert('Failed to delete comment. Please try again.');
+    }
+}
     
     // Helper function to format timestamp
     function formatTimestamp(timestamp) {
