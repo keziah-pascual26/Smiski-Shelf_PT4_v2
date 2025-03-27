@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const auth = require('../middleware/authMiddleware');
+const Post = require('../models/postModel'); // Add this line
 
 // Create Report model schema if it doesn't exist
 const reportSchema = new mongoose.Schema({
@@ -59,12 +60,13 @@ router.post('/post', auth, async (req, res) => {
             return res.status(400).json({ error: 'Post ID and reason are required' });
         }
 
-        // Check if user has already reported this post
+        // Find the post first
         const post = await Post.findById(postId);
         if (!post) {
             return res.status(404).json({ error: 'Post not found' });
         }
 
+        // Check if user has already reported this post
         const existingReport = post.reports.find(
             report => report.reporter.toString() === req.user.id
         );
@@ -76,15 +78,14 @@ router.post('/post', auth, async (req, res) => {
         }
 
         // Add the report to the post
-        const newReport = {
+        post.reports.push({
             reporter: req.user.id,
             reason,
             details: details || '',
             status: 'pending',
             createdAt: new Date()
-        };
+        });
 
-        post.reports.push(newReport);
         await post.save();
         
         res.status(201).json({ 
@@ -127,6 +128,41 @@ router.post('/user', auth, async (req, res) => {
     } catch (error) {
         console.error('Error creating report:', error);
         res.status(500).json({ error: 'Failed to submit report' });
+    }
+});
+
+// Add this new route to get all reports
+router.get('/all', auth, async (req, res) => {
+    try {
+        const reports = await Post.aggregate([
+            // Unwind the reports array to create a document for each report
+            { $unwind: '$reports' },
+            // Project the fields we want
+            {
+                $project: {
+                    postId: '$_id',
+                    postText: '$text',
+                    reporter: '$reports.reporter',
+                    reason: '$reports.reason',
+                    details: '$reports.details',
+                    status: '$reports.status',
+                    createdAt: '$reports.createdAt'
+                }
+            },
+            // Sort by creation date, newest first
+            { $sort: { createdAt: -1 } }
+        ]);
+
+        // Populate reporter information
+        await Post.populate(reports, {
+            path: 'reporter',
+            select: 'username'
+        });
+
+        res.json(reports);
+    } catch (error) {
+        console.error('Error fetching reports:', error);
+        res.status(500).json({ error: 'Failed to fetch reports' });
     }
 });
 
