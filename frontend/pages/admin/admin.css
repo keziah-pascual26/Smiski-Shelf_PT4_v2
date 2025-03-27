@@ -672,3 +672,23 @@ tr:hover {
     border-color: var(--primary-color);
     outline: none;
 }
+
+/* Styling for suspended account error */
+.suspended-account-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.suspended-account-error a {
+    color: #721c24;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.error-message {
+    margin-bottom: 15px;
+}

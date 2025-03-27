@@ -99,7 +99,6 @@ async function fetchDashboardStats() {
         if (response.ok) {
             const stats = await response.json();
             document.getElementById("total-users").textContent = stats.userCount;
-            document.getElementById("total-stories").textContent = stats.storyCount;
             document.getElementById("total-posts").textContent = stats.postCount;
             document.getElementById("active-users").textContent = stats.activeUserCount;
         } else {
@@ -108,7 +107,6 @@ async function fetchDashboardStats() {
     } catch (error) {
         console.error("Error fetching dashboard stats:", error);
         document.getElementById("total-users").textContent = "Error";
-        document.getElementById("total-stories").textContent = "Error";
         document.getElementById("total-posts").textContent = "Error";
         document.getElementById("active-users").textContent = "Error";
     }
