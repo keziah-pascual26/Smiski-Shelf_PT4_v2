@@ -5,7 +5,7 @@ const fs = require('fs-extra');
 // Set storage engine
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    const uploadDir = path.join(__dirname, '../uploads/stories');
+    const uploadDir = path.join(__dirname, '../uploads');
     fs.ensureDirSync(uploadDir); // Create directory if it doesn't exist
     cb(null, uploadDir);
   },
