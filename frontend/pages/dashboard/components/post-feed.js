@@ -389,44 +389,64 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log("Current user ID:", loggedInUserId);
             console.log("Current username:", loggedInUsername);
             
-            // Check if we have the user ID
-            if (!loggedInUserId) {
-                console.error("Missing user ID for repost check");
+            // Get user ID from token if not available directly
+            let userId = loggedInUserId;
+            if (!userId) {
+                // Try to extract from token
+                try {
+                    const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+                    userId = tokenPayload.id || tokenPayload.userId;
+                    console.log("Extracted user ID from token:", userId);
+                } catch (e) {
+                    console.error("Could not extract user ID from token");
+                }
+            }
+    
+            // Still no user ID? Show error
+            if (!userId) {
+                console.error("User ID not available");
                 alert("Unable to repost: User ID not available");
                 return;
             }
-            
-            // Instead of checking if the user already reposted this post by fetching all posts,
-            // we'll directly attempt to repost and let the server handle any duplicates
-            
-            // If not already reposted, proceed with repost
+    
+            // First check if this post was already reposted by this user
             const response = await fetch(`http://localhost:3000/posts/${postId}/repost`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({
+                    userId: userId,
+                    username: loggedInUsername
+                })
             });
-        
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error("Error response from server:", errorText);
+    
+            // Handle non-JSON response (like HTML error page)
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                const data = await response.json();
                 
-                // Check if the error is about already reposting
-                if (errorText.includes("already reposted")) {
-                    alert("You have already reposted this content!");
-                    return;
+                if (!response.ok) {
+                    if (data.error === "already_reposted") {
+                        alert("You have already reposted this post!");
+                        return;
+                    }
+                    throw new Error(data.message || 'Failed to repost');
                 }
-                
-                throw new Error(`Failed to repost post: ${response.status}`);
+            } else {
+                // Handle non-JSON response
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
             }
-        
-            const data = await response.json();
-            console.log(`✅ Post ${postId} reposted successfully:`, data.message);
-            await retrievePosts(); // Refresh posts
+    
+            console.log("✅ Post reposted successfully");
+            alert("Post reposted successfully!"); // Using alert instead of toast
+            await retrievePosts(); // Refresh posts to show the repost
         } catch (error) {
             console.error("🚨 Error reposting post:", error);
-            alert("Error reposting post: " + error.message);
+            alert("Failed to repost post: " + error.message); // Using alert instead of toast
         }
     }
 

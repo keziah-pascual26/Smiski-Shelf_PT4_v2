@@ -259,6 +259,19 @@ module.exports = (app) => {
                 return res.status(404).json({ error: "Original post not found" });
             }
     
+            // Check if user has already reposted this post
+            const existingRepost = await Post.findOne({
+                userId: req.user._id,
+                originalPostId: originalPost._id
+            });
+    
+            if (existingRepost) {
+                return res.status(400).json({ 
+                    error: "already_reposted", 
+                    message: "You have already reposted this post" 
+                });
+            }
+    
             const repost = new Post({
                 username: req.user.username,
                 userId: req.user._id, // Add userId to repost
@@ -274,6 +287,29 @@ module.exports = (app) => {
         } catch (error) {
             console.error("🚨 Error reposting post:", error);
             res.status(500).json({ error: "Failed to repost post" });
+        }
+    });
+    
+    // Add a new endpoint to check if a user has already reposted a post
+    app.get('/posts/:id/check-repost', authenticateToken, async (req, res) => {
+        try {
+            const postId = req.params.id;
+            
+            // Check if this user has already reposted this post
+            const existingRepost = await Post.findOne({ 
+                userId: req.user._id,
+                originalPostId: postId 
+            });
+            
+            res.json({ 
+                hasReposted: !!existingRepost 
+            });
+        } catch (error) {
+            console.error("🚨 Error checking repost status:", error);
+            res.status(500).json({ 
+                error: "Failed to check repost status",
+                message: error.message 
+            });
         }
     });
 
