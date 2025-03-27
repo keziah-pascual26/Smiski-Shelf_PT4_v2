@@ -7,7 +7,10 @@ let postsCurrentPage = 1;
 let postsPerPage = 10;
 let allPosts = [];
 
-
+// Global variables for reports pagination
+let reportsCurrentPage = 1;
+let reportsPerPage = 10;
+let allReports = [];
 
 // Add this at the beginning of your admin-dashboard.js file
 document.addEventListener('DOMContentLoaded', function() {
@@ -76,15 +79,28 @@ async function initializeDashboard() {
         await fetchPosts();
         
         // Set up refresh buttons
-        document.getElementById("refresh-users-btn").addEventListener("click", fetchUsers);
-        document.getElementById("refresh-posts-btn").addEventListener("click", fetchPosts);
+        document.getElementById("refresh-users-btn")?.addEventListener("click", fetchUsers);
+        document.getElementById("refresh-posts-btn")?.addEventListener("click", fetchPosts);
+        document.getElementById("refresh-reports-btn")?.addEventListener("click", fetchReports);
         
         // Set up search functionality
-        document.getElementById("user-search").addEventListener("input", filterUsers);
-        document.getElementById("post-search").addEventListener("input", filterPosts);
+        document.getElementById("user-search")?.addEventListener("input", filterUsers);
+        document.getElementById("post-search")?.addEventListener("input", filterPosts);
+        document.getElementById("report-search")?.addEventListener("input", filterReports);
         
-        // Set up user filter for posts
-        document.getElementById("user-filter").addEventListener("change", filterPosts);
+        // Set up filters
+        document.getElementById("user-filter")?.addEventListener("change", filterPosts);
+        document.getElementById("report-type-filter")?.addEventListener("change", filterReports);
+        document.getElementById("report-status-filter")?.addEventListener("change", filterReports);
+
+        // Initialize reports
+        await fetchReports().catch(err => {
+            console.error('Reports initialization error:', err);
+            document.getElementById("reports-table-body").innerHTML = `
+                <tr><td colspan="8">Failed to initialize reports section</td></tr>
+            `;
+        });
+
     } catch (error) {
         console.error("Error initializing dashboard:", error);
     }
@@ -989,5 +1005,174 @@ async function populateUserFilter() {
         
     } catch (error) {
         console.error("Error populating user filter:", error);
+    }
+}
+
+async function fetchReports() {
+    try {
+        const token = localStorage.getItem("adminToken");
+        if (!token) {
+            throw new Error("No admin token found");
+        }
+
+        const response = await fetch("http://localhost:3000/api/admin/reports", {
+            method: 'GET',
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || "Failed to fetch reports");
+        }
+
+        const data = await response.json();
+        allReports = Array.isArray(data.reports) ? data.reports : [];
+
+        renderReports(allReports);
+        updateReportsPagination(Math.ceil(allReports.length / reportsPerPage));
+
+    } catch (error) {
+        console.error("Error fetching reports:", error);
+        document.getElementById("reports-table-body").innerHTML = `
+            <tr>
+                <td colspan="8" class="error-message">
+                    Failed to load reports: ${error.message}. Please try again later.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+function renderReports(reports) {
+    const tableBody = document.getElementById("reports-table-body");
+    
+    if (!reports || reports.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="8">No reports found</td></tr>';
+        return;
+    }
+
+    tableBody.innerHTML = reports.map(report => `
+        <tr>
+            <td>${report._id}</td>
+            <td>${report.reportType}</td>
+            <td>${getReportedItemText(report)}</td>
+            <td>${report.reporter?.username || 'Unknown'}</td>
+            <td>${report.reason}</td>
+            <td>${new Date(report.createdAt).toLocaleDateString()}</td>
+            <td>
+                <span class="status-badge ${report.status.toLowerCase()}">
+                    ${report.status}
+                </span>
+            </td>
+            <td class="actions">
+                <button onclick="updateReportStatus('${report._id}', 'resolved')" 
+                        class="action-btn resolve-btn" 
+                        ${report.status === 'resolved' ? 'disabled' : ''}>
+                    <i class="fas fa-check"></i>
+                </button>
+                <button onclick="updateReportStatus('${report._id}', 'dismissed')" 
+                        class="action-btn dismiss-btn"
+                        ${report.status === 'dismissed' ? 'disabled' : ''}>
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function getReportedItemText(report) {
+    if (report.reportType === 'post') {
+        return report.reportedPost ? 
+            `Post: ${report.reportedPost.content.substring(0, 30)}...` : 
+            'Deleted post';
+    }
+    return report.reportedUser ? 
+        `User: ${report.reportedUser.username}` : 
+        'Deleted user';
+}
+
+async function updateReportStatus(reportId, newStatus) {
+    try {
+        const token = localStorage.getItem("adminToken");
+        const response = await fetch(`http://localhost:3000/api/admin/reports/${reportId}/status`, {
+            method: 'PUT',
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+
+        if (!response.ok) {
+            throw new Error("Failed to update report status");
+        }
+
+        // Refresh reports after status update
+        await fetchReports();
+
+    } catch (error) {
+        console.error("Error updating report status:", error);
+        alert("Failed to update report status");
+    }
+}
+
+function filterReports() {
+    const searchTerm = document.getElementById("report-search").value.toLowerCase();
+    const typeFilter = document.getElementById("report-type-filter").value;
+    const statusFilter = document.getElementById("report-status-filter").value;
+
+    const filteredReports = allReports.filter(report => {
+        const matchesSearch = !searchTerm || 
+            report._id.toLowerCase().includes(searchTerm) ||
+            report.reason.toLowerCase().includes(searchTerm) ||
+            (report.reportedUser?.username || '').toLowerCase().includes(searchTerm);
+
+        const matchesType = typeFilter === 'all' || report.reportType === typeFilter;
+        const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
+
+        return matchesSearch && matchesType && matchesStatus;
+    });
+
+    renderReports(filteredReports);
+}
+
+// Add these event listeners to your initialization function
+function initializeReports() {
+    document.getElementById("refresh-reports-btn").addEventListener("click", fetchReports);
+    document.getElementById("report-search").addEventListener("input", filterReports);
+    document.getElementById("report-type-filter").addEventListener("change", filterReports);
+    document.getElementById("report-status-filter").addEventListener("change", filterReports);
+}
+
+function updateReportsPagination(totalPages) {
+    const pageInfo = document.getElementById("reports-page-info");
+    const prevBtn = document.getElementById("reports-prev-page");
+    const nextBtn = document.getElementById("reports-next-page");
+
+    if (pageInfo) pageInfo.textContent = `Page ${reportsCurrentPage} of ${totalPages}`;
+    
+    if (prevBtn) prevBtn.disabled = reportsCurrentPage === 1;
+    if (nextBtn) nextBtn.disabled = reportsCurrentPage === totalPages;
+
+    // Update pagination buttons
+    if (prevBtn) {
+        prevBtn.onclick = () => {
+            if (reportsCurrentPage > 1) {
+                reportsCurrentPage--;
+                fetchReports();
+            }
+        };
+    }
+
+    if (nextBtn) {
+        nextBtn.onclick = () => {
+            if (reportsCurrentPage < totalPages) {
+                reportsCurrentPage++;
+                fetchReports();
+            }
+        };
     }
 }
