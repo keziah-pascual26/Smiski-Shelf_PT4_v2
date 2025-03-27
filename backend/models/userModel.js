@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
     resetTokenExpiry: { type: Date, default: null },
     twoFactorSecret: { type: String },
     twoFactorEnabled: { type: Boolean, default: false },
-    status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' }, // Add status field
+    status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
     lastLogin: { type: Date, default: Date.now }, // Add lastLogin field
     createdAt: { type: Date, default: Date.now }
 });

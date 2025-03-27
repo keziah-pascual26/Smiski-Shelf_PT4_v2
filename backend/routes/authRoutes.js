@@ -14,7 +14,7 @@ router.post('/login', async (req, res) => {
         const { email, password, token } = req.body;
         
         // Find user by email
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).select('+status');
         if (!user) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
@@ -23,6 +23,14 @@ router.post('/login', async (req, res) => {
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Check if account is suspended
+        if (user.status === 'suspended') {
+            return res.status(403).json({ 
+                message: 'Your account has been suspended. Please contact support for assistance.',
+                suspended: true
+            });
         }
 
         // Special case for admin login
