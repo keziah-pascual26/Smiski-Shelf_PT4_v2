@@ -86,6 +86,7 @@ async function initializeDashboard() {
 }
 
 // Fetch dashboard statistics
+// Fetch dashboard statistics
 async function fetchDashboardStats() {
     try {
         const token = localStorage.getItem("adminToken");
@@ -98,9 +99,40 @@ async function fetchDashboardStats() {
         
         if (response.ok) {
             const stats = await response.json();
-            document.getElementById("total-users").textContent = stats.userCount;
-            document.getElementById("total-posts").textContent = stats.postCount;
-            document.getElementById("active-users").textContent = stats.activeUserCount;
+            
+            // Display user count
+            document.getElementById("total-users").textContent = stats.userCount || 0;
+            
+            // Calculate and display total posts
+            const postsResponse = await fetch("http://localhost:3000/api/admin/posts?limit=1000", {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            
+            if (postsResponse.ok) {
+                const postsData = await postsResponse.json();
+                document.getElementById("total-posts").textContent = postsData.totalPosts || 0;
+            }
+            
+            // Get all users to calculate active users based on status field
+            const usersResponse = await fetch("http://localhost:3000/api/admin/users?limit=1000", {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+            
+            if (usersResponse.ok) {
+                const usersData = await usersResponse.json();
+                // Count users with 'active' status
+                const activeUsers = usersData.users.filter(user => 
+                    user.status === 'active' || !user.status // Count as active if status is 'active' or undefined
+                );
+                
+                document.getElementById("active-users").textContent = activeUsers.length;
+            } else {
+                document.getElementById("active-users").textContent = "Error";
+            }
         } else {
             throw new Error("Failed to fetch dashboard stats");
         }
