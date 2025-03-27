@@ -118,4 +118,33 @@ router.get('/stories/mystories', authenticateToken, async (req, res) => {
     }
 });
 
+// Add this DELETE endpoint for stories
+router.delete('/stories/:storyId', authenticateToken, async (req, res) => {
+    try {
+        const { storyId } = req.params;
+        
+        // Find the story
+        const story = await Story.findById(storyId);
+        
+        if (!story) {
+            return res.status(404).json({ error: 'Story not found' });
+        }
+        
+        // Check if the user is the owner of the story
+        if (story.userId.toString() !== req.user.id) {
+            return res.status(403).json({ error: 'You are not authorized to delete this story' });
+        }
+        
+        // Delete the story
+        await Story.findByIdAndDelete(storyId);
+        
+        res.json({ message: 'Story deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting story:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Make sure to add this before the module.exports line
+
 module.exports = router;

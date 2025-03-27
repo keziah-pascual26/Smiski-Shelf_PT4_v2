@@ -1917,32 +1917,50 @@ async function savePostEdit(postId) {
         }
     }
     
-    // Function to delete a story
-    async function deleteStory(storyId) {
-        try {
-            const response = await fetch(`http://localhost:3000/api/stories/${storyId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to delete story');
-            }
-            
-            // Reload stories to reflect changes
-            loadUserStories();
-            
-            // Also update user stats
-            loadUserStats();
-            
-        } catch (error) {
-            console.error('Error deleting story:', error);
-            alert('Failed to delete story. Please try again.');
+// Function to delete a story
+async function deleteStory(storyId) {
+    try {
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            alert('You need to be logged in to delete stories');
+            return;
         }
+        
+        console.log('Attempting to delete story:', storyId); // Debug log
+        
+        // Updated URL to match your backend route structure
+        // Looking at your other API calls, you're using /stories/ not /api/stories/
+        const response = await fetch(`http://localhost:3000/stories/${storyId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log('Delete response status:', response.status); // Debug log
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server response:', errorText);
+            throw new Error(`Failed to delete story: ${response.status} ${response.statusText}`);
+        }
+        
+        // Reload stories to reflect changes
+        loadUserStories();
+        
+        // Also update user stats
+        loadUserStats();
+        
+        // Show success message
+        alert('Story deleted successfully');
+        
+    } catch (error) {
+        console.error('Error deleting story:', error);
+        alert(`Failed to delete story: ${error.message}`);
     }
+}
     
     // Function to upload a profile picture
     async function uploadProfilePicture(file) {
