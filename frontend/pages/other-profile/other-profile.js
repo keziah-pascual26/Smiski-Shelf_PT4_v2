@@ -1903,6 +1903,13 @@ deleteCommentButtons.forEach(button => {
             }
         });
     }
+
+    const reportPostBtn = postElement.querySelector('.report-post');
+    if (reportPostBtn) {
+        reportPostBtn.addEventListener('click', () => {
+            showReportPostModal(post._id);
+        });
+    }
     
     // Close dropdown when clicking outside
     document.addEventListener('click', () => {
@@ -2238,3 +2245,257 @@ async function deleteComment(postId, commentId) {
         }
     }
 });
+
+// Add this function to show the report post modal
+function showReportPostModal(postId) {
+    // Create modal for reporting post
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'reportPostModal';
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Report Post</h2>
+            <p>Please tell us why you're reporting this post:</p>
+            <form id="report-post-form">
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="report-reason" value="inappropriate" required>
+                        Inappropriate content
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="report-reason" value="spam">
+                        Spam or misleading
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="report-reason" value="harassment">
+                        Harassment or bullying
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="report-reason" value="violence">
+                        Violence or harmful behavior
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="report-reason" value="other">
+                        Other
+                    </label>
+                </div>
+                <div class="form-group" id="other-reason-container" style="display: none;">
+                    <label for="other-reason">Please specify:</label>
+                    <textarea id="other-reason" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="report-details">Additional details (optional):</label>
+                    <textarea id="report-details" rows="3"></textarea>
+                </div>
+                <input type="hidden" id="reported-post-id" value="${postId}">
+                <div class="form-actions">
+                    <button type="button" class="cancel-btn">Cancel</button>
+                    <button type="submit" class="submit-btn">Submit Report</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Show "other" reason textarea when "other" is selected
+    const otherRadio = modal.querySelector('input[value="other"]');
+    const otherReasonContainer = modal.querySelector('#other-reason-container');
+    
+    otherRadio.addEventListener('change', function() {
+        otherReasonContainer.style.display = this.checked ? 'block' : 'none';
+    });
+    
+    // Close modal when clicking the X
+    const closeBtn = modal.querySelector('.close-modal');
+    closeBtn.addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    // Close modal when clicking the Cancel button
+    const cancelBtn = modal.querySelector('.cancel-btn');
+    cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    // Handle form submission
+    const form = modal.querySelector('#report-post-form');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const postId = document.getElementById('reported-post-id').value;
+        const reasonRadio = form.querySelector('input[name="report-reason"]:checked');
+        
+        if (!reasonRadio) {
+            alert('Please select a reason for reporting this post.');
+            return;
+        }
+        
+        let reason = reasonRadio.value;
+        let details = document.getElementById('report-details').value;
+        
+        // If "other" is selected, get the text from the other-reason textarea
+        if (reason === 'other') {
+            const otherReason = document.getElementById('other-reason').value;
+            if (!otherReason.trim()) {
+                alert('Please specify the reason for reporting this post.');
+                return;
+            }
+            reason = 'other';
+            details = `Other reason: ${otherReason}\n\nAdditional details: ${details}`;
+        }
+        
+        try {
+            await submitPostReport(postId, reason, details);
+            document.body.removeChild(modal);
+        } catch (error) {
+            console.error('Error submitting report:', error);
+            alert('Failed to submit report. Please try again later.');
+        }
+    });
+}
+
+// Add this function to submit the report to the server
+// Update the submitPostReport function to better handle errors
+async function submitPostReport(postId, reason, details) {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('You must be logged in to report a post');
+        }
+        
+        const response = await fetch('http://localhost:3000/api/reports/post', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                postId,
+                reason,
+                details
+            })
+        });
+        
+        // Check if response is not OK before trying to parse JSON
+        if (!response.ok) {
+            // Try to get error as JSON first
+            let errorMessage = 'Failed to submit report';
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorMessage;
+            } catch (jsonError) {
+                // If JSON parsing fails, try to get text
+                try {
+                    const errorText = await response.text();
+                    console.error('Server response:', errorText.substring(0, 100) + '...');
+                    errorMessage = `Server error (${response.status})`;
+                } catch (textError) {
+                    errorMessage = `Server error (${response.status})`;
+                }
+            }
+            throw new Error(errorMessage);
+        }
+        
+        const result = await response.json();
+        alert('Thank you for your report. Our team will review it shortly.');
+        return result;
+    } catch (error) {
+        console.error('Error submitting report:', error);
+        alert(error.message || 'Failed to submit report. Please try again later.');
+        throw error;
+    }
+}
+
+// Add CSS for the report modal
+const reportModalStyles = document.createElement('style');
+reportModalStyles.textContent = `
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    
+    .modal-content {
+        background-color: white;
+        padding: 24px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+    }
+    
+    .close-modal {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+    }
+    
+    .form-group {
+        margin-bottom: 16px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+    }
+    
+    .form-group textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+    }
+    
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 24px;
+    }
+    
+    .cancel-btn {
+        padding: 8px 16px;
+        background-color: #f1f1f1;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .submit-btn {
+        padding: 8px 16px;
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .submit-btn:hover {
+        background-color: #c0392b;
+    }
+`;
+document.head.appendChild(reportModalStyles);

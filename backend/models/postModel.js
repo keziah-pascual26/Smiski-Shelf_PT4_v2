@@ -11,7 +11,29 @@ const postSchema = new mongoose.Schema({
     }], // Array of users who liked the post with timestamps
     comments: [{ username: String, text: String }], // Array of comments with username and text
     originalPostId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', default: null }, // Reference to the original post
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+
+    reports: [{
+        reporter: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        reason: {
+            type: String,
+            required: true
+        },
+        details: String,
+        status: {
+            type: String,
+            enum: ['pending', 'reviewed', 'resolved', 'dismissed'],
+            default: 'pending'
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
+    }]
 });
 
 const Post = mongoose.model('Post', postSchema);

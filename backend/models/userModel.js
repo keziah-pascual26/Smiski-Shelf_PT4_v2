@@ -22,6 +22,7 @@ const userSchema = new mongoose.Schema({
         ref: 'User' 
     }],
     status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' }, // Add status field
+    status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
     lastLogin: { type: Date, default: Date.now }, // Add lastLogin field
     createdAt: { type: Date, default: Date.now }
 });

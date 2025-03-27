@@ -70,12 +70,27 @@ document.addEventListener("DOMContentLoaded", async () => {
                 margin: 12px 0;
                 border-radius: 8px;
                 overflow: hidden;
+                display: flex;
+                justify-content: center;
+                align-items: center;
             }
             
             .post-media img, .post-media video {
                 max-width: 100%;
+                max-height: 500px; /* Set maximum height */
                 border-radius: 8px;
                 display: block;
+                object-fit: contain; /* Maintain aspect ratio */
+                margin: 0 auto; /* Center the image */
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+            
+            /* Add specific styling for ID card images */
+            .post-media img[alt="Post Image"] {
+                width: auto;
+                height: auto;
+                max-height: 400px;
+                border: 1px solid #e0e0e0;
             }
             
             .post-stats {
@@ -388,44 +403,64 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.log("Current user ID:", loggedInUserId);
             console.log("Current username:", loggedInUsername);
             
-            // Check if we have the user ID
-            if (!loggedInUserId) {
-                console.error("Missing user ID for repost check");
+            // Get user ID from token if not available directly
+            let userId = loggedInUserId;
+            if (!userId) {
+                // Try to extract from token
+                try {
+                    const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+                    userId = tokenPayload.id || tokenPayload.userId;
+                    console.log("Extracted user ID from token:", userId);
+                } catch (e) {
+                    console.error("Could not extract user ID from token");
+                }
+            }
+    
+            // Still no user ID? Show error
+            if (!userId) {
+                console.error("User ID not available");
                 alert("Unable to repost: User ID not available");
                 return;
             }
-            
-            // Instead of checking if the user already reposted this post by fetching all posts,
-            // we'll directly attempt to repost and let the server handle any duplicates
-            
-            // If not already reposted, proceed with repost
+    
+            // First check if this post was already reposted by this user
             const response = await fetch(`http://localhost:3000/posts/${postId}/repost`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
-                }
+                },
+                body: JSON.stringify({
+                    userId: userId,
+                    username: loggedInUsername
+                })
             });
-        
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error("Error response from server:", errorText);
+    
+            // Handle non-JSON response (like HTML error page)
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                const data = await response.json();
                 
-                // Check if the error is about already reposting
-                if (errorText.includes("already reposted")) {
-                    alert("You have already reposted this content!");
-                    return;
+                if (!response.ok) {
+                    if (data.error === "already_reposted") {
+                        alert("You have already reposted this post!");
+                        return;
+                    }
+                    throw new Error(data.message || 'Failed to repost');
                 }
-                
-                throw new Error(`Failed to repost post: ${response.status}`);
+            } else {
+                // Handle non-JSON response
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
             }
-        
-            const data = await response.json();
-            console.log(`✅ Post ${postId} reposted successfully:`, data.message);
-            await retrievePosts(); // Refresh posts
+    
+            console.log("✅ Post reposted successfully");
+            alert("Post reposted successfully!"); // Using alert instead of toast
+            await retrievePosts(); // Refresh posts to show the repost
         } catch (error) {
             console.error("🚨 Error reposting post:", error);
-            alert("Error reposting post: " + error.message);
+            alert("Failed to repost post: " + error.message); // Using alert instead of toast
         }
     }
 
@@ -535,24 +570,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function renderPosts(posts) {
         const postFeed = document.querySelector("#postFeed");
         if (!postFeed) return;
-
+    
         postFeed.innerHTML = ""; // Clear previous posts
-
+    
         // Process posts in parallel for efficiency
         const postPromises = posts.map(async (post) => {
             const postElement = document.createElement("div");
             postElement.classList.add("post");
             postElement.dataset.userId = post.userId; // Add userId as data attribute
             postElement.dataset.postId = post._id;
-
+    
             const formattedTimestamp = formatTimestamp(post.createdAt);
-
+    
             // Use the post's username directly from the post object
             const postUsername = post.username; // This is the username of the post creator
             
+            // Check if this is a repost
+            const isRepost = !!post.originalPostId;
+            
             // Get profile picture URL for this post's author
             const profilePicUrl = await getUserProfilePicture(postUsername);
-
+    
             let mediaContent = "";
             if (post.media && post.media.length > 0) {
                 mediaContent = `
@@ -572,11 +610,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     </div>
                 `;
             }
-
+    
             const userLiked = (post.likes || []).some(like => like.username === loggedInUsername);
             const likesCount = post.likes?.length || 0;
             const commentsCount = post.comments?.length || 0;
-
+    
             // Format comments with better styling
             const commentsList = (post.comments || []).length > 0
                 ? (post.comments || []).map(comment => `
@@ -592,12 +630,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     </div>
                 `).join("")
                 : "<div class='no-comments'>No comments yet</div>";
-
+    
             postElement.innerHTML = `
                 <div class="post-header">
                     <img src="${profilePicUrl}" alt="User Profile">
                     <div class="post-header-info">
-                        <span class="username">${postUsername}</span>
+                        <span class="username">${postUsername}${isRepost ? ' <span class="repost-label" style="color: #65676b; font-style: italic; font-size: 0.85em; margin-left: 5px;">• Reposted</span>' : ''}</span>
                         <span class="timestamp">${formattedTimestamp}</span>
                     </div>
                 </div>
@@ -629,10 +667,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     </div>
                 </div>
             `;
-
+    
             return postElement;
         });
-
+    
         // Wait for all post elements to be created with their profile pictures
         const postElements = await Promise.all(postPromises);
         
@@ -640,6 +678,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         postElements.forEach(element => {
             postFeed.appendChild(element);
         });
+    
+        // Add event listeners
+        // ... rest of the function remains the same
+    
 
         // Add event listeners
         document.querySelectorAll(".like-button").forEach(button => {
