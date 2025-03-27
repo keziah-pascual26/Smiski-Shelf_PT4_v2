@@ -2,38 +2,16 @@ const mongoose = require('mongoose');
 
 const postSchema = new mongoose.Schema({
     username: { type: String, required: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Added userId field referencing User model
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     text: { type: String, required: true },
     media: { type: [String], default: [] },
     likes: [{ 
         username: String,
         createdAt: { type: Date, default: Date.now }
-    }], // Array of users who liked the post with timestamps
-    comments: [{ username: String, text: String }], // Array of comments with username and text
-    originalPostId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', default: null }, // Reference to the original post
+    }],
+    comments: [{ username: String, text: String }],
+    originalPostId: { type: mongoose.Schema.Types.ObjectId, ref: 'Post', default: null },
     createdAt: { type: Date, default: Date.now },
-
-    reports: [{
-        reporter: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-            required: true
-        },
-        reason: {
-            type: String,
-            required: true
-        },
-        details: String,
-        status: {
-            type: String,
-            enum: ['pending', 'reviewed', 'resolved', 'dismissed'],
-            default: 'pending'
-        },
-        createdAt: {
-            type: Date,
-            default: Date.now
-        }
-    }]
 });
 
 const Post = mongoose.model('Post', postSchema);

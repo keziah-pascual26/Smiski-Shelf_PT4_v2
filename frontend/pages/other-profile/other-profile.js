@@ -2365,54 +2365,33 @@ function showReportPostModal(postId) {
     });
 }
 
-// Add this function to submit the report to the server
-// Update the submitPostReport function to better handle errors
-async function submitPostReport(postId, reason, details) {
+async function submitPostReport(postId, reason) {
     try {
         const token = localStorage.getItem('token');
-        if (!token) {
-            throw new Error('You must be logged in to report a post');
-        }
-        
         const response = await fetch('http://localhost:3000/api/reports/post', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                postId,
-                reason,
-                details
+                reportType: 'post',
+                targetId: postId,
+                reason: reason
             })
         });
-        
-        // Check if response is not OK before trying to parse JSON
+
         if (!response.ok) {
-            // Try to get error as JSON first
-            let errorMessage = 'Failed to submit report';
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.error || errorMessage;
-            } catch (jsonError) {
-                // If JSON parsing fails, try to get text
-                try {
-                    const errorText = await response.text();
-                    console.error('Server response:', errorText.substring(0, 100) + '...');
-                    errorMessage = `Server error (${response.status})`;
-                } catch (textError) {
-                    errorMessage = `Server error (${response.status})`;
-                }
-            }
-            throw new Error(errorMessage);
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to submit report');
         }
-        
-        const result = await response.json();
-        alert('Thank you for your report. Our team will review it shortly.');
-        return result;
+
+        const data = await response.json();
+        alert('Report submitted successfully');
+        return data;
     } catch (error) {
         console.error('Error submitting report:', error);
-        alert(error.message || 'Failed to submit report. Please try again later.');
+        alert('Failed to submit report: ' + error.message);
         throw error;
     }
 }

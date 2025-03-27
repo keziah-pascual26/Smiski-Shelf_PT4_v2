@@ -776,3 +776,54 @@ tr:hover {
 #reports-table .review-btn {
     color: #f39c12;
 }
+
+/* Reports Section Styles */
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.status-badge.pending {
+    background-color: #ffd700;
+    color: #000;
+}
+
+.status-badge.resolved {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.status-badge.dismissed {
+    background-color: #f44336;
+    color: white;
+}
+
+.status-badge.reviewed {
+    background-color: #2196F3;
+    color: white;
+}
+
+.action-btn {
+    padding: 4px 8px;
+    margin: 0 2px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.resolve-btn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.dismiss-btn {
+    background-color: #f44336;
+    color: white;
+}
+
+.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
