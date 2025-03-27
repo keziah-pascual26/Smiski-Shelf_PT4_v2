@@ -14,18 +14,23 @@ style.textContent = `
     }
     
     .post-create-container {
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        padding: 12px 16px;
-        margin-bottom: 16px;
-        border: 1px solid #e4e6eb;
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Centers items horizontally */
+        justify-content: center; /* Centers items vertically */
+        background-color: white;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        width: 100%;
     }
-    
+
     .user-profile {
         display: flex;
         align-items: center;
-        margin-bottom: 10px;
+        justify-content: center; /* Centers the profile section horizontally */
+        gap: 10px;
+        margin-bottom: 15px;
     }
     
     .user-profile img {
@@ -50,17 +55,20 @@ style.textContent = `
         font-size: 15px;
         margin-bottom: 10px;
         cursor: pointer;
+        resize: none; /* Prevent manual resizing */
+        overflow: hidden; /* Hide scrollbars */
+        transition: height 0.2s ease; /* Optional: Smooth height adjustment */
     }
-    
+
     input.post-input:focus {
         outline: none;
     }
     
     .post-options {
         display: flex;
-        justify-content: space-around;
-        padding-top: 12px;
-        border-top: 1px solid #e4e6eb;
+        justify-content: center; /* Centers the post options horizontally */
+        gap: 20px; /* Adds spacing between options */
+        width: 100%;
     }
     
     .post-option {
