@@ -222,39 +222,48 @@ style.textContent = `
             cursor: not-allowed;
         }
         
-        /* Media Preview Styles */
-        .media-preview-container {
-            padding: 0 16px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 16px;
-        }
+        /* Media Preview Styles - UPDATED */
+    .media-preview-container {
+        padding: 0 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+    }
         
         .media-preview {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 8px;
-            object-fit: cover;
-        }
-        
-        .media-preview-wrapper {
-            position: relative;
-            border-radius: 8px;
-            overflow: hidden;
-            width: 100%;
-            background-color: #f0f2f5;
-        }
-        
-        .media-preview-wrapper img {
-            width: 100%;
-            display: block;
-        }
-        
-        .media-preview-wrapper video {
-            width: 100%;
-            display: block;
-        }
+        max-width: 100%;
+        max-height: 300px;
+        border-radius: 8px;
+        /* Removed object-fit: cover to prevent cropping */
+        object-fit: contain; /* Changed to contain to preserve aspect ratio */
+    }
+    
+    .media-preview-wrapper {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        width: 100%;
+        background-color: #f0f2f5;
+        text-align: center; /* Center the image */
+        padding: 8px; /* Add some padding */
+    }
+    
+    .media-preview-wrapper img {
+        width: auto; /* Changed from 100% to auto */
+        max-width: 100%; /* Ensure it doesn't overflow */
+        height: auto; /* Maintain aspect ratio */
+        display: block;
+        margin: 0 auto; /* Center horizontally */
+    }
+    
+    .media-preview-wrapper video {
+        width: auto; /* Changed from 100% to auto */
+        max-width: 100%; /* Ensure it doesn't overflow */
+        height: auto; /* Maintain aspect ratio */
+        display: block;
+        margin: 0 auto; /* Center horizontally */
+    }
         
         .remove-media {
             position: absolute;

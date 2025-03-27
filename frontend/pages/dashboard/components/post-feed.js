@@ -71,12 +71,27 @@ document.addEventListener("DOMContentLoaded", async () => {
                 margin: 12px 0;
                 border-radius: 8px;
                 overflow: hidden;
+                display: flex;
+                justify-content: center;
+                align-items: center;
             }
             
             .post-media img, .post-media video {
                 max-width: 100%;
+                max-height: 500px; /* Set maximum height */
                 border-radius: 8px;
                 display: block;
+                object-fit: contain; /* Maintain aspect ratio */
+                margin: 0 auto; /* Center the image */
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+            
+            /* Add specific styling for ID card images */
+            .post-media img[alt="Post Image"] {
+                width: auto;
+                height: auto;
+                max-height: 400px;
+                border: 1px solid #e0e0e0;
             }
             
             .post-stats {
