@@ -586,9 +586,10 @@ function createPostElement(post, isLikedTab = false) {
     // Only show edit and delete buttons if it's the user's own post and not in the liked tab
     const showEditDelete = post.username === currentUsername && !isLikedTab;
     
+    // Use a placeholder for profile picture initially
     postElement.innerHTML = `
         <div class="post-header">
-            <img src="/public/no-profile.png" alt="User Profile">
+            <img src="/public/no-profile.png" alt="User Profile" class="post-user-avatar" data-username="${post.username}">
             <div class="post-header-info">
                 <span class="username">${post.username}</span>
                 <span class="timestamp">• ${timestamp}</span>
@@ -1197,9 +1198,81 @@ function createPostElement(post, isLikedTab = false) {
         });
     });
     
+    // After the post is created, fetch and update the profile picture
+    const userAvatar = postElement.querySelector('.post-user-avatar');
+    if (userAvatar) {
+        const username = userAvatar.getAttribute('data-username');
+        retrieveProfilePicture(username).then(profilePicUrl => {
+            userAvatar.src = profilePicUrl;
+        }).catch(error => {
+            console.error(`Failed to load profile picture for ${username}:`, error);
+            // Keep the default image if there's an error
+        });
+    }
+    
+    // Also update profile pictures for comments
+    const commentAvatars = postElement.querySelectorAll('.comment-avatar');
+    commentAvatars.forEach(avatar => {
+        const commentUsername = avatar.getAttribute('alt');
+        if (commentUsername && commentUsername !== 'Your Avatar') {
+            retrieveProfilePicture(commentUsername).then(profilePicUrl => {
+                avatar.src = profilePicUrl;
+            }).catch(error => {
+                console.error(`Failed to load comment profile picture for ${commentUsername}:`, error);
+            });
+        } else if (commentUsername === 'Your Avatar') {
+            // For the current user's comment input avatar
+            retrieveProfilePicture(currentUsername).then(profilePicUrl => {
+                avatar.src = profilePicUrl;
+            }).catch(error => {
+                console.error(`Failed to load your profile picture:`, error);
+            });
+        }
+    });
+    
     return postElement;
 }
-    
+
+// Function to retrieve profile picture for comments and posts
+async function retrieveProfilePicture(username) {
+    try {
+        // Check if it's the current user
+        const currentUsername = localStorage.getItem('username');
+        if (username === currentUsername) {
+            // Use the profile picture already loaded for the current user
+            const currentUserPic = document.getElementById('profilePicture');
+            if (currentUserPic && currentUserPic.src && !currentUserPic.src.includes('no-profile.png')) {
+                return currentUserPic.src;
+            }
+        }
+        
+        // Fetch the user's profile data to get their profile picture
+        const response = await fetch(`http://localhost:3000/api/users/byUsername/${encodeURIComponent(username)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch user data: ${response.status}`);
+        }
+        
+        const userData = await response.json();
+        
+        // Return the profile picture URL or default image
+        if (userData.profilePicture) {
+            return `http://localhost:3000${userData.profilePicture}`;
+        } else {
+            return '/public/no-profile.png';
+        }
+    } catch (error) {
+        console.error(`Error retrieving profile picture for ${username}:`, error);
+        return '/public/no-profile.png'; // Default image on error
+    }
+}
+
     // Helper function to create a story element
 function createStoryElement(story) {
     const storyElement = document.createElement('div');
