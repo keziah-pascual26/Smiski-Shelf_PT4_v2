@@ -7,6 +7,10 @@ let postsCurrentPage = 1;
 let postsPerPage = 10;
 let allPosts = [];
 
+let reportsCurrentPage = 1;
+let reportsPerPage = 10;
+let allReports = [];
+
 // Add this at the beginning of your admin-dashboard.js file
 document.addEventListener('DOMContentLoaded', function() {
     // Check if user is admin
@@ -56,6 +60,7 @@ document.querySelectorAll(".admin-nav a").forEach(link => {
 });
 
 // Dashboard initialization
+// Update the initializeDashboard function to include reports section
 async function initializeDashboard() {
     try {
         // Fetch dashboard stats
@@ -70,16 +75,26 @@ async function initializeDashboard() {
         // Fetch posts data
         await fetchPosts();
         
+        // Set up dummy reports data for UI demonstration
+        setupDummyReports();
+        
         // Set up refresh buttons
         document.getElementById("refresh-users-btn").addEventListener("click", fetchUsers);
         document.getElementById("refresh-posts-btn").addEventListener("click", fetchPosts);
+        document.getElementById("refresh-reports-btn").addEventListener("click", () => setupDummyReports());
         
         // Set up search functionality
         document.getElementById("user-search").addEventListener("input", filterUsers);
         document.getElementById("post-search").addEventListener("input", filterPosts);
+        document.getElementById("report-search").addEventListener("input", filterReports);
         
         // Set up user filter for posts
         document.getElementById("user-filter").addEventListener("change", filterPosts);
+        
+        // Set up report filters
+        document.getElementById("report-type-filter").addEventListener("change", filterReports);
+        document.getElementById("report-status-filter").addEventListener("change", filterReports);
+        
     } catch (error) {
         console.error("Error initializing dashboard:", error);
     }
@@ -950,4 +965,392 @@ async function populateUserFilter() {
     } catch (error) {
         console.error("Error populating user filter:", error);
     }
+}
+
+
+// Add this function to set up dummy reports for UI demonstration
+function setupDummyReports() {
+    // Create dummy reports data
+    allReports = [
+        {
+            _id: "rep123456789",
+            reportType: "user",
+            reportedUser: { _id: "user123", username: "john_doe", email: "john@example.com" },
+            reporter: { _id: "user456", username: "jane_smith" },
+            reason: "Inappropriate behavior",
+            details: "This user has been sending harassing messages",
+            status: "pending",
+            createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // 2 days ago
+        },
+        {
+            _id: "rep987654321",
+            reportType: "post",
+            reportedPost: { _id: "post123", text: "This is an inappropriate post content", username: "toxic_user" },
+            reporter: { _id: "user789", username: "alex_jones" },
+            reason: "Offensive content",
+            details: "This post contains hate speech",
+            status: "reviewed",
+            createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() // 5 days ago
+        },
+        {
+            _id: "rep456789123",
+            reportType: "user",
+            reportedUser: { _id: "user789", username: "spam_account", email: "spam@example.com" },
+            reporter: { _id: "user123", username: "john_doe" },
+            reason: "Spam account",
+            details: "This account is posting spam links",
+            status: "resolved",
+            createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() // 10 days ago
+        },
+        {
+            _id: "rep789123456",
+            reportType: "post",
+            reportedPost: { _id: "post456", text: "Check out this link to get free stuff", username: "spam_account" },
+            reporter: { _id: "user456", username: "jane_smith" },
+            reason: "Spam content",
+            details: "This post contains suspicious links",
+            status: "dismissed",
+            createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days ago
+        }
+    ];
+    
+    // Display reports
+    displayReports(allReports);
+    
+    // Update pagination
+    updateReportsPagination(1);
+}
+
+// Add this function to filter reports
+function filterReports() {
+    const searchTerm = document.getElementById("report-search").value.toLowerCase();
+    const typeFilter = document.getElementById("report-type-filter").value;
+    const statusFilter = document.getElementById("report-status-filter").value;
+    
+    let filteredReports = allReports;
+    
+    // Apply type filter
+    if (typeFilter !== "all") {
+        filteredReports = filteredReports.filter(report => report.reportType === typeFilter);
+    }
+    
+    // Apply status filter
+    if (statusFilter !== "all") {
+        filteredReports = filteredReports.filter(report => report.status === statusFilter);
+    }
+    
+    // Apply search term
+    if (searchTerm) {
+        filteredReports = filteredReports.filter(report => {
+            return (
+                report._id.toLowerCase().includes(searchTerm) ||
+                (report.reportType === "user" && report.reportedUser && 
+                 report.reportedUser.username.toLowerCase().includes(searchTerm)) ||
+                (report.reportType === "post" && report.reportedPost && 
+                 report.reportedPost.text.toLowerCase().includes(searchTerm)) ||
+                (report.reporter && report.reporter.username.toLowerCase().includes(searchTerm)) ||
+                report.reason.toLowerCase().includes(searchTerm)
+            );
+        });
+    }
+    
+    // Display filtered reports
+    displayReports(filteredReports);
+}
+
+// Add this function to update reports pagination
+function updateReportsPagination(totalPages) {
+    document.getElementById("reports-page-info").textContent = `Page ${reportsCurrentPage} of ${totalPages}`;
+    
+    // Update button states
+    document.getElementById("reports-prev-page").disabled = reportsCurrentPage === 1;
+    document.getElementById("reports-next-page").disabled = reportsCurrentPage === totalPages;
+    
+    // Remove existing listeners to prevent duplicates
+    const prevButton = document.getElementById("reports-prev-page");
+    const nextButton = document.getElementById("reports-next-page");
+    
+    const newPrevButton = prevButton.cloneNode(true);
+    const newNextButton = nextButton.cloneNode(true);
+    
+    prevButton.parentNode.replaceChild(newPrevButton, prevButton);
+    nextButton.parentNode.replaceChild(newNextButton, nextButton);
+    
+    // Add new listeners
+    newPrevButton.addEventListener("click", () => {
+        if (reportsCurrentPage > 1) {
+            reportsCurrentPage--;
+            filterReports();
+        }
+    });
+    
+    newNextButton.addEventListener("click", () => {
+        if (reportsCurrentPage < totalPages) {
+            reportsCurrentPage++;
+            filterReports();
+        }
+    });
+}
+
+// Add this function to display reports
+function displayReports(reports) {
+    const tableBody = document.getElementById("reports-table-body");
+    tableBody.innerHTML = "";
+    
+    if (reports.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty-message">
+                    No reports found
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    reports.forEach(report => {
+        const row = document.createElement("tr");
+        
+        // Format date
+        const reportDate = new Date(report.createdAt).toLocaleString();
+        
+        // Create status badge with appropriate color
+        let statusBadgeClass = '';
+        switch(report.status) {
+            case 'pending':
+                statusBadgeClass = 'status-pending';
+                break;
+            case 'reviewed':
+                statusBadgeClass = 'status-reviewed';
+                break;
+            case 'resolved':
+                statusBadgeClass = 'status-resolved';
+                break;
+            case 'dismissed':
+                statusBadgeClass = 'status-dismissed';
+                break;
+        }
+        
+        // Determine reported item based on report type
+        let reportedItem = 'N/A';
+        if (report.reportType === 'user' && report.reportedUser) {
+            reportedItem = report.reportedUser.username || 'Unknown User';
+        } else if (report.reportType === 'post' && report.reportedPost) {
+            reportedItem = report.reportedPost.text 
+                ? (report.reportedPost.text.length > 30 
+                    ? report.reportedPost.text.substring(0, 30) + '...' 
+                    : report.reportedPost.text)
+                : 'Post ID: ' + report.reportedPost._id;
+        }
+        
+        row.innerHTML = `
+            <td>${report._id.substring(0, 8)}...</td>
+            <td>${report.reportType}</td>
+            <td>${reportedItem}</td>
+            <td>${report.reporter ? report.reporter.username : 'N/A'}</td>
+            <td>${report.reason}</td>
+            <td>${reportDate}</td>
+            <td><span class="status-badge ${statusBadgeClass}">${report.status}</span></td>
+            <td class="actions">
+                <button class="view-btn" data-id="${report._id}">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="review-btn" data-id="${report._id}">
+                    <i class="fas fa-gavel"></i>
+                </button>
+            </td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+    
+    // Add event listeners to action buttons
+    document.querySelectorAll("#reports-table-body .view-btn").forEach(button => {
+        button.addEventListener("click", () => {
+            viewReport(button.getAttribute("data-id"));
+        });
+    });
+    
+    document.querySelectorAll("#reports-table-body .review-btn").forEach(button => {
+        button.addEventListener("click", () => {
+            reviewReport(button.getAttribute("data-id"));
+        });
+    });
+}
+
+// Add this function to view a report
+function viewReport(reportId) {
+    // Find the report in our dummy data
+    const report = allReports.find(r => r._id === reportId);
+    
+    if (!report) {
+        alert("Report not found");
+        return;
+    }
+    
+    // Create modal for report details
+    const modal = document.createElement("div");
+    modal.className = "admin-modal";
+    
+    let reportedItemDetails = '';
+    
+    // Different display based on report type
+    if (report.reportType === 'user' && report.reportedUser) {
+        reportedItemDetails = `
+            <div class="reported-item-details">
+                <h3>Reported User Details</h3>
+                <p><strong>Username:</strong> ${report.reportedUser.username}</p>
+                <p><strong>Email:</strong> ${report.reportedUser.email}</p>
+                <p><strong>User ID:</strong> ${report.reportedUser._id}</p>
+                <p><strong>Status:</strong> Active</p>
+            </div>
+        `;
+    } else if (report.reportType === 'post' && report.reportedPost) {
+        reportedItemDetails = `
+            <div class="reported-item-details">
+                <h3>Reported Post Details</h3>
+                <p><strong>Post ID:</strong> ${report.reportedPost._id}</p>
+                <p><strong>Author:</strong> ${report.reportedPost.username || 'Unknown'}</p>
+                <p><strong>Content:</strong> ${report.reportedPost.text || 'No text content'}</p>
+                <p><strong>Created:</strong> ${new Date(report.createdAt).toLocaleString()}</p>
+            </div>
+        `;
+    }
+    
+    modal.innerHTML = `
+        <div class="admin-modal-content">
+            <span class="admin-modal-close">&times;</span>
+            <h2>Report Details</h2>
+            <div class="report-details">
+                <p><strong>Report ID:</strong> ${report._id}</p>
+                <p><strong>Report Type:</strong> ${report.reportType}</p>
+                <p><strong>Reporter:</strong> ${report.reporter ? report.reporter.username : 'N/A'}</p>
+                <p><strong>Reason:</strong> ${report.reason}</p>
+                <p><strong>Details:</strong> ${report.details || 'No details provided'}</p>
+                <p><strong>Status:</strong> ${report.status}</p>
+                <p><strong>Date Reported:</strong> ${new Date(report.createdAt).toLocaleString()}</p>
+                <p><strong>Admin Notes:</strong> No notes</p>
+            </div>
+            ${reportedItemDetails}
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close modal when clicking the X
+    const closeBtn = modal.querySelector(".admin-modal-close");
+    closeBtn.addEventListener("click", () => {
+        document.body.removeChild(modal);
+    });
+}
+
+// Add this function to review a report
+function reviewReport(reportId) {
+    // Find the report in our dummy data
+    const report = allReports.find(r => r._id === reportId);
+    
+    if (!report) {
+        alert("Report not found");
+        return;
+    }
+    
+    // Create modal for reviewing report
+    const modal = document.createElement("div");
+    modal.className = "admin-modal";
+    
+    // Determine reported item details for display
+    let reportedItemInfo = '';
+    let actionOptions = '';
+    
+    if (report.reportType === 'user' && report.reportedUser) {
+        reportedItemInfo = `
+            <p><strong>Reported User:</strong> ${report.reportedUser.username}</p>
+            <p><strong>User Email:</strong> ${report.reportedUser.email}</p>
+        `;
+        
+        actionOptions = `
+            <option value="none">No Action</option>
+            <option value="warn">Warn User</option>
+            <option value="suspend">Suspend User</option>
+            <option value="ban">Ban User</option>
+        `;
+    } else if (report.reportType === 'post' && report.reportedPost) {
+        reportedItemInfo = `
+            <p><strong>Reported Post:</strong> ${report.reportedPost.text ? 
+                (report.reportedPost.text.length > 100 ? 
+                    report.reportedPost.text.substring(0, 100) + '...' : 
+                    report.reportedPost.text) : 
+                'No text content'}</p>
+            <p><strong>Post Author:</strong> ${report.reportedPost.username || 'Unknown'}</p>
+        `;
+        
+        actionOptions = `
+            <option value="none">No Action</option>
+            <option value="hide">Hide Post</option>
+            <option value="delete">Delete Post</option>
+        `;
+    }
+    
+    modal.innerHTML = `
+        <div class="admin-modal-content">
+            <span class="admin-modal-close">&times;</span>
+            <h2>Review Report</h2>
+            <div class="report-details">
+                <p><strong>Report Type:</strong> ${report.reportType}</p>
+                ${reportedItemInfo}
+                <p><strong>Reporter:</strong> ${report.reporter ? report.reporter.username : 'N/A'}</p>
+                <p><strong>Reason:</strong> ${report.reason}</p>
+                <p><strong>Details:</strong> ${report.details || 'No details provided'}</p>
+            </div>
+            <form id="review-report-form">
+                <div class="form-group">
+                    <label for="report-status">Update Status</label>
+                    <select id="report-status" required>
+                        <option value="pending" ${report.status === 'pending' ? 'selected' : ''}>Pending</option>
+                        <option value="reviewed" ${report.status === 'reviewed' ? 'selected' : ''}>Reviewed</option>
+                        <option value="resolved" ${report.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                        <option value="dismissed" ${report.status === 'dismissed' ? 'selected' : ''}>Dismissed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="admin-notes">Admin Notes</label>
+                    <textarea id="admin-notes" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="action-taken">Action to Take</label>
+                    <select id="action-taken">
+                        ${actionOptions}
+                    </select>
+                </div>
+                <button type="submit" class="save-btn">Save Review</button>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close modal when clicking the X
+    const closeBtn = modal.querySelector(".admin-modal-close");
+    closeBtn.addEventListener("click", () => {
+        document.body.removeChild(modal);
+    });
+    
+    // Handle form submission
+    const form = document.getElementById("review-report-form");
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        
+        const status = document.getElementById("report-status").value;
+        const adminNotes = document.getElementById("admin-notes").value;
+        const action = document.getElementById("action-taken").value;
+        
+        // Update the report in our dummy data
+        report.status = status;
+        
+        alert("Report reviewed successfully (UI demonstration only)");
+        document.body.removeChild(modal);
+        
+        // Refresh the reports display
+        displayReports(allReports);
+    });
 }
