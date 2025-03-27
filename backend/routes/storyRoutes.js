@@ -103,5 +103,19 @@ router.get('/api/stories/:storyId/comments', authenticateToken, async (req, res)
     }
 });
 
+// Get current user's stories
+router.get('/stories/mystories', authenticateToken, async (req, res) => {
+    try {
+        // Find all stories created by the current user
+        const stories = await Story.find({
+            userId: req.user.id
+        }).sort({ createdAt: -1 });
+        
+        res.json(stories);
+    } catch (error) {
+        console.error('Error fetching user stories:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 module.exports = router;

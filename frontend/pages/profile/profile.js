@@ -355,54 +355,70 @@ async function updatePostsCount(username) {
         }
     }
     
-    // Function to load user's stories
-    async function loadUserStories() {
-        const userStoriesFeed = document.getElementById('userStoriesFeed');
-        userStoriesFeed.innerHTML = '<div class="loading">Loading your stories...</div>';
-        
-        try {
-            const response = await fetch('http://localhost:3000/api/stories/mystories', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
+        // Function to load user's stories
+        async function loadUserStories() {
+            const userStoriesFeed = document.getElementById('userStoriesFeed');
+            userStoriesFeed.innerHTML = '<div class="loading">Loading your stories...</div>';
+            
+            try {
+                // Updated endpoint to match the backend route
+                const response = await fetch('http://localhost:3000/stories/mystories', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server response:', errorText);
+                    throw new Error(`Failed to fetch stories: ${response.status} ${response.statusText}`);
                 }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to fetch stories');
-            }
-            
-            const stories = await response.json();
-            
-            if (stories.length === 0) {
+                
+                let stories = await response.json();
+                console.log('All stories loaded:', stories.length);
+                
+                // Filter stories to only show those posted within the last 24 hours
+                const twentyFourHoursAgo = new Date();
+                twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+                
+                stories = stories.filter(story => {
+                    const storyDate = new Date(story.createdAt);
+                    return storyDate >= twentyFourHoursAgo;
+                });
+                
+                console.log('Stories within last 24 hours:', stories.length);
+                        
+                if (stories.length === 0) {
+                    userStoriesFeed.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No recent stories</h3>
+                            <p>You don't have any stories from the last 24 hours.</p>
+                            <a href="/pages/dashboard/dashboard.html" class="empty-state-action">Create a Story</a>
+                        </div>
+                    `;
+                    return;
+                }
+                        
+                // Render stories
+                userStoriesFeed.innerHTML = '';
+                stories.forEach(story => {
+                    const storyElement = createStoryElement(story);
+                    userStoriesFeed.appendChild(storyElement);
+                });
+            } catch (error) {
+                console.error('Error loading stories:', error);
                 userStoriesFeed.innerHTML = `
                     <div class="empty-state">
-                        <h3>No stories yet</h3>
-                        <p>Share your Smiski moments in a story!</p>
-                        <a href="/pages/dashboard/dashboard.html" class="empty-state-action">Create a Story</a>
+                        <h3>Error loading stories</h3>
+                        <p>We couldn't load your stories. Please try again later.</p>
+                        <p class="error-details">${error.message}</p>
                     </div>
                 `;
-                return;
             }
-            
-            // Render stories
-            userStoriesFeed.innerHTML = '';
-            stories.forEach(story => {
-                const storyElement = createStoryElement(story);
-                userStoriesFeed.appendChild(storyElement);
-            });
-        } catch (error) {
-            console.error('Error loading stories:', error);
-            userStoriesFeed.innerHTML = `
-                <div class="empty-state">
-                    <h3>Error loading stories</h3>
-                    <p>We couldn't load your stories. Please try again later.</p>
-                </div>
-            `;
         }
-    }
-    
+        
 // Function to load liked posts
 async function loadLikedPosts() {
     const userLikedFeed = document.getElementById('userLikedFeed');
@@ -1145,75 +1161,528 @@ function createPostElement(post, isLikedTab = false) {
 }
     
     // Helper function to create a story element
-    function createStoryElement(story) {
-        const storyElement = document.createElement('div');
-        storyElement.className = 'story-card';
+function createStoryElement(story) {
+    const storyElement = document.createElement('div');
+    storyElement.className = 'story-card';
+    
+    // Format timestamp
+    const timestamp = formatTimestamp(story.createdAt);
+    
+    // Create media HTML
+    let mediaHtml = '';
+    if (story.media && story.media.length > 0) {
+        const mediaFile = story.media[0]; // Use first media file
+        const fileExtension = mediaFile.split('.').pop().toLowerCase();
         
-        // Format timestamp
-        const timestamp = formatTimestamp(story.createdAt);
+        if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+            mediaHtml = `
+                <div class="story-media">
+                    <video>
+                        <source src="/uploads/${mediaFile}" type="video/${fileExtension}">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="play-indicator">
+                        <i class="fas fa-play"></i>
+                    </div>
+                </div>
+            `;
+        } else {
+            mediaHtml = `
+                <div class="story-media">
+                    <img src="/uploads/${mediaFile}" alt="Story Image">
+                </div>
+            `;
+        }
+    }
+    
+    storyElement.innerHTML = `
+        <div class="story-content">
+            ${mediaHtml}
+            <div class="story-overlay"></div>
+            <div class="story-info">
+                <div class="story-header">
+                    <h3>${story.title}</h3>
+                    <span class="story-timestamp">${timestamp}</span>
+                </div>
+                <p class="story-description">${story.description}</p>
+            </div>
+        </div>
+        <div class="story-footer">
+            <button class="view-story-btn" data-id="${story._id}">
+                <i class="fas fa-eye"></i> View
+            </button>
+            <button class="delete-story-btn" data-id="${story._id}">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    // Add CSS for the story styling
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Modern Story Card Styling with 9:16 ratio */
+        .story-card {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            width: 280px; /* Fixed width */
+            margin-left: auto;
+            margin-right: auto;
+        }
         
-        // Create media HTML
-        let mediaHtml = '';
-        if (story.media && story.media.length > 0) {
-            const mediaFile = story.media[0]; // Use first media file
-            const fileExtension = mediaFile.split('.').pop().toLowerCase();
-            
-            if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
-                mediaHtml = `
-                    <div class="story-media">
-                        <video>
-                            <source src="/uploads/${mediaFile}" type="video/${fileExtension}">
-                            Your browser does not support the video tag.
-                        </video>
-                        <div class="play-indicator">
-                            <i class="fas fa-play"></i>
-                        </div>
-                    </div>
-                `;
-            } else {
-                mediaHtml = `
-                    <div class="story-media">
-                        <img src="/uploads/${mediaFile}" alt="Story Image">
-                    </div>
-                `;
+        .story-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+        
+        .story-content {
+            position: relative;
+            width: 100%;
+            /* 9:16 aspect ratio (height = width * 16/9) */
+            padding-top: 177.78%; /* 16/9 = 1.778 */
+            overflow: hidden;
+        }
+        
+        .story-media {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .story-media img, .story-media video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .story-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.1) 100%);
+            z-index: 1;
+        }
+        
+        .story-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            color: white;
+            z-index: 2;
+        }
+        
+        .story-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .story-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        
+        .story-timestamp {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .story-description {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.4;
+            opacity: 0.9;
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .story-footer {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background-color: #fff;
+        }
+        
+        .view-story-btn, .delete-story-btn {
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .view-story-btn {
+            background-color: #4a76a8;
+            color: white;
+            flex-grow: 1;
+            justify-content: center;
+            margin-right: 10px;
+        }
+        
+        .view-story-btn:hover {
+            background-color: #3d6293;
+        }
+        
+        .delete-story-btn {
+            background-color: #f0f2f5;
+            color: #65676b;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .delete-story-btn:hover {
+            background-color: #e4e6eb;
+            color: #e41e3f;
+        }
+        
+        .play-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+        }
+        
+        .play-indicator i {
+            color: white;
+            font-size: 24px;
+            margin-left: 4px; /* Slight offset for play icon */
+        }
+        
+        /* Story grid layout */
+        #userStoriesFeed {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+        
+        /* Empty state styling */
+        #userStoriesFeed .empty-state {
+            background-color: #f9f9f9;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-top: 20px;
+            grid-column: 1 / -1; /* Span all columns */
+        }
+        
+        #userStoriesFeed .empty-state h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        #userStoriesFeed .empty-state p {
+            color: #65676b;
+            margin-bottom: 20px;
+        }
+        
+        #userStoriesFeed .empty-state-action {
+            display: inline-block;
+            background-color: #4a76a8;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        
+        #userStoriesFeed .empty-state-action:hover {
+            background-color: #3d6293;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Add event listeners
+    const viewButton = storyElement.querySelector('.view-story-btn');
+    if (viewButton) {
+        viewButton.addEventListener('click', () => {
+            openStoryViewer(story);
+        });
+    }
+    
+    const deleteButton = storyElement.querySelector('.delete-story-btn');
+    if (deleteButton) {
+        deleteButton.addEventListener('click', () => {
+            if (confirm('Are you sure you want to delete this story?')) {
+                deleteStory(story._id);
+            }
+        });
+    }
+    
+    return storyElement;
+}
+
+// Function to open a story viewer modal
+function openStoryViewer(story) {
+    // Create modal container
+    const modal = document.createElement('div');
+    modal.className = 'story-viewer-modal';
+    
+    // Determine content type
+    let contentHtml = '';
+    if (story.media && story.media.length > 0) {
+        const mediaFile = story.media[0];
+        const fileExtension = mediaFile.split('.').pop().toLowerCase();
+        
+        if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+            contentHtml = `
+                <video autoplay controls>
+                    <source src="/uploads/${mediaFile}" type="video/${fileExtension}">
+                    Your browser does not support the video tag.
+                </video>
+            `;
+        } else {
+            contentHtml = `<img src="/uploads/${mediaFile}" alt="${story.title}">`;
+        }
+    }
+    
+    // Create modal content with 9:16 ratio
+    modal.innerHTML = `
+        <div class="story-viewer-content">
+            <div class="story-viewer-header">
+                <h2>${story.title}</h2>
+                <button class="close-story-btn">&times;</button>
+            </div>
+            <div class="story-viewer-media-container">
+                <div class="story-viewer-media">
+                    ${contentHtml}
+                </div>
+            </div>
+            <div class="story-viewer-details">
+                <p class="story-viewer-description">${story.description}</p>
+                <p class="story-viewer-timestamp">Posted ${formatTimestamp(story.createdAt)}</p>
+            </div>
+        </div>
+    `;
+    
+    // Add modal styles with fixed 9:16 ratio
+    const style = document.createElement('style');
+    style.textContent = `
+        .story-viewer-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .story-viewer-modal.active {
+            opacity: 1;
+        }
+        
+        .story-viewer-content {
+            background-color: #fff;
+            border-radius: 12px;
+            max-width: 90%;
+            width: 420px; /* Fixed width for the modal */
+            max-height: 95vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+        
+        .story-viewer-modal.active .story-viewer-content {
+            transform: translateY(0);
+        }
+        
+        .story-viewer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .story-viewer-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #333;
+        }
+        
+        .close-story-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #65676b;
+            cursor: pointer;
+            padding: 0 8px;
+        }
+        
+        .story-viewer-media-container {
+            width: 100%;
+            /* 9:16 aspect ratio */
+            padding-top: 177.78%; /* 16/9 = 1.778 */
+            position: relative;
+            background-color: #000;
+            overflow: hidden;
+        }
+        
+        .story-viewer-media {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .story-viewer-media img, .story-viewer-media video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Changed from 'cover' to 'contain' to show full image */
+            background-color: #000; /* Black background to fill empty space */
+        }
+        
+        .story-viewer-details {
+            padding: 20px;
+            background-color: #fff;
+        }
+        
+        .story-viewer-description {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+        }
+        
+        .story-viewer-timestamp {
+            margin: 0;
+            font-size: 14px;
+            color: #65676b;
+        }
+        
+        /* Media queries for responsive design */
+        @media (max-height: 800px) {
+            .story-viewer-content {
+                width: 360px;
             }
         }
         
-        storyElement.innerHTML = `
-            <div class="story-header">
-                <h3>${story.title}</h3>
-                <span class="story-timestamp">${timestamp}</span>
-            </div>
-            ${mediaHtml}
-            <p class="story-description">${story.description}</p>
-            <div class="story-footer">
-                <button class="view-story-btn" data-id="${story._id}">View Story</button>
-                <button class="delete-story-btn" data-id="${story._id}">
-                    <i class="fa fa-trash"></i>
-                </button>
-            </div>
-        `;
-        
-        // Add event listeners
-        const viewButton = storyElement.querySelector('.view-story-btn');
-        if (viewButton) {
-            viewButton.addEventListener('click', () => {
-                // Implement story viewer functionality
-                alert('Story viewer will be implemented here!');
-            });
+        @media (max-width: 480px) {
+            .story-viewer-content {
+                width: 100%;
+                max-width: 100%;
+                height: 100%;
+                max-height: 100%;
+                border-radius: 0;
+            }
+            
+            .story-viewer-media-container {
+                height: calc(100% - 120px); /* Adjust for header and details */
+                padding-top: 0;
+            }
+            
+            .story-viewer-media {
+                position: relative;
+            }
         }
+    `;
+    document.head.appendChild(style);
+    
+    // Add to document
+    document.body.appendChild(modal);
+    
+    // Add animation timing
+    setTimeout(() => {
+        modal.classList.add('active');
+    }, 10);
+    
+    // Set auto-close timer (15 seconds)
+    const autoCloseTimer = setTimeout(() => {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            document.body.removeChild(modal);
+        }, 300);
+    }, 15000);
+    
+    // Close button functionality
+    const closeBtn = modal.querySelector('.close-story-btn');
+    closeBtn.addEventListener('click', () => {
+        // Clear the auto-close timer when manually closed
+        clearTimeout(autoCloseTimer);
         
-        const deleteButton = storyElement.querySelector('.delete-story-btn');
-        if (deleteButton) {
-            deleteButton.addEventListener('click', () => {
-                if (confirm('Are you sure you want to delete this story?')) {
-                    deleteStory(story._id);
-                }
-            });
+        modal.classList.remove('active');
+        setTimeout(() => {
+            document.body.removeChild(modal);
+        }, 300);
+    });
+    
+    // Close on click outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            // Clear the auto-close timer when manually closed
+            clearTimeout(autoCloseTimer);
+            
+            modal.classList.remove('active');
+            setTimeout(() => {
+                document.body.removeChild(modal);
+            }, 300);
         }
-        
-        return storyElement;
+    });
+    
+    // For video content, reset the timer when the video ends
+    const videoElement = modal.querySelector('video');
+    if (videoElement) {
+        videoElement.addEventListener('ended', () => {
+            // Clear existing timer
+            clearTimeout(autoCloseTimer);
+            
+            // Close the modal
+            modal.classList.remove('active');
+            setTimeout(() => {
+                document.body.removeChild(modal);
+            }, 300);
+        });
     }
+}
     
     // Function to toggle like on a post
     async function toggleLike(postId, likeButton) {
