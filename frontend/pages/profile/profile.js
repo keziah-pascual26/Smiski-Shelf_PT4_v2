@@ -126,8 +126,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Fetch and update friends count
             await updateFriendsCount();
             
-            // Update stories count (if you have this functionality)
-            // await updateStoriesCount(username);
+            // Update stories count with recent stories count
+            await updateRecentStoriesCount();
             
             return userData;
         } catch (error) {
@@ -276,6 +276,46 @@ async function updatePostsCount(username) {
     } catch (error) {
         console.error('Error fetching posts count:', error);
         postsCount.textContent = '0';
+        return 0;
+    }
+}
+
+// Function to fetch and update recent stories count
+async function updateRecentStoriesCount() {
+    try {
+        const response = await fetch('http://localhost:3000/stories/mystories', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch stories');
+        }
+        
+        const stories = await response.json();
+        
+        // Calculate stories posted in the last 24 hours
+        const twentyFourHoursAgo = new Date();
+        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+        
+        const recentStories = stories.filter(story => {
+            const storyDate = new Date(story.createdAt);
+            return storyDate >= twentyFourHoursAgo;
+        });
+        
+        // Update the stories count in the UI to show only recent stories count
+        if (storiesCount) {
+            storiesCount.textContent = `${recentStories.length}`;
+        }
+        
+        console.log(`✅ Updated stories count: ${stories.length} total, ${recentStories.length} recent`);
+        return recentStories.length;
+    } catch (error) {
+        console.error('Error fetching recent stories count:', error);
+        if (storiesCount) storiesCount.textContent = '0';
         return 0;
     }
 }
