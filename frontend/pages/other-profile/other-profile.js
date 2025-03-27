@@ -1372,6 +1372,210 @@ async function loadUserPosts(username) {
     }
 }
     
+// Add this style to the document.addEventListener('DOMContentLoaded') section, after the existing postStyles
+const storyStyles = document.createElement('style');
+storyStyles.textContent = `
+    /* Modern Stories Grid Layout */
+    .stories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+        padding: 16px;
+    }
+    
+    /* Story Card with 9:16 Aspect Ratio */
+    .story-card {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background-color: #fff;
+    }
+    
+    .story-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Story Media Container with 9:16 Ratio */
+    .story-media {
+        position: relative;
+        width: 100%;
+        padding-top: 177.78%; /* 16:9 Aspect Ratio (9/16 = 0.5625) */
+        background-color: #f0f0f0;
+    }
+    
+    .story-media img, 
+    .story-media video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    /* Story Content Overlay */
+    .story-content {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 16px;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0));
+        color: white;
+    }
+    
+    .story-title {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+    
+    .story-timestamp {
+        font-size: 12px;
+        opacity: 0.8;
+    }
+    
+    /* Story User Info */
+    .story-user-info {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        display: flex;
+        align-items: center;
+        z-index: 2;
+    }
+    
+    .story-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 2px solid white;
+        object-fit: cover;
+    }
+    
+    /* Story Indicator */
+    .story-indicator {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #4CAF50;
+        box-shadow: 0 0 0 2px white;
+    }
+    
+    /* Story View Button */
+    .view-story-btn {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        background-color: #3897f0;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        z-index: 2;
+    }
+    
+    .view-story-btn:hover {
+        background-color: #1877f2;
+    }
+    
+    /* Play Indicator for Videos */
+    .play-indicator {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 50px;
+        height: 50px;
+        background-color: rgba(0,0,0,0.5);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 20px;
+    }
+    
+    /* Story Modal for Viewing */
+    .story-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    
+    .story-modal-content {
+        position: relative;
+        width: 100%;
+        max-width: 400px;
+        height: 100%;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        background-color: #000;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .story-media-container {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .story-media-container img,
+    .story-media-container video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    
+    .story-modal-header {
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: rgba(0,0,0,0.5);
+        color: white;
+    }
+    
+    .story-modal-footer {
+        padding: 16px;
+        background-color: rgba(0,0,0,0.5);
+        color: white;
+    }
+    
+    .close-modal {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        z-index: 10;
+    }
+`;
+document.head.appendChild(storyStyles);
+
+// ... existing code ...
+
 async function loadUserStories(username) {
     const userStoriesFeed = document.getElementById('userStoriesFeed');
     if (!userStoriesFeed) {
@@ -1383,8 +1587,6 @@ async function loadUserStories(username) {
     
     try {
         console.log(`Fetching stories for user: ${username}`);
-        // Fix the URL to match the backend route structure
-        // Remove the 'api/' prefix since your storyRoutes.js doesn't use it
         const url = `http://localhost:3000/stories/user/${encodeURIComponent(username)}`;
         console.log(`Request URL: ${url}`);
         
@@ -1436,11 +1638,14 @@ async function loadUserStories(username) {
             return;
         }
         
-        // Render stories
-        userStoriesFeed.innerHTML = '';
+        // Create a modern grid layout for stories
+        userStoriesFeed.innerHTML = '<div class="stories-grid"></div>';
+        const storiesGrid = userStoriesFeed.querySelector('.stories-grid');
+        
+        // Render stories in the grid
         stories.forEach(story => {
             const storyElement = createStoryElement(story);
-            userStoriesFeed.appendChild(storyElement);
+            storiesGrid.appendChild(storyElement);
         });
     } catch (error) {
         console.error('Error loading stories:', error);
