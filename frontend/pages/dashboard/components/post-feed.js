@@ -571,24 +571,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function renderPosts(posts) {
         const postFeed = document.querySelector("#postFeed");
         if (!postFeed) return;
-
+    
         postFeed.innerHTML = ""; // Clear previous posts
-
+    
         // Process posts in parallel for efficiency
         const postPromises = posts.map(async (post) => {
             const postElement = document.createElement("div");
             postElement.classList.add("post");
             postElement.dataset.userId = post.userId; // Add userId as data attribute
             postElement.dataset.postId = post._id;
-
+    
             const formattedTimestamp = formatTimestamp(post.createdAt);
-
+    
             // Use the post's username directly from the post object
             const postUsername = post.username; // This is the username of the post creator
             
+            // Check if this is a repost
+            const isRepost = !!post.originalPostId;
+            
             // Get profile picture URL for this post's author
             const profilePicUrl = await getUserProfilePicture(postUsername);
-
+    
             let mediaContent = "";
             if (post.media && post.media.length > 0) {
                 mediaContent = `
@@ -608,11 +611,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     </div>
                 `;
             }
-
+    
             const userLiked = (post.likes || []).some(like => like.username === loggedInUsername);
             const likesCount = post.likes?.length || 0;
             const commentsCount = post.comments?.length || 0;
-
+    
             // Format comments with better styling
             const commentsList = (post.comments || []).length > 0
                 ? (post.comments || []).map(comment => `
@@ -628,12 +631,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     </div>
                 `).join("")
                 : "<div class='no-comments'>No comments yet</div>";
-
+    
             postElement.innerHTML = `
                 <div class="post-header">
                     <img src="${profilePicUrl}" alt="User Profile">
                     <div class="post-header-info">
-                        <span class="username">${postUsername}</span>
+                        <span class="username">${postUsername}${isRepost ? ' <span class="repost-label" style="color: #65676b; font-style: italic; font-size: 0.85em; margin-left: 5px;">• Reposted</span>' : ''}</span>
                         <span class="timestamp">${formattedTimestamp}</span>
                     </div>
                 </div>
@@ -665,10 +668,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     </div>
                 </div>
             `;
-
+    
             return postElement;
         });
-
+    
         // Wait for all post elements to be created with their profile pictures
         const postElements = await Promise.all(postPromises);
         
@@ -676,6 +679,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         postElements.forEach(element => {
             postFeed.appendChild(element);
         });
+    
+        // Add event listeners
+        // ... rest of the function remains the same
+    
 
         // Add event listeners
         document.querySelectorAll(".like-button").forEach(button => {
