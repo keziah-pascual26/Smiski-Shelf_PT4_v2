@@ -13,6 +13,7 @@ const session = require('express-session');
 const authRoutes = require('./routes/authRoutes');
 const reactionRoutes = require('./routes/reactionRoutes');
 const adminRoutes = require('./routes/adminRoutes'); // Add this line
+const reportRoutes = require('./routes/reportRoutes');
 
 // Add speakeasy and qrcode
 const speakeasy = require('speakeasy');
@@ -98,6 +99,9 @@ app.use(passport.session());
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/pages', express.static(path.join(__dirname, '../frontend/pages')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.use('/api/reports', reportRoutes);
+
 
 
 // Add test routes for debugging
