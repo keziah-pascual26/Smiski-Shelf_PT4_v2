@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - The Smiski Shelf</title>
+    <link rel="stylesheet" href="/pages/admin/admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div class="admin-logo">
+                <h2>Smiski Admin</h2>
+            </div>
+            <nav class="admin-nav">
+                <ul>
+                    <li class="active"><a href="#users-section"><i class="fas fa-users"></i> Users</a></li>
+                    <li><a href="#posts-section"><i class="fas fa-clipboard"></i> Posts</a></li>
+                    <li><a href="#settings-section"><i class="fas fa-cog"></i> Settings</a></li>
+                </ul>
+            </nav>
+            <div class="admin-logout">
+                <button id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="admin-content">
+            <div class="admin-header">
+                <h1>Admin Dashboard</h1>
+                <div class="admin-user">
+                    <span>Admin</span>
+                    <i class="fas fa-user-shield"></i>
+                </div>
+            </div>
+            
+            <!-- Dashboard Stats -->
+            <div class="admin-stats">
+                <div class="stat-card">
+                    <div class="stat-icon users-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Total Users</h3>
+                        <p id="total-users">Loading...</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon stories-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Total Stories</h3>
+                        <p id="total-stories">Loading...</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon posts-icon">
+                        <i class="fas fa-clipboard"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Total Posts</h3>
+                        <p id="total-posts">Loading...</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon active-icon">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>Active Users</h3>
+                        <p id="active-users">Loading...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Users Section -->
+            <section id="users-section" class="admin-section active">
+                <div class="section-header">
+                    <h2>User Management</h2>
+                    <div class="section-actions">
+                        <div class="search-box">
+                            <input type="text" id="user-search" placeholder="Search users...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <button id="refresh-users-btn" class="refresh-btn">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Registration Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <tr class="loading-row">
+                                <td colspan="6">Loading users data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="pagination">
+                    <button id="prev-page" disabled><i class="fas fa-chevron-left"></i></button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="next-page" disabled><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </section>
+            
+            <!-- Other sections will be added later -->
+            <section id="stories-section" class="admin-section">
+                <h2>Stories Management</h2>
+                <p>This section is under development.</p>
+            </section>
+            
+            
+        <section id="posts-section" class="admin-section">
+            <div class="section-header">
+                <h2>Posts Management</h2>
+                <div class="section-actions">
+                    <div class="search-box">
+                        <input type="text" id="post-search" placeholder="Search posts...">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="filter-container">
+                        <select id="user-filter">
+                            <option value="">Filter by user</option>
+                            <!-- User options will be populated dynamically -->
+                        </select>
+                    </div>
+                    <button id="refresh-posts-btn" class="refresh-btn">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="posts-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Content</th>
+                            <th>Created</th>
+                            <th>Likes</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="posts-table-body">
+                        <tr class="loading-row">
+                            <td colspan="7">Loading posts data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="pagination">
+                <button id="posts-prev-page" disabled><i class="fas fa-chevron-left"></i></button>
+                <span id="posts-page-info">Page 1 of 1</span>
+                <button id="posts-next-page" disabled><i class="fas fa-chevron-right"></i></button>
+            </div>
+        </section>
+            
+            <section id="settings-section" class="admin-section">
+                <h2>Admin Settings</h2>
+                <p>This section is under development.</p>
+            </section>
+        </div>
+    </div>
+
+    <script src="/pages/admin/admin-dashboard.js"></script>
+</body>
+</html>

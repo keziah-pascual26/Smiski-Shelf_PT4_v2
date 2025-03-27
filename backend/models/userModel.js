@@ -12,8 +12,7 @@ const userSchema = new mongoose.Schema({
     googleId: { type: String },
     resetToken: { type: String, default: null },
     resetTokenExpiry: { type: Date, default: null },
-    // Add 2FA fields
-    twoFactorSecret: { type: String, default: null },
+    twoFactorSecret: { type: String },
     twoFactorEnabled: { type: Boolean, default: false },
     // Add profile privacy setting
     isProfilePublic: { type: Boolean, default: true },
@@ -21,7 +20,10 @@ const userSchema = new mongoose.Schema({
     friends: [{ 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User' 
-    }]
+    }],
+    status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' }, // Add status field
+    lastLogin: { type: Date, default: Date.now }, // Add lastLogin field
+    createdAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model("User", userSchema);

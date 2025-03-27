@@ -12,6 +12,7 @@ const passport = require('passport');
 const session = require('express-session');
 const authRoutes = require('./routes/authRoutes');
 const reactionRoutes = require('./routes/reactionRoutes');
+const adminRoutes = require('./routes/adminRoutes'); // Add this line
 
 // Add speakeasy and qrcode
 const speakeasy = require('speakeasy');
@@ -98,6 +99,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/pages', express.static(path.join(__dirname, '../frontend/pages')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+
 // Add test routes for debugging
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is working' });
@@ -113,9 +115,17 @@ app.use('/api', require('./routes/storyRoutes'));
 app.use('/api', require('./routes/userRoutes'));
 app.use('/api', require('./routes/friendRoutes')); // Add friend routes
 app.use('/api', require('./routes/messageRoutes')); // Add message routes
+app.use('/api/admin', adminRoutes);
 
 app.use('/', reactionRoutes);
 app.use('/', storyRoutes);
+
+// Make sure JWT_SECRET is properly set
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'your_secret_key') {
+    console.warn('⚠️ WARNING: JWT_SECRET is not properly set. Using a default value for development.');
+    process.env.JWT_SECRET = 'smiski_shelf_secure_jwt_secret_key_' + Math.random().toString(36).substring(2);
+}
+
 
 
 // Import and use routes - IMPORTANT: Only use one method for post routes
@@ -258,6 +268,8 @@ app.post("/api/reset-password", async (req, res) => {
         res.status(500).json({ message: "Internal Server Error" });
     }
 });
+
+
 
 // Catch-all route for SPA navigation - MOVED TO THE END so it doesn't intercept API routes
 app.get('*', (req, res) => {
