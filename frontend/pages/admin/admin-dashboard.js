@@ -77,6 +77,7 @@ async function initializeDashboard() {
         
         // Fetch posts data
         await fetchPosts();
+        initializeReports();
         
         // Set up refresh buttons
         document.getElementById("refresh-users-btn")?.addEventListener("click", fetchUsers);
@@ -1011,41 +1012,52 @@ async function populateUserFilter() {
 async function fetchReports() {
     try {
         const token = localStorage.getItem("adminToken");
+        
         if (!token) {
-            throw new Error("No admin token found");
+            window.location.href = "../login/login.html";
+            return;
         }
 
-        const response = await fetch("http://localhost:3000/api/admin/reports", {
-            method: 'GET',
+        const response = await fetch("http://localhost:3000/api/admin/reports/list", {
             headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
+                "Authorization": `Bearer ${token}`
             }
         });
 
+        if (response.status === 401 || response.status === 403) {
+            localStorage.removeItem("adminToken");
+            window.location.href = "../login/login.html";
+            return;
+        }
+
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || "Failed to fetch reports");
+            throw new Error(`Server error: ${response.status}`);
         }
 
         const data = await response.json();
-        allReports = Array.isArray(data.reports) ? data.reports : [];
-
-        renderReports(allReports);
-        updateReportsPagination(Math.ceil(allReports.length / reportsPerPage));
+        
+        if (!data || (!Array.isArray(data) && !Array.isArray(data.reports))) {
+            throw new Error('Invalid data format received from server');
+        }
+        
+        // Handle both array and object with reports property
+        const reportsArray = Array.isArray(data) ? data : data.reports;
+        
+        allReports = reportsArray;
+        renderReports(reportsArray);
+        updateReportsPagination();
 
     } catch (error) {
         console.error("Error fetching reports:", error);
         document.getElementById("reports-table-body").innerHTML = `
-            <tr>
-                <td colspan="8" class="error-message">
-                    Failed to load reports: ${error.message}. Please try again later.
-                </td>
-            </tr>
+            <tr><td colspan="8" class="error-message">
+                Error loading reports: ${error.message}
+            </td></tr>
         `;
     }
 }
 
+// Function to render reports
 function renderReports(reports) {
     const tableBody = document.getElementById("reports-table-body");
     
@@ -1054,7 +1066,11 @@ function renderReports(reports) {
         return;
     }
 
-    tableBody.innerHTML = reports.map(report => `
+    const start = (reportsCurrentPage - 1) * reportsPerPage;
+    const end = start + reportsPerPage;
+    const paginatedReports = reports.slice(start, end);
+
+    tableBody.innerHTML = paginatedReports.map(report => `
         <tr>
             <td>${report._id}</td>
             <td>${report.reportType}</td>
@@ -1083,17 +1099,15 @@ function renderReports(reports) {
     `).join('');
 }
 
+// Helper function to get reported item text
 function getReportedItemText(report) {
     if (report.reportType === 'post') {
-        return report.reportedPost ? 
-            `Post: ${report.reportedPost.content.substring(0, 30)}...` : 
-            'Deleted post';
+        return `Post: ${report.targetId}`;
     }
-    return report.reportedUser ? 
-        `User: ${report.reportedUser.username}` : 
-        'Deleted user';
+    return `User: ${report.targetId}`;
 }
 
+// Function to update report status
 async function updateReportStatus(reportId, newStatus) {
     try {
         const token = localStorage.getItem("adminToken");
@@ -1110,7 +1124,6 @@ async function updateReportStatus(reportId, newStatus) {
             throw new Error("Failed to update report status");
         }
 
-        // Refresh reports after status update
         await fetchReports();
 
     } catch (error) {
@@ -1119,16 +1132,17 @@ async function updateReportStatus(reportId, newStatus) {
     }
 }
 
+// Function to filter reports
 function filterReports() {
     const searchTerm = document.getElementById("report-search").value.toLowerCase();
     const typeFilter = document.getElementById("report-type-filter").value;
     const statusFilter = document.getElementById("report-status-filter").value;
 
     const filteredReports = allReports.filter(report => {
-        const matchesSearch = !searchTerm || 
+        const matchesSearch = 
             report._id.toLowerCase().includes(searchTerm) ||
             report.reason.toLowerCase().includes(searchTerm) ||
-            (report.reportedUser?.username || '').toLowerCase().includes(searchTerm);
+            report.reporter?.username.toLowerCase().includes(searchTerm);
 
         const matchesType = typeFilter === 'all' || report.reportType === typeFilter;
         const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
@@ -1139,12 +1153,37 @@ function filterReports() {
     renderReports(filteredReports);
 }
 
+// Function to update reports pagination
+function updateReportsPagination() {
+    const totalPages = Math.ceil(allReports.length / reportsPerPage);
+    document.getElementById("reports-page-info").textContent = `Page ${reportsCurrentPage} of ${totalPages}`;
+    document.getElementById("reports-prev-page").disabled = reportsCurrentPage <= 1;
+    document.getElementById("reports-next-page").disabled = reportsCurrentPage >= totalPages;
+}
+
 // Add these event listeners to your initialization function
 function initializeReports() {
     document.getElementById("refresh-reports-btn").addEventListener("click", fetchReports);
     document.getElementById("report-search").addEventListener("input", filterReports);
     document.getElementById("report-type-filter").addEventListener("change", filterReports);
     document.getElementById("report-status-filter").addEventListener("change", filterReports);
+    
+    document.getElementById("reports-prev-page").addEventListener("click", () => {
+        if (reportsCurrentPage > 1) {
+            reportsCurrentPage--;
+            renderReports(allReports);
+            updateReportsPagination();
+        }
+    });
+
+    document.getElementById("reports-next-page").addEventListener("click", () => {
+        const totalPages = Math.ceil(allReports.length / reportsPerPage);
+        if (reportsCurrentPage < totalPages) {
+            reportsCurrentPage++;
+            renderReports(allReports);
+            updateReportsPagination();
+        }
+    });
 }
 
 function updateReportsPagination(totalPages) {
