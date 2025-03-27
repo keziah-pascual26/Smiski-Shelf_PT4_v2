@@ -183,7 +183,7 @@ export async function loadStories() {
 
                 if (story.media && story.media.length > 0) {
                     const mediaUrl = story.media[0];
-                    const fullMediaUrl = `http://localhost:3000/uploads/stories/${mediaUrl}`;
+                    const fullMediaUrl = `http://localhost:3000/uploads/${mediaUrl}`;
 
                     const fileExtension = mediaUrl.split('.').pop().toLowerCase();
                     
@@ -339,7 +339,7 @@ function viewStory(story, storyArray) {
             
             // Create video element
             const videoElement = document.createElement('video');
-            videoElement.src = `http://localhost:3000/uploads/stories/${mediaUrl}`;
+            videoElement.src = `http://localhost:3000/uploads/${mediaUrl}`;
             videoElement.className = 'story-video';
             videoElement.controls = true;
             container.appendChild(videoElement);
@@ -407,7 +407,7 @@ function viewStory(story, storyArray) {
         } else if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExtension)) {
             // Image handling remains the same
             const img = document.createElement('img');
-            img.src = `http://localhost:3000/uploads/stories/${mediaUrl}`;
+            img.src = `http://localhost:3000/uploads/${mediaUrl}`;
             img.className = 'story-media';
             container.appendChild(img);
             
