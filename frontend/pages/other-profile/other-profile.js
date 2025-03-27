@@ -1372,16 +1372,23 @@ async function loadUserPosts(username) {
     }
 }
     
-    // Function to load user stories
 async function loadUserStories(username) {
     const userStoriesFeed = document.getElementById('userStoriesFeed');
+    if (!userStoriesFeed) {
+        console.error('Stories feed container not found');
+        return;
+    }
+    
     userStoriesFeed.innerHTML = '<div class="loading">Loading stories...</div>';
     
-    // Check if profile is private
-    const profileContainer = document.querySelector('.profile-container');
-    
     try {
-        const response = await fetch(`http://localhost:3000/api/stories/user/${encodeURIComponent(username)}`, {
+        console.log(`Fetching stories for user: ${username}`);
+        // Fix the URL to match the backend route structure
+        // Remove the 'api/' prefix since your storyRoutes.js doesn't use it
+        const url = `http://localhost:3000/stories/user/${encodeURIComponent(username)}`;
+        console.log(`Request URL: ${url}`);
+        
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -1389,17 +1396,41 @@ async function loadUserStories(username) {
             }
         });
         
+        // Log response details for debugging
+        console.log('Stories response status:', response.status);
+        console.log('Stories response headers:', [...response.headers.entries()]);
+        
         if (!response.ok) {
-            throw new Error('Failed to fetch stories');
+            let errorText = '';
+            try {
+                const errorData = await response.json();
+                errorText = errorData.error || response.statusText;
+            } catch (e) {
+                const rawText = await response.text();
+                console.log('Raw response text (first 100 chars):', rawText.substring(0, 100));
+                errorText = `${response.statusText} - Not valid JSON`;
+            }
+            
+            throw new Error(`Failed to fetch stories: ${response.status} ${errorText}`);
+        }
+        
+        // Check content type to ensure we're getting JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const rawText = await response.text();
+            console.log('Unexpected content type:', contentType);
+            console.log('Raw response text (first 100 chars):', rawText.substring(0, 100));
+            throw new Error(`Expected JSON but got ${contentType || 'unknown content type'}`);
         }
         
         const stories = await response.json();
+        console.log(`Loaded ${stories.length} stories for user ${username}:`, stories);
         
         if (stories.length === 0) {
             userStoriesFeed.innerHTML = `
                 <div class="empty-state">
                     <h3>No stories yet</h3>
-                    <p>${username} hasn't shared any stories yet.</p>
+                    <p>${username} hasn't posted any stories yet.</p>
                 </div>
             `;
             return;
@@ -1417,6 +1448,7 @@ async function loadUserStories(username) {
             <div class="empty-state">
                 <h3>Error loading stories</h3>
                 <p>We couldn't load the stories. Please try again later.</p>
+                <p class="error-details">${error.message}</p>
             </div>
         `;
     }
@@ -1679,116 +1711,116 @@ deleteCommentButtons.forEach(button => {
 }
     
     // Helper function to create a story element
-    function createStoryElement(story) {
-        const storyElement = document.createElement('div');
-        storyElement.className = 'story-card';
-        
-        // Format timestamp
-        const timestamp = formatTimestamp(story.createdAt);
-        
-        // Create media HTML
-        let mediaHtml = '';
-        if (story.media && story.media.length > 0) {
-            const mediaFile = story.media[0]; // Use first media file
-            const fileExtension = mediaFile.split('.').pop().toLowerCase();
-            
-            if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
-                mediaHtml = `
-                    <div class="story-media">
-                        <video>
-                            <source src="/uploads/${mediaFile}" type="video/${fileExtension}">
-                            Your browser does not support the video tag.
-                        </video>
-                        <div class="play-indicator">
-                            <i class="fas fa-play"></i>
-                        </div>
-                    </div>
-                `;
-            } else {
-                mediaHtml = `
-                    <div class="story-media">
-                        <img src="/uploads/${mediaFile}" alt="Story Image">
-                    </div>
-                `;
-            }
-        }
-        
-        storyElement.innerHTML = `
-            <div class="story-header">
-                <h3>${story.title}</h3>
-                <span class="story-timestamp">${timestamp}</span>
-            </div>
-            ${mediaHtml}
-            <p class="story-description">${story.description}</p>
-            <div class="story-footer">
-                <button class="view-story-btn" data-id="${story._id}">View Story</button>
-            </div>
-        `;
-        
-        // Add event listeners
-        const viewButton = storyElement.querySelector('.view-story-btn');
-        if (viewButton) {
-            viewButton.addEventListener('click', () => {
-                // Implement story viewer functionality
-                viewStory(story);
-            });
-        }
-        
-        return storyElement;
-    }
+function createStoryElement(story) {
+    const storyElement = document.createElement('div');
+    storyElement.className = 'story-card';
     
-    // Function to view a story
-    function viewStory(story) {
-        // Create a modal for viewing the story
-        const modal = document.createElement('div');
-        modal.className = 'story-modal';
+    // Format timestamp
+    const timestamp = formatTimestamp(story.createdAt);
+    
+    // Create media HTML
+    let mediaHtml = '';
+    if (story.media && story.media.length > 0) {
+        const mediaFile = story.media[0]; // Use first media file
+        const fileExtension = mediaFile.split('.').pop().toLowerCase();
         
-        let mediaContent = '';
-        if (story.media && story.media.length > 0) {
-            const mediaFile = story.media[0];
-            const fileExtension = mediaFile.split('.').pop().toLowerCase();
-            
-            if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
-                mediaContent = `
-                    <video controls autoplay>
-                        <source src="/uploads/${mediaFile}" type="video/${fileExtension}">
+        if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+            mediaHtml = `
+                <div class="story-media">
+                    <video>
+                        <source src="http://localhost:3000/uploads/${mediaFile}" type="video/${fileExtension}">
                         Your browser does not support the video tag.
                     </video>
-                `;
-            } else {
-                mediaContent = `<img src="/uploads/${mediaFile}" alt="Story Image">`;
-            }
+                    <div class="play-indicator">
+                        <i class="fas fa-play"></i>
+                    </div>
+                </div>
+            `;
+        } else {
+            mediaHtml = `
+                <div class="story-media">
+                    <img src="http://localhost:3000/uploads/${mediaFile}" alt="Story Image">
+                </div>
+            `;
         }
-        
-        modal.innerHTML = `
-            <div class="story-modal-content">
-                <span class="close-modal">&times;</span>
-                <h2>${story.title}</h2>
-                <div class="story-media-container">
-                    ${mediaContent}
-                </div>
-                <p>${story.description}</p>
-                <div class="story-info">
-                    <span>Posted by ${story.username}</span>
-                    <span>${formatTimestamp(story.createdAt)}</span>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        // Close modal when clicking the close button
-        modal.querySelector('.close-modal').addEventListener('click', () => {
-            document.body.removeChild(modal);
-        });
-        
-        // Close modal when clicking outside the content
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                document.body.removeChild(modal);
-            }
+    }
+    
+    storyElement.innerHTML = `
+        <div class="story-header">
+            <h3>${story.title}</h3>
+            <span class="story-timestamp">${timestamp}</span>
+        </div>
+        ${mediaHtml}
+        <p class="story-description">${story.description}</p>
+        <div class="story-footer">
+            <button class="view-story-btn" data-id="${story._id}">View Story</button>
+        </div>
+    `;
+    
+    // Add event listeners
+    const viewButton = storyElement.querySelector('.view-story-btn');
+    if (viewButton) {
+        viewButton.addEventListener('click', () => {
+            // Implement story viewer functionality
+            viewStory(story);
         });
     }
+    
+    return storyElement;
+}
+    
+    // Function to view a story
+function viewStory(story) {
+    // Create a modal for viewing the story
+    const modal = document.createElement('div');
+    modal.className = 'story-modal';
+    
+    let mediaContent = '';
+    if (story.media && story.media.length > 0) {
+        const mediaFile = story.media[0];
+        const fileExtension = mediaFile.split('.').pop().toLowerCase();
+        
+        if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+            mediaContent = `
+                <video controls autoplay>
+                    <source src="http://localhost:3000/uploads/${mediaFile}" type="video/${fileExtension}">
+                    Your browser does not support the video tag.
+                </video>
+            `;
+        } else {
+            mediaContent = `<img src="http://localhost:3000/uploads/${mediaFile}" alt="Story Image">`;
+        }
+    }
+    
+    modal.innerHTML = `
+        <div class="story-modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>${story.title}</h2>
+            <div class="story-media-container">
+                ${mediaContent}
+            </div>
+            <p>${story.description}</p>
+            <div class="story-info">
+                <span>Posted by ${story.username}</span>
+                <span>${formatTimestamp(story.createdAt)}</span>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close modal when clicking the close button
+    modal.querySelector('.close-modal').addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    // Close modal when clicking outside the content
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
+    });
+}
     
     // Function to toggle like on a post
 async function toggleLike(postId, likeButton) {

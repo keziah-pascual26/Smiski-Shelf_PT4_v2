@@ -76,29 +76,36 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Handle Logout
     logoutBtn.addEventListener("click", () => {
-        alert("Logging out...");
-    
-        // Clear local storage (username and token)
-        localStorage.removeItem("username");
-        localStorage.removeItem("token");
-    
-        // Optionally, make an API call to the server to invalidate the token/session (if necessary)
-        fetch("http://localhost:3000/logout", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${localStorage.getItem("token")}`
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log(data.message);
-        })
-        .catch(err => {
-            console.error("Logout Error:", err);
-        });
+        const confirmLogout = confirm("Are you sure you want to log out?");
         
-        // Redirect to the login page
-        window.location.href = "/login"; // Correct the URL to match the backend route
+        if (confirmLogout) {
+            alert("Logging out...");
+        
+            // Clear local storage (username and token)
+            localStorage.removeItem("username");
+            localStorage.removeItem("token");
+    
+            // Optionally, make an API call to the server to invalidate the token/session (if necessary)
+            fetch("http://localhost:3000/logout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.message);
+            })
+            .catch(err => {
+                console.error("Logout Error:", err);
+            });
+    
+            // Redirect to the login page
+            window.location.href = "/login"; // Correct the URL to match the backend route
+        } else {
+            console.log("Logout canceled.");
+        }
     });
+    
 });

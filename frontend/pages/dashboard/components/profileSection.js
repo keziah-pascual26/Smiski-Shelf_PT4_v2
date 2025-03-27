@@ -73,20 +73,7 @@ async function initializeProfileSection() {
                 <h3 class="profile-username">${username}</h3>
                 <p class="profile-bio">${userData.bio || 'Welcome to my Smiski Shelf profile!'}</p>
                 
-                <div class="profile-stats">
-                    <div class="stat-item">
-                        <span class="stat-value">${stats.posts}</span>
-                        <span class="stat-label">Posts</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">${stats.friends}</span>
-                        <span class="stat-label">Friends</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value">${stats.stories}</span>
-                        <span class="stat-label">Stories</span>
-                    </div>
-                </div>
+                
                 
                 <div class="profile-actions">
                     <button class="profile-edit-btn" id="editProfileBtn">Edit Profile</button>

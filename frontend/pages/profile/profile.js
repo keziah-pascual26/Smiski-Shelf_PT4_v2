@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Edit profile button
     if (editProfileBtn) {
         editProfileBtn.addEventListener('click', () => {
-            window.location.href = '/pages/settings/settings.html#profile';
+            window.location.href = '/pages/userprofile/userprofile.html#profile';
         });
     }
     

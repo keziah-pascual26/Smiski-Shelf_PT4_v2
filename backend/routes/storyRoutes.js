@@ -121,6 +121,23 @@ router.delete('/stories/:storyId', authenticateToken, async (req, res) => {
     }
 });
 
+// Add this route to get stories by username
+router.get('/stories/user/:username', authenticateToken, async (req, res) => {
+    try {
+        const { username } = req.params;
+        
+        // Find all non-expired stories by the specified username
+        const stories = await Story.find({
+            username: username,
+            expiresAt: { $gt: new Date() } // Only get stories that haven't expired
+        }).sort({ createdAt: -1 });
+        
+        res.json(stories);
+    } catch (error) {
+        console.error('Error fetching user stories:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 // Make sure to add this before the module.exports line
 
 module.exports = router;
